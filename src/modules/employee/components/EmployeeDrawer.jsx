@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { X, User, Mail, Phone, Lock, Briefcase, Calendar, Building2, ShieldCheck, Eye, EyeOff, Clock, Users, Search, ChevronDown, MapPin, ScanFace, Navigation } from "lucide-react";
+import { X, User, Mail, Phone, Lock, Briefcase, Calendar, Building2, ShieldCheck, Eye, EyeOff, Clock, Users, Search, ChevronDown, MapPin, ScanFace } from "lucide-react";
 
 const Field = ({ label, icon: Icon, children }) => (
     <div>
@@ -105,7 +105,7 @@ const ManagerPicker = ({ value, onChange, options }) => {
     );
 };
 
-const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts, employmentStatuses, departments, companyUsers, onSubmit, onCompanyChange, loading }) => {
+const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts, employmentStatuses, departments, companyUsers, branches, onSubmit, onCompanyChange, loading }) => {
     const isEdit = !!initialData;
     const [form, setForm] = useState({});
     const [showPassword, setShowPassword] = useState(false);
@@ -404,71 +404,25 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
                             <MapPin size={13} /> Attendance Settings
                         </p>
 
-                        {/* Geofence */}
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-700">Geofence Restriction</p>
-                                    <p className="text-xs text-gray-400">Allow punch-in only within a specific radius</p>
-                                </div>
-                                <button type="button"
-                                    onClick={() => set("attendanceSettings", { ...form.attendanceSettings, geofenceEnabled: !form.attendanceSettings?.geofenceEnabled })}
-                                    className={`relative w-10 h-5 rounded-full transition-colors ${form.attendanceSettings?.geofenceEnabled ? "bg-blue-600" : "bg-gray-300"}`}>
-                                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.attendanceSettings?.geofenceEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
-                                </button>
-                            </div>
-
-                            {form.attendanceSettings?.geofenceEnabled && (
-                                <>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Allowed Radius (meters)</label>
-                                        <input
-                                            type="number" min="10" max="10000"
-                                            value={form.attendanceSettings?.geofenceRadius || 100}
-                                            onChange={e => set("attendanceSettings", { ...form.attendanceSettings, geofenceRadius: Number(e.target.value) })}
-                                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                            placeholder="100"
-                                        />
-                                        <p className="text-xs text-gray-400 mt-1">Recommended: 50–500 meters</p>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Office Location</label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text" readOnly
-                                                value={form.attendanceSettings?.geofenceLocation?.address || ""}
-                                                placeholder="Click 'Use Current Location'"
-                                                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500"
-                                            />
-                                            <button type="button"
-                                                onClick={() => {
-                                                    if (!navigator.geolocation) return;
-                                                    navigator.geolocation.getCurrentPosition(async ({ coords: { latitude, longitude } }) => {
-                                                        let address = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-                                                        try {
-                                                            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
-                                                            const d = await r.json();
-                                                            address = d.display_name || address;
-                                                        } catch {}
-                                                        set("attendanceSettings", { ...form.attendanceSettings, geofenceLocation: { latitude, longitude, address } });
-                                                    });
-                                                }}
-                                                className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium whitespace-nowrap">
-                                                <Navigation size={12} /> Use Current
-                                            </button>
-                                        </div>
-                                        {form.attendanceSettings?.geofenceLocation?.latitude && (
-                                            <p className="text-xs text-green-600 mt-1">
-                                                ✓ {form.attendanceSettings.geofenceLocation.latitude.toFixed(5)}, {form.attendanceSettings.geofenceLocation.longitude.toFixed(5)}
-                                            </p>
-                                        )}
-                                    </div>
-                                </>
-                            )}
+                        {/* Branch Assignment */}
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2 mb-3">
+                            <p className="text-sm font-medium text-gray-700">Assign Branch</p>
+                            <p className="text-xs text-gray-400">Employee must be within branch geofence to punch-in</p>
+                            <select
+                                value={form.branch || ""}
+                                onChange={e => set("branch", e.target.value || null)}
+                                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white mt-1">
+                                <option value="">No branch (geofence disabled)</option>
+                                {(branches || []).map(b => (
+                                    <option key={b._id} value={b._id}>
+                                        {b.name} — {b.geofenceRadius}m radius
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         {/* Face Recognition */}
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mt-3">
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm font-medium text-gray-700">Face Recognition</p>

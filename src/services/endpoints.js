@@ -259,5 +259,13 @@ export const ENDPOINTS = {
   
   PERFORMANCE: {
     GET: `/api/performance`
+  },
+
+  BRANCH: {
+    CREATE: `/api/branches`,
+    GET_ALL: `/api/branches`,
+    GET_BY_COMPANY: (companyId) => `/api/branches/by-company/${companyId}`,
+    UPDATE: (id) => `/api/branches/${id}`,
+    DELETE: (id) => `/api/branches/${id}`,
   }
 };

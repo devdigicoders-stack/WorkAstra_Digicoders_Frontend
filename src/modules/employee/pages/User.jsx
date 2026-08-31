@@ -8,6 +8,8 @@ import { useStore } from "../../../context/StoreContext";
 import { fetchAllCompaniesList } from "../../company/services/companyService";
 import { getShiftsByCompany } from "../../workshift/services/workShiftService";
 import { getStatusesByCompany, getCompanyEmploymentStatuses } from "../../employmentStatus/services/employmentStatusService";
+import api from "../../../services/axios";
+import { ENDPOINTS } from "../../../services/endpoints";
 import { getDepartmentsByCompany } from "../../department/services/departmentService";
 import { adminChangePassword } from "../../auth/services/authService";
 import { toast } from "react-toastify";
@@ -35,6 +37,7 @@ const User = () => {
     const [modalShifts, setModalShifts] = useState([]);
     const [modalStatuses, setModalStatuses] = useState([]);
     const [modalCompanyUsers, setModalCompanyUsers] = useState([]);
+    const [modalBranches, setModalBranches] = useState([]);
     const [modalDepartments, setModalDepartments] = useState([]);
     const [companies, setCompanies] = useState([]);
     const [open, setOpen] = useState(false);
@@ -209,18 +212,20 @@ const User = () => {
     const handleFieldChange = async (name, value, formData) => {
         if (name === "companyId") {
             try {
-                const [rolesRes, shiftsRes, statusesRes, usersRes, deptsRes] = await Promise.all([
+                const [rolesRes, shiftsRes, statusesRes, usersRes, deptsRes, branchesRes] = await Promise.all([
                     getRolesByCompany(value),
                     getShiftsByCompany(value),
                     getStatusesByCompany(value),
                     fetchUsers(),
                     getDepartmentsByCompany(value),
+                    api.get(ENDPOINTS.BRANCH.GET_BY_COMPANY(value)).catch(() => ({ data: { branches: [] } })),
                 ]);
                 setModalRoles(rolesRes.data || []);
                 setModalShifts(shiftsRes.data || []);
                 setModalStatuses(statusesRes.employmentStatuses || []);
                 setModalCompanyUsers((usersRes.users || []).filter(u => u.companyId?._id === value || u.companyId === value));
                 setModalDepartments(deptsRes.departments || []);
+                setModalBranches(branchesRes.data?.branches || []);
                 return { ...formData, companyId: value, role: "", workShift: "", reportingTo: "", employmentStatus: "", department: "" };
             } catch (err) {
                 console.error(err);
@@ -537,6 +542,7 @@ const User = () => {
                 employmentStatuses={modalStatuses}
                 departments={modalDepartments}
                 companyUsers={modalCompanyUsers}
+                branches={modalBranches}
                 onSubmit={selected ? handleUpdate : handleCreate}
                 onCompanyChange={handleFieldChange}
                 loading={loading}

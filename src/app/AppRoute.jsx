@@ -60,6 +60,7 @@ import MyResignation from "../modules/exit/pages/MyResignation";
 import ManageResignations from "../modules/exit/pages/ManageResignations";
 import ViewResignation from "../modules/exit/pages/ViewResignation";
 import Placeholder from "../Pages/Placeholder";
+import Branches from "../modules/branches/pages/Branches";
 
 const AppRoute = createBrowserRouter([
     {
@@ -97,6 +98,7 @@ const AppRoute = createBrowserRouter([
             { path: "/reports/sales", element: <SalesReport /> },
             { path: "/reports/performance", element: <PerformanceReport /> },
             { path: "/work-shifts", element: <WorkShift /> },
+            { path: "/branches", element: <Branches /> },
             { path: "/employment-status", element: <EmploymentStatus /> },
             { path: "/leave-management",  element: <LeaveManagement /> },
             { path: "/leave/assign",       element: <AssignLeave /> },
