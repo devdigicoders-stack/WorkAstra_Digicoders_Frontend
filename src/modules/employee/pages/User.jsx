@@ -153,7 +153,11 @@ const User = () => {
                 payload = new FormData();
                 Object.keys(data).forEach(key => {
                     if (data[key] !== undefined && data[key] !== null) {
-                        payload.append(key, data[key]);
+                        if (typeof data[key] === "object" && !(data[key] instanceof File)) {
+                            payload.append(key, JSON.stringify(data[key]));
+                        } else {
+                            payload.append(key, data[key]);
+                        }
                     }
                 });
             }
@@ -186,7 +190,11 @@ const User = () => {
                 payload = new FormData();
                 Object.keys(data).forEach(key => {
                     if (data[key] !== undefined && data[key] !== null) {
-                        payload.append(key, data[key]);
+                        if (typeof data[key] === "object" && !(data[key] instanceof File)) {
+                            payload.append(key, JSON.stringify(data[key]));
+                        } else {
+                            payload.append(key, data[key]);
+                        }
                     }
                 });
             }
@@ -473,12 +481,14 @@ const User = () => {
                                                                 getStatusesByCompany(cid),
                                                                 fetchUsers(),
                                                                 getDepartmentsByCompany(cid),
-                                                            ]).then(([r, s, es, us, d]) => {
+                                                                api.get(ENDPOINTS.BRANCH.GET_BY_COMPANY(cid)).catch(() => ({ data: { branches: [] } })),
+                                                            ]).then(([r, s, es, us, d, b]) => {
                                                                 setModalRoles(r.data || []);
                                                                 setModalShifts(s.data || []);
                                                                 setModalStatuses(es.employmentStatuses || []);
                                                                 setModalCompanyUsers((us.users || []).filter(x => x.companyId?._id === cid || x.companyId === cid));
                                                                 setModalDepartments(d.departments || []);
+                                                                setModalBranches(b.data?.branches || []);
                                                             });
                                                             setOpen(true);
                                                         }}
