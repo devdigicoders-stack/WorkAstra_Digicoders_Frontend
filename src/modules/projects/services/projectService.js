@@ -1,0 +1,38 @@
+import api from "../../../services/axios";
+import { ENDPOINTS } from "../../../services/endpoints";
+
+export const getProjects = () => api.get(ENDPOINTS.PROJECT.GET_ALL);
+export const getProjectById = (id) => api.get(ENDPOINTS.PROJECT.GET_BY_ID(id));
+export const createProject = (data) => api.post(ENDPOINTS.PROJECT.CREATE, data);
+export const updateProject = (id, data) => api.put(ENDPOINTS.PROJECT.UPDATE(id), data);
+export const deleteProject = (id) => api.delete(ENDPOINTS.PROJECT.DELETE(id));
+
+export const getFileBundles = (id) => api.get(ENDPOINTS.PROJECT.GET_BUNDLES(id));
+export const createFileBundle = (id, fd, onUploadProgress) =>
+    api.post(ENDPOINTS.PROJECT.CREATE_BUNDLE(id), fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 0,
+        onUploadProgress,
+    });
+export const updateFileBundle = (id, bid, fd, onUploadProgress) =>
+    api.put(ENDPOINTS.PROJECT.UPDATE_BUNDLE(id, bid), fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 0,
+        onUploadProgress,
+    });
+export const deleteFileBundle = (id, bid) => api.delete(ENDPOINTS.PROJECT.DELETE_BUNDLE(id, bid));
+export const updateBundleAccess = (id, bid, data) => api.patch(ENDPOINTS.PROJECT.UPDATE_BUNDLE_ACCESS(id, bid), data);
+
+export const getTasksByProject = (projectId) => api.get(ENDPOINTS.TASK.BY_PROJECT(projectId));
+export const getTaskById = (id) => api.get(ENDPOINTS.TASK.GET_BY_ID(id));
+export const createTask = (formData) => api.post(ENDPOINTS.TASK.CREATE, formData, { headers: { "Content-Type": "multipart/form-data" } });
+export const updateTask = (id, data) => api.put(ENDPOINTS.TASK.UPDATE(id), data);
+export const startWork = (id) => api.patch(ENDPOINTS.TASK.START_WORK(id));
+export const deleteTask = (id) => api.delete(ENDPOINTS.TASK.DELETE(id));
+
+export const addComment = (id, formData) => api.post(ENDPOINTS.TASK.ADD_COMMENT(id), formData, { headers: { "Content-Type": "multipart/form-data" } });
+export const deleteComment = (id, commentId) => api.delete(ENDPOINTS.TASK.DELETE_COMMENT(id, commentId));
+export const grantCommentAccess = (id, userIds) => api.patch(ENDPOINTS.TASK.COMMENT_ACCESS(id), { userIds });
+export const addAttachment = (id, formData) => api.post(ENDPOINTS.TASK.ADD_ATTACHMENT(id), formData, { headers: { "Content-Type": "multipart/form-data" } });
+export const getMyTaskHistory = () => api.get(ENDPOINTS.TASK.MY_HISTORY);
+export const deleteAttachment = (id, attId) => api.delete(ENDPOINTS.TASK.DELETE_ATTACHMENT(id, attId));
