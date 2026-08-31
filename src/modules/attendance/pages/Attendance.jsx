@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useStore } from "../../../context/StoreContext";
 import {
     checkIn, checkOut, getTodayAttendance,
@@ -12,9 +12,10 @@ import { getHolidays, getMyLeaves, getCompanyLeaves } from "../../leave/services
 import {
     MapPin, Clock, LogIn, LogOut, CheckCircle, AlertCircle,
     Timer, TrendingUp, Calendar, RefreshCw, ChevronLeft, ChevronRight, Palmtree,
-    FileEdit, Check, X, Download, BarChart2
+    FileEdit, Check, X, Download, BarChart2, ScanFace, Camera
 } from "lucide-react";
 import { toast } from "react-toastify";
+import * as faceapi from "face-api.js";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const fmt = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "—";
@@ -57,6 +58,109 @@ const getLocation = () => new Promise((resolve, reject) => {
         { enableHighAccuracy: true, timeout: 10000 }
     );
 });
+
+// ── Face Scan Modal ──────────────────────────────────────────────────────────
+const FaceScanModal = ({ onSuccess, onCancel }) => {
+    const videoRef = useRef(null);
+    const [status, setStatus] = useState("loading"); // loading | ready | scanning | error
+    const [modelsLoaded, setModelsLoaded] = useState(false);
+    const streamRef = useRef(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        const load = async () => {
+            try {
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+                    faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+                    faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
+                ]);
+                if (cancelled) return;
+                setModelsLoaded(true);
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                streamRef.current = stream;
+                if (videoRef.current) videoRef.current.srcObject = stream;
+                setStatus("ready");
+            } catch (e) {
+                if (!cancelled) setStatus("error");
+            }
+        };
+        load();
+        return () => {
+            cancelled = true;
+            streamRef.current?.getTracks().forEach(t => t.stop());
+        };
+    }, []);
+
+    const scan = async () => {
+        if (!modelsLoaded || !videoRef.current) return;
+        setStatus("scanning");
+        try {
+            const detection = await faceapi
+                .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+            if (!detection) {
+                setStatus("ready");
+                return toast.error("No face detected. Please look at the camera.");
+            }
+            streamRef.current?.getTracks().forEach(t => t.stop());
+            onSuccess(Array.from(detection.descriptor));
+        } catch {
+            setStatus("ready");
+            toast.error("Face scan failed. Try again.");
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <ScanFace size={18} className="text-blue-600" />
+                        <h3 className="text-base font-semibold text-gray-900">Face Verification</h3>
+                    </div>
+                    <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+                </div>
+
+                <div className="relative bg-black rounded-xl overflow-hidden mb-4" style={{ aspectRatio: "4/3" }}>
+                    <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+                    {status === "loading" && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white text-sm gap-2">
+                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Loading models...
+                        </div>
+                    )}
+                    {status === "scanning" && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white text-sm gap-2">
+                            <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                            Scanning face...
+                        </div>
+                    )}
+                    {status === "error" && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-red-400 text-sm">Camera error</div>
+                    )}
+                    {/* Face guide overlay */}
+                    {(status === "ready" || status === "scanning") && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-40 h-48 border-2 border-blue-400 rounded-full opacity-60" />
+                        </div>
+                    )}
+                </div>
+
+                <p className="text-xs text-gray-400 text-center mb-4">Position your face inside the oval and click Scan</p>
+
+                <div className="flex gap-3">
+                    <button onClick={onCancel} className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
+                    <button onClick={scan} disabled={status !== "ready"}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50">
+                        <Camera size={14} /> Scan Face
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // ── StatCard ──────────────────────────────────────────────────────────────────
 const StatCard = ({ icon: Icon, label, value, color }) => (
@@ -811,6 +915,8 @@ const Attendance = () => {
     const [location, setLocation] = useState(null);
     const [locationError, setLocationError] = useState("");
     const [userShift, setUserShift] = useState(null);
+    const [showFaceScan, setShowFaceScan] = useState(false);
+    const [pendingCheckInType, setPendingCheckInType] = useState(null); // "in" | "out"
     const weekOff = userShift?.weekOff ?? [0, 6];
     // #20 — Pagination
     const ITEMS_PER_PAGE = 25;
@@ -960,26 +1066,43 @@ const Attendance = () => {
     useEffect(() => { loadToday(); loadSummary(); loadMyRecords(); loadHolidays(); loadMyLeaves(); }, [loadToday, loadSummary, loadMyRecords, loadHolidays, loadMyLeaves]);
     useEffect(() => { if (tab === "team" || tab === "report") loadCompanyRecords(); }, [tab, loadCompanyRecords]);
 
-    const doCheckIn = async () => {
+    const doCheckIn = async (faceDescriptor = null) => {
         if (!location) return toast.error("Location unavailable. Please refresh location.");
+        if (user?.attendanceSettings?.faceRecognitionEnabled && !faceDescriptor) {
+            setPendingCheckInType("in");
+            setShowFaceScan(true);
+            return;
+        }
         try {
             setLoading(true);
-            await checkIn(location);
+            await checkIn({ ...location, faceDescriptor });
             toast.success("Checked in successfully!");
             loadToday(); loadSummary(); loadMyRecords();
         } catch (e) { toast.error(e?.response?.data?.message || "Check-in failed"); }
         finally { setLoading(false); }
     };
 
-    const doCheckOut = async () => {
+    const doCheckOut = async (faceDescriptor = null) => {
         if (!location) return toast.error("Location unavailable. Please refresh location.");
+        if (user?.attendanceSettings?.faceRecognitionEnabled && !faceDescriptor) {
+            setPendingCheckInType("out");
+            setShowFaceScan(true);
+            return;
+        }
         try {
             setLoading(true);
-            await checkOut(location);
+            await checkOut({ ...location, faceDescriptor });
             toast.success("Checked out successfully!");
             loadToday(); loadSummary(); loadMyRecords();
         } catch (e) { toast.error(e?.response?.data?.message || "Check-out failed"); }
         finally { setLoading(false); }
+    };
+
+    const handleFaceScanSuccess = (faceDescriptor) => {
+        setShowFaceScan(false);
+        if (pendingCheckInType === "in") doCheckIn(faceDescriptor);
+        else if (pendingCheckInType === "out") doCheckOut(faceDescriptor);
+        setPendingCheckInType(null);
     };
 
     const checkedIn = !!today?.checkIn;
@@ -1551,6 +1674,13 @@ const Attendance = () => {
                         </form>
                     </div>
                 </div>
+            )}
+            {/* Face Scan Modal */}
+            {showFaceScan && (
+                <FaceScanModal
+                    onSuccess={handleFaceScanSuccess}
+                    onCancel={() => { setShowFaceScan(false); setPendingCheckInType(null); }}
+                />
             )}
         </div>
     );

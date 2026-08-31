@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { useStore } from "../context/StoreContext";
 import { getProfile, updateUserProfile, changePassword } from "../modules/auth/services/authService";
 import { getCompanyWorkShifts } from "../modules/workshift/services/workShiftService";
 import {
     Camera, Pencil, X, Check, User, Mail, Phone, Calendar,
-    Briefcase, Building2, ShieldCheck, Clock, Eye, EyeOff, Lock, MapPin, Banknote
+    Briefcase, Building2, ShieldCheck, Clock, Eye, EyeOff, Lock, MapPin, Banknote, ScanFace
 } from "lucide-react";
 import BankDetailsComponent from "../modules/employee/components/BankDetailsComponent";
+import * as faceapi from "face-api.js";
+import api from "../services/axios";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition";
@@ -55,6 +57,7 @@ const Profile = () => {
         { key: "employment", label: "Employment" },
         { key: "bank",       label: "Bank & UPI" },
         { key: "security",   label: "Security" },
+        { key: "face",       label: "Face ID" },
     ];
 
     const [form, setForm] = useState(EMPTY);
@@ -463,8 +466,126 @@ const Profile = () => {
                             </div>
                         </div>
                     )}
+                    {/* ── Face ID ── */}
+                    {tab === "face" && (
+                        <FaceRegistration rawUser={rawUser} />
+                    )}
                 </div>
             </div>
+        </div>
+    );
+};
+
+// ── Face Registration Component ───────────────────────────────────────────────
+const FaceRegistration = ({ rawUser }) => {
+    const videoRef = useRef(null);
+    const [status, setStatus] = useState("idle"); // idle | loading | ready | scanning | done | error
+    const [modelsLoaded, setModelsLoaded] = useState(false);
+    const streamRef = useRef(null);
+    const isRegistered = rawUser?.attendanceSettings?.faceDescriptor?.length > 0;
+
+    const startCamera = async () => {
+        setStatus("loading");
+        try {
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+                faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+                faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
+            ]);
+            setModelsLoaded(true);
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            streamRef.current = stream;
+            if (videoRef.current) videoRef.current.srcObject = stream;
+            setStatus("ready");
+        } catch {
+            setStatus("error");
+            toast.error("Camera access denied or models failed to load.");
+        }
+    };
+
+    const stopCamera = () => {
+        streamRef.current?.getTracks().forEach(t => t.stop());
+        setStatus("idle");
+    };
+
+    const capture = async () => {
+        if (!modelsLoaded || !videoRef.current) return;
+        setStatus("scanning");
+        try {
+            const detection = await faceapi
+                .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+            if (!detection) {
+                setStatus("ready");
+                return toast.error("No face detected. Look directly at the camera.");
+            }
+            const descriptor = Array.from(detection.descriptor);
+            await api.post("/user/register-face", { faceDescriptor: descriptor });
+            stopCamera();
+            setStatus("done");
+            toast.success("Face registered successfully!");
+        } catch {
+            setStatus("ready");
+            toast.error("Face capture failed. Try again.");
+        }
+    };
+
+    useEffect(() => () => streamRef.current?.getTracks().forEach(t => t.stop()), []);
+
+    return (
+        <div className="max-w-sm space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <ScanFace size={20} className="text-blue-600 shrink-0" />
+                <div>
+                    <p className="text-sm font-semibold text-blue-800">Face Recognition</p>
+                    <p className="text-xs text-blue-600 mt-0.5">
+                        {isRegistered || status === "done" ? "✅ Face already registered" : "No face registered yet"}
+                    </p>
+                </div>
+            </div>
+
+            {(status === "loading" || status === "ready" || status === "scanning") && (
+                <div className="relative bg-black rounded-xl overflow-hidden" style={{ aspectRatio: "4/3" }}>
+                    <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+                    {status === "loading" && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white text-sm gap-2">
+                            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Loading...
+                        </div>
+                    )}
+                    {status === "scanning" && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white text-sm gap-2">
+                            <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                            Scanning...
+                        </div>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-40 h-48 border-2 border-blue-400 rounded-full opacity-60" />
+                    </div>
+                </div>
+            )}
+
+            <div className="flex gap-3">
+                {status === "idle" || status === "done" ? (
+                    <button onClick={startCamera}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition">
+                        <Camera size={14} /> {isRegistered || status === "done" ? "Re-register Face" : "Register Face"}
+                    </button>
+                ) : (
+                    <>
+                        <button onClick={capture} disabled={status !== "ready"}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition disabled:opacity-50">
+                            <ScanFace size={14} /> Capture
+                        </button>
+                        <button onClick={stopCamera}
+                            className="px-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition">
+                            Cancel
+                        </button>
+                    </>
+                )}
+            </div>
+            <p className="text-xs text-gray-400">Position your face inside the oval and click Capture. Good lighting improves accuracy.</p>
         </div>
     );
 };
