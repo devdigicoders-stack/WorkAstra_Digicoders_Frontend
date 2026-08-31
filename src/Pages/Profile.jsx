@@ -161,7 +161,7 @@ const Profile = () => {
         setSaving(true);
         try {
             const fd = new FormData();
-            const textFields = ["firstName", "lastName", "phone", "gender", "address", "dateOfBirth",
+            const textFields = ["firstName", "lastName", "email", "phone", "gender", "address", "dateOfBirth",
                 "employeeCode", "joiningDate", "workShift", "employmentStatus", "password"];
             textFields.forEach(k => {
                 if (form[k] !== null && form[k] !== "") fd.append(k, form[k]);
