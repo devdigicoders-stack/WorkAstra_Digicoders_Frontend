@@ -18,7 +18,7 @@ import { toast } from "react-toastify";
 import * as faceapi from "face-api.js";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-const fmt = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "—";
+const fmt = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" }) : "—";
 const fmtDate = (d) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 const fmtHours = (h) => {
@@ -265,8 +265,8 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
                             const isFuture = dateStr > today;
                             const dayOfWeek = new Date(dateStr).getDay();
                             const isWeekOff = weekOff.includes(dayOfWeek);
-                            const inTime = rec?.checkIn ? new Date(rec.checkIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false }) : null;
-                            const outTime = rec?.checkOut ? new Date(rec.checkOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false }) : null;
+                            const inTime = rec?.checkIn ? new Date(rec.checkIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }) : null;
+                            const outTime = rec?.checkOut ? new Date(rec.checkOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }) : null;
 
                             return (
                                 <button
