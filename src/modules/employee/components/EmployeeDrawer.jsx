@@ -122,6 +122,16 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
         if (formattedData.aadharDateOfBirth) {
             formattedData.aadharDateOfBirth = formattedData.aadharDateOfBirth.split("T")[0];
         }
+        // Normalize attendanceSettings — always ensure it's a proper object with defaults
+        formattedData.attendanceSettings = {
+            faceRecognitionEnabled: false,
+            faceDescriptor: null,
+            ...(formattedData.attendanceSettings || {}),
+        };
+        // Normalize branch — extract _id if it's a populated object
+        if (formattedData.branch && typeof formattedData.branch === "object") {
+            formattedData.branch = formattedData.branch._id;
+        }
         setForm(formattedData);
         setErrors({});
     }, [initialData, isOpen]);
@@ -429,12 +439,15 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
                                     <p className="text-xs text-gray-400">Require face scan before punch-in</p>
                                 </div>
                                 <button type="button"
-                                    onClick={() => set("attendanceSettings", { ...form.attendanceSettings, faceRecognitionEnabled: !form.attendanceSettings?.faceRecognitionEnabled })}
-                                    className={`relative w-10 h-5 rounded-full transition-colors ${form.attendanceSettings?.faceRecognitionEnabled ? "bg-blue-600" : "bg-gray-300"}`}>
-                                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.attendanceSettings?.faceRecognitionEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
+                                    onClick={() => set("attendanceSettings", {
+                                        ...form.attendanceSettings,
+                                        faceRecognitionEnabled: !form.attendanceSettings.faceRecognitionEnabled
+                                    })}
+                                    className={`relative w-10 h-5 rounded-full transition-colors ${form.attendanceSettings.faceRecognitionEnabled ? "bg-blue-600" : "bg-gray-300"}`}>
+                                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.attendanceSettings.faceRecognitionEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
                                 </button>
                             </div>
-                            {form.attendanceSettings?.faceRecognitionEnabled && (
+                            {form.attendanceSettings.faceRecognitionEnabled && (
                                 <p className="text-xs text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 mt-3 flex items-center gap-2">
                                     <ScanFace size={13} /> Employee will need to register their face from their profile page before first punch-in.
                                 </p>
