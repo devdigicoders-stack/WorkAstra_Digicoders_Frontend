@@ -78,7 +78,8 @@ const ViewNda = () => {
             finalUrl = `${baseUrl}${url}`;
         }
         
-        if (finalUrl.includes('onrender.com') && finalUrl.startsWith('http://')) {
+        // Enforce HTTPS if current page is on HTTPS to prevent Mixed Content blocking
+        if (window.location.protocol === 'https:' && finalUrl.startsWith('http://') && !finalUrl.includes('localhost')) {
             finalUrl = finalUrl.replace('http://', 'https://');
         }
         

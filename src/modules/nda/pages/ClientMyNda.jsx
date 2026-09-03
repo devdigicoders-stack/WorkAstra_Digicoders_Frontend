@@ -42,7 +42,7 @@ const ClientMyNda = () => {
     const docUrl = signature.signedDocumentUrl;
 
     let finalDocUrl = docUrl;
-    if (finalDocUrl && finalDocUrl.includes('onrender.com') && finalDocUrl.startsWith('http://')) {
+    if (window.location.protocol === 'https:' && finalDocUrl.startsWith('http://') && !finalDocUrl.includes('localhost')) {
         finalDocUrl = finalDocUrl.replace('http://', 'https://');
     }
 
