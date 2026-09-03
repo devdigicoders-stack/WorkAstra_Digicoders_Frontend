@@ -41,14 +41,11 @@ const ViewNda = () => {
         role: ""
     });
 
-    // If role is Client, show their specific My NDA view
-    if (user?.role?.name?.toLowerCase() === "client") {
-        return <ClientMyNda />;
-    }
+    const companyIdStr = typeof user?.companyId === "object" ? user?.companyId?._id : user?.companyId;
 
     useEffect(() => {
         fetchData();
-    }, [user?.companyId]);
+    }, [companyIdStr]);
 
     // Initialize Employee form when user data is loaded
     useEffect(() => {
@@ -64,6 +61,11 @@ const ViewNda = () => {
             });
         }
     }, [user]);
+
+    // If role is Client, show their specific My NDA view (placed after all hooks)
+    if (user?.role?.name?.toLowerCase() === "client") {
+        return <ClientMyNda />;
+    }
 
     const getDocumentUrl = (url) => {
         if (!url) return "";
@@ -87,7 +89,7 @@ const ViewNda = () => {
         try {
             setLoading(true);
             const [ndasRes, sigsRes] = await Promise.all([
-                getAllNdas(user?.companyId?._id || ""),
+                getAllNdas(companyIdStr || ""),
                 getMySignatures()
             ]);
             
