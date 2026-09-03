@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useStore } from "../../../context/StoreContext";
-import { FileText, Edit3, X, CheckCircle, Search, UserCheck, Users, Download, ArrowRight, ArrowLeft, ShieldCheck, Eye } from "lucide-react";
+import { FileText, Edit3, X, CheckCircle, Search, UserCheck, Users, Download, ArrowRight, ArrowLeft, ShieldCheck, Eye, Eraser, RotateCcw } from "lucide-react";
 import { toast } from "react-toastify";
 import SignatureCanvas from "react-signature-canvas";
 import { getAllNdas, signNda, getMySignatures } from "../../../services/ndaService";
@@ -528,21 +528,31 @@ const ViewNda = () => {
                             {signingStep === 3 && (
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-xs font-semibold text-gray-700">Draw Your Signature on Canvas *</label>
-                                        <button 
-                                            type="button" 
-                                            onClick={handleClearSignature}
-                                            className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-medium transition"
-                                        >
-                                            Clear
-                                        </button>
+                                        <div>
+                                            <label className="text-xs font-semibold text-gray-700 block">Draw Your Digital Signature *</label>
+                                            <span className="text-[11px] text-gray-400">This signature will appear on the corner of every page and in the signature box.</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                type="button" 
+                                                onClick={handleClearSignature}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-medium transition"
+                                                title="Erase / Clear signature"
+                                            >
+                                                <Eraser size={14} /> Erase / Clear
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="bg-white border-2 border-dashed border-gray-300 rounded-2xl overflow-hidden relative shadow-inner">
                                         <SignatureCanvas 
                                             ref={sigPadRef} 
-                                            canvasProps={{ className: 'w-full h-44 cursor-crosshair' }} 
+                                            penColor="#0a2540"
+                                            canvasProps={{ className: 'w-full h-44 cursor-crosshair bg-slate-50/30' }} 
                                         />
+                                        <div className="absolute bottom-2 right-3 pointer-events-none text-[10px] text-gray-300 font-medium select-none">
+                                            Sign here ✍️
+                                        </div>
                                     </div>
 
                                     <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-3">
