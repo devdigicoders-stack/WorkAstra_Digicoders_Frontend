@@ -24,9 +24,10 @@ export const getAllNdas = async (companyId = "", manage = false) => {
     }
 };
 
-export const signNda = async (ndaId, signatureBase64) => {
+export const signNda = async (ndaId, payload) => {
     try {
-        const res = await api.post(`/api/nda/${ndaId}/sign`, { signatureBase64 });
+        const body = typeof payload === "string" ? { signatureBase64: payload } : payload;
+        const res = await api.post(`/api/nda/${ndaId}/sign`, body);
         return res.data;
     } catch (error) {
         throw error.response?.data || error.message;
