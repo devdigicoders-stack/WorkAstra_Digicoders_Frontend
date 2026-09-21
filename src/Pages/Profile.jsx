@@ -74,6 +74,9 @@ const Profile = () => {
     const [showNew, setShowNew] = useState(false);
     const [showConfirmNew, setShowConfirmNew] = useState(false);
 
+    const [pinForm, setPinForm] = useState({ currentPin: "", newPin: "", confirmNewPin: "" });
+    const [pinLoading, setPinLoading] = useState(false);
+
     const mapUser = (u) => ({
         firstName:            u.firstName || "",
         lastName:             u.lastName || "",
@@ -151,6 +154,34 @@ const Profile = () => {
             toast.error(err?.message || "Failed to change password");
         } finally {
             setPwLoading(false);
+        }
+    };
+
+    const handleChangePayrollPin = async (e) => {
+        e.preventDefault();
+        if (!pinForm.currentPin || !pinForm.newPin || !pinForm.confirmNewPin)
+            return toast.error("All PIN fields are required");
+        if (pinForm.newPin.length !== 6)
+            return toast.error("New PIN must be exactly 6 digits");
+        if (pinForm.newPin !== pinForm.confirmNewPin)
+            return toast.error("New PINs do not match");
+        try {
+            setPinLoading(true);
+            const { ENDPOINTS } = await import("../services/endpoints");
+            const res = await api.put(ENDPOINTS.COMPANY.CHANGE_PIN, { 
+                currentPin: pinForm.currentPin, 
+                newPin: pinForm.newPin 
+            });
+            if (res.data.success) {
+                toast.success(res.data.message || "Payroll PIN changed successfully");
+                setPinForm({ currentPin: "", newPin: "", confirmNewPin: "" });
+            } else {
+                toast.error(res.data.message || "Failed to change PIN");
+            }
+        } catch (err) {
+            toast.error(err?.response?.data?.message || "Failed to change PIN");
+        } finally {
+            setPinLoading(false);
         }
     };
 
@@ -464,6 +495,66 @@ const Profile = () => {
                                 <Lock size={14} className="shrink-0 mt-0.5" />
                                 <span>After changing your password you'll stay logged in. For security, log out and back in on other devices.</span>
                             </div>
+
+                            {user?.role?.name === "admin" && (
+                                <div className="mt-8 pt-6 border-t border-gray-100">
+                                    <h3 className="text-sm font-semibold text-gray-700 mb-4">Change Payroll PIN</h3>
+                                    <form onSubmit={handleChangePayrollPin} className="space-y-4">
+                                        <div>
+                                            <label className={labelCls}>Current PIN</label>
+                                            <div className="relative">
+                                                <ShieldCheck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                <input
+                                                    type="password"
+                                                    maxLength={6}
+                                                    value={pinForm.currentPin}
+                                                    onChange={e => setPinForm(p => ({ ...p, currentPin: e.target.value.replace(/\D/g, "") }))}
+                                                    placeholder="Enter current 6-digit PIN"
+                                                    className={`${inputCls} pl-9`}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className={labelCls}>New PIN</label>
+                                            <div className="relative">
+                                                <ShieldCheck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                <input
+                                                    type="password"
+                                                    maxLength={6}
+                                                    value={pinForm.newPin}
+                                                    onChange={e => setPinForm(p => ({ ...p, newPin: e.target.value.replace(/\D/g, "") }))}
+                                                    placeholder="Enter new 6-digit PIN"
+                                                    className={`${inputCls} pl-9`}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className={labelCls}>Confirm New PIN</label>
+                                            <div className="relative">
+                                                <ShieldCheck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                <input
+                                                    type="password"
+                                                    maxLength={6}
+                                                    value={pinForm.confirmNewPin}
+                                                    onChange={e => setPinForm(p => ({ ...p, confirmNewPin: e.target.value.replace(/\D/g, "") }))}
+                                                    placeholder="Re-enter new 6-digit PIN"
+                                                    className={`${inputCls} pl-9 ${
+                                                        pinForm.confirmNewPin && pinForm.newPin !== pinForm.confirmNewPin
+                                                            ? "border-red-300 focus:ring-red-400" : ""
+                                                    }`}
+                                                />
+                                            </div>
+                                            {pinForm.confirmNewPin && pinForm.newPin !== pinForm.confirmNewPin && (
+                                                <p className="text-xs text-red-500 mt-1">PINs do not match</p>
+                                            )}
+                                        </div>
+                                        <button type="submit" disabled={pinLoading}
+                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50">
+                                            {pinLoading ? "Updating..." : "Update Payroll PIN"}
+                                        </button>
+                                    </form>
+                                </div>
+                            )}
                         </div>
                     )}
                     {/* ── Face ID ── */}

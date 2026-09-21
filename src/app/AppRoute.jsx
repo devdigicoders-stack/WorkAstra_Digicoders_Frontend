@@ -61,6 +61,7 @@ import ManageResignations from "../modules/exit/pages/ManageResignations";
 import ViewResignation from "../modules/exit/pages/ViewResignation";
 import Placeholder from "../Pages/Placeholder";
 import Branches from "../modules/branches/pages/Branches";
+import SecureRoute from "../Components/SecureRoute";
 
 const AppRoute = createBrowserRouter([
     {
@@ -92,7 +93,7 @@ const AppRoute = createBrowserRouter([
             { path: "/departments", element: <Department/> },
             { path: "/attendance", element: <Attendance /> },
             { path: "/reports/attendance", element: <AttendanceReport /> },
-            { path: "/reports/payroll", element: <PayrollReport /> },
+            { path: "/reports/payroll", element: <SecureRoute><PayrollReport /></SecureRoute> },
             { path: "/reports/leave", element: <LeaveReport /> },
             { path: "/reports/employees", element: <EmployeeReport /> },
             { path: "/reports/sales", element: <SalesReport /> },
@@ -104,7 +105,7 @@ const AppRoute = createBrowserRouter([
             { path: "/leave/assign",       element: <AssignLeave /> },
             { path: "/leave/holidays",     element: <Holiday /> },
             { path: "/leave/types",         element: <LeaveType /> },
-            { path: "/payroll", element: <Payroll /> },
+            { path: "/payroll", element: <SecureRoute><Payroll /></SecureRoute> },
             { path: "/payroll/penalty-dates", element: <PenaltyDates /> },
             { path: "/projects", element: <Projects /> },
             { path: "/projects/:id", element: <ProjectDetail /> },

@@ -9,6 +9,7 @@ export const ENDPOINTS = {
     ALL_USERS: `/api/user/all`,
     VERIFY_TOKEN: `/api/user/me`,
     LOGOUT: `/api/user/logout`,
+    VERIFY_PIN: `/api/user/verify-pin`,
   },
 
   USER: {
@@ -34,6 +35,7 @@ export const ENDPOINTS = {
     DELETE_COMPANY: (companyId) => `/api/company/${companyId}`,
     TOGGLE_COMPANY_STATUS: (companyId) => `/api/company/${companyId}/status`,
     UPLOAD_ICON: (companyId) => `/api/company/${companyId}/icon`,
+    CHANGE_PIN: `/api/company/change-pin`,
   },
 
   DEPARTMENT: {
