@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { CalendarClock, FileText, User, ShieldCheck, Check, ArrowLeft, Download, LogOut } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { resignationService } from '../../../services/resignationService';
+import { generateSalarySlipsClientPDF, generateExperienceLetterClientPDF } from '../services/exitPdfGenerator';
 import { toast } from 'react-toastify';
 const ViewResignation = () => {
     const location = useLocation();
@@ -40,17 +41,18 @@ const ViewResignation = () => {
     const handleDownloadExperienceLetter = async () => {
         try {
             setIsDownloading(true);
-            const response = await resignationService.downloadExperienceLetter(resignation._id);
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `${employee.firstName}_${employee.lastName}_Experience_Letter.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            const data = await resignationService.getExperienceLetterData(resignation._id);
+            if (!data || !data.success) {
+                throw new Error(data?.message || 'Failed to fetch experience letter data');
+            }
+            await generateExperienceLetterClientPDF({
+                user: data.user,
+                resignation: data.resignation
+            });
+            toast.success('Experience Letter downloaded successfully!');
         } catch (error) {
             console.error('Error downloading experience letter:', error);
-            toast.error('Failed to download Experience Letter.');
+            toast.error(error?.response?.data?.message || error?.message || 'Failed to download Experience Letter.');
         } finally {
             setIsDownloading(false);
         }
@@ -59,17 +61,19 @@ const ViewResignation = () => {
     const handleDownloadSalarySlips = async () => {
         try {
             setIsDownloadingSlips(true);
-            const response = await resignationService.downloadSalarySlips(resignation._id);
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `${employee.firstName}_${employee.lastName}_3Months_Salary_Slip.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            const data = await resignationService.getSalarySlipsData(resignation._id);
+            if (!data || !data.success) {
+                throw new Error(data?.message || 'Failed to fetch salary slips data');
+            }
+            await generateSalarySlipsClientPDF({
+                user: data.user,
+                resignation: data.resignation,
+                payrollRuns: data.payrollRuns
+            });
+            toast.success('Salary Slips downloaded successfully!');
         } catch (error) {
             console.error('Error downloading salary slips:', error);
-            toast.error('Failed to download Salary Slips.');
+            toast.error(error?.response?.data?.message || error?.message || 'Failed to download Salary Slips.');
         } finally {
             setIsDownloadingSlips(false);
         }

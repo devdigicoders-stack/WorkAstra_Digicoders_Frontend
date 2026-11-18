@@ -48,10 +48,20 @@ export const resignationService = {
     return response;
   },
 
+  getExperienceLetterData: async (id) => {
+    const response = await api.get(`/api/resignations/${id}/experience-letter-data`);
+    return response.data;
+  },
+
   downloadSalarySlips: async (id) => {
     const response = await api.get(`/api/resignations/${id}/salary-slips`, {
       responseType: 'blob'
     });
     return response;
+  },
+
+  getSalarySlipsData: async (id) => {
+    const response = await api.get(`/api/resignations/${id}/salary-slips-data`);
+    return response.data;
   }
 };
