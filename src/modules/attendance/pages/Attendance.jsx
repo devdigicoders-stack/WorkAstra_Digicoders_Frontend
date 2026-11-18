@@ -34,12 +34,12 @@ const fmtHours = (h) => {
 };
 
 const STATUS = {
-    present:       { cls: "bg-green-50 text-green-700",   dot: "bg-green-500",   label: "Present" },
-    late:          { cls: "bg-yellow-50 text-yellow-700", dot: "bg-yellow-400",  label: "Late" },
-    "half-day":    { cls: "bg-orange-50 text-orange-700", dot: "bg-orange-400",  label: "Half Day" },
-    "early-leave": { cls: "bg-purple-50 text-purple-700", dot: "bg-purple-400",  label: "Early Leave" },
-    absent:        { cls: "bg-red-50 text-red-500",       dot: "bg-red-400",     label: "Absent" },
-    regularized:   { cls: "bg-blue-50 text-blue-700",     dot: "bg-blue-500",    label: "Regularized" },
+    present: { cls: "bg-green-50 text-green-700", dot: "bg-green-500", label: "Present" },
+    late: { cls: "bg-yellow-50 text-yellow-700", dot: "bg-yellow-400", label: "Late" },
+    "half-day": { cls: "bg-orange-50 text-orange-700", dot: "bg-orange-400", label: "Half Day" },
+    "early-leave": { cls: "bg-purple-50 text-purple-700", dot: "bg-purple-400", label: "Early Leave" },
+    absent: { cls: "bg-red-50 text-red-500", dot: "bg-red-400", label: "Absent" },
+    regularized: { cls: "bg-blue-50 text-blue-700", dot: "bg-blue-500", label: "Regularized" },
 };
 
 const getLocation = () => new Promise((resolve, reject) => {
@@ -213,9 +213,9 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
     const selectedDateStr = selected
         ? `${year}-${String(mon).padStart(2, "0")}-${String(selected).padStart(2, "0")}`
         : null;
-    const selectedRecord  = selectedDateStr ? recordMap[selectedDateStr] : null;
+    const selectedRecord = selectedDateStr ? recordMap[selectedDateStr] : null;
     const selectedHoliday = selectedDateStr ? holidayMap[selectedDateStr] : null;
-    const selectedLeave   = selectedDateStr ? leaveForDate(selectedDateStr) : null;
+    const selectedLeave = selectedDateStr ? leaveForDate(selectedDateStr) : null;
     const selectedDayLabel = selected
         ? new Date(year, mon - 1, selected).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })
         : null;
@@ -230,298 +230,292 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
             </div>
 
             {viewMode === "calendar" ? (
-            <div className="flex flex-col lg:flex-row gap-5">
-                {/* ── Calendar grid ── */}
-                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm w-full lg:max-w-md xl:max-w-lg shrink-0">
-                {/* Month nav */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                    <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-                        <ChevronLeft size={18} />
-                    </button>
-                    <h3 className="font-semibold text-gray-800 text-base">{monthLabel}</h3>
-                    <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
-                        <ChevronRight size={18} />
-                    </button>
-                </div>
+                <div className="flex flex-col lg:flex-row gap-5">
+                    {/* ── Calendar grid ── */}
+                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm w-full lg:max-w-md xl:max-w-lg shrink-0">
+                        {/* Month nav */}
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                            <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
+                                <ChevronLeft size={18} />
+                            </button>
+                            <h3 className="font-semibold text-gray-800 text-base">{monthLabel}</h3>
+                            <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition">
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
 
-                <div className="p-4">
-                    {/* Day headers */}
-                    <div className="grid grid-cols-7 mb-1">
-                        {days.map(d => (
-                            <div key={d} className="text-center text-xs font-semibold text-gray-400 py-2">{d}</div>
-                        ))}
-                    </div>
+                        <div className="p-4">
+                            {/* Day headers */}
+                            <div className="grid grid-cols-7 mb-1">
+                                {days.map(d => (
+                                    <div key={d} className="text-center text-xs font-semibold text-gray-400 py-2">{d}</div>
+                                ))}
+                            </div>
 
-                    {/* Date cells */}
-                    <div className="grid grid-cols-7 gap-1.5">
-                        {cells.map((day, idx) => {
-                            if (!day) return <div key={`e-${idx}`} />;
-                            const dateStr = `${year}-${String(mon).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                            const rec     = recordMap[dateStr];
-                            const holiday = holidayMap[dateStr];
-                            const leave   = leaveForDate(dateStr);
-                            const isToday = dateStr === today;
-                            const isSelected = selected === day;
-                            const isFuture = dateStr > today;
-                            const dayOfWeek = new Date(dateStr).getDay();
-                            const isWeekOff = weekOff.includes(dayOfWeek);
-                            const inTime = rec?.checkIn ? new Date(rec.checkIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }) : null;
-                            const outTime = rec?.checkOut ? new Date(rec.checkOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }) : null;
+                            {/* Date cells */}
+                            <div className="grid grid-cols-7 gap-1.5">
+                                {cells.map((day, idx) => {
+                                    if (!day) return <div key={`e-${idx}`} />;
+                                    const dateStr = `${year}-${String(mon).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                                    const rec = recordMap[dateStr];
+                                    const holiday = holidayMap[dateStr];
+                                    const leave = leaveForDate(dateStr);
+                                    const isToday = dateStr === today;
+                                    const isSelected = selected === day;
+                                    const isFuture = dateStr > today;
+                                    const dayOfWeek = new Date(dateStr).getDay();
+                                    const isWeekOff = weekOff.includes(dayOfWeek);
+                                    const inTime = rec?.checkIn ? new Date(rec.checkIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }) : null;
+                                    const outTime = rec?.checkOut ? new Date(rec.checkOut).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" }) : null;
 
-                            return (
-                                <button
-                                    key={day}
-                                    onClick={() => setSelected(isSelected ? null : day)}
-                                    className={[
-                                        "relative flex flex-col items-center justify-start pt-2 pb-1.5 px-0.5 rounded-xl transition",
-                                        rec ? "h-[72px] sm:h-20" : "h-12 sm:h-14",
-                                        isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "",
-                                        isToday && !isSelected ? "ring-2 ring-blue-300 bg-blue-50/40" : "",
-                                        holiday && !isSelected ? "bg-pink-50/60" : "",
-                                        leave && !holiday && !isSelected ? "bg-teal-50/60" : "",
-                                        isWeekOff && !holiday && !isSelected && !isToday ? "bg-gray-100/80" : "",
-                                        !isSelected && !isToday && !holiday && !isWeekOff ? "hover:bg-gray-50" : "",
-                                        isFuture && !holiday ? "opacity-25" : "",
-                                    ].filter(Boolean).join(" ")}
-                                >
-                                    {/* Day number */}
-                                    <span className={`text-sm font-semibold leading-none ${
-                                        isToday ? "text-blue-600" : isSelected ? "text-blue-700" : holiday ? "text-pink-600" : leave ? "text-teal-600" : isWeekOff ? "text-gray-400" : "text-gray-700"
-                                    }`}>{day}</span>
+                                    return (
+                                        <button
+                                            key={day}
+                                            onClick={() => setSelected(isSelected ? null : day)}
+                                            className={[
+                                                "relative flex flex-col items-center justify-start pt-2 pb-1.5 px-0.5 rounded-xl transition",
+                                                rec ? "h-[72px] sm:h-20" : "h-12 sm:h-14",
+                                                isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "",
+                                                isToday && !isSelected ? "ring-2 ring-blue-300 bg-blue-50/40" : "",
+                                                holiday && !isSelected ? "bg-pink-50/60" : "",
+                                                leave && !holiday && !isSelected ? "bg-teal-50/60" : "",
+                                                isWeekOff && !holiday && !isSelected && !isToday ? "bg-gray-100/80" : "",
+                                                !isSelected && !isToday && !holiday && !isWeekOff ? "hover:bg-gray-50" : "",
+                                                isFuture && !holiday ? "opacity-25" : "",
+                                            ].filter(Boolean).join(" ")}
+                                        >
+                                            {/* Day number */}
+                                            <span className={`text-sm font-semibold leading-none ${isToday ? "text-blue-600" : isSelected ? "text-blue-700" : holiday ? "text-pink-600" : leave ? "text-teal-600" : isWeekOff ? "text-gray-400" : "text-gray-700"
+                                                }`}>{day}</span>
 
-                                    {/* Dots row */}
-                                    <div className="flex gap-0.5 mt-1 justify-center">
-                                        {rec && (
-                                            <div className={`w-1.5 h-1.5 rounded-full ${
-                                                rec.status === "present" ? "bg-green-500" :
-                                                rec.status === "late" ? "bg-yellow-400" :
-                                                rec.status === "half-day" ? "bg-orange-400" :
-                                                rec.status === "early-leave" ? "bg-purple-400" :
-                                                rec.status === "regularized" ? "bg-blue-500" :
-                                                "bg-red-400"
-                                            }`} />
-                                        )}
-                                        {!rec && !holiday && (
-                                            <div className={`w-1.5 h-1.5 rounded-full ${
-                                                isFuture || isWeekOff ? "bg-transparent" : "bg-gray-200"
-                                            }`} />
-                                        )}
-                                        {holiday && <div className="w-1.5 h-1.5 rounded-full bg-pink-500" />}
-                                        {leave && !holiday && <div className={`w-1.5 h-1.5 rounded-full ${leave.status === "approved" ? "bg-teal-500" : "bg-yellow-400"}`} />}
-                                    </div>
-
-                                    {/* In/Out times */}
-                                    {rec && (
-                                        <div className="mt-0.5 w-full px-0.5 space-y-0.5">
-                                            <div className={`w-full text-center text-[9px] sm:text-[10px] font-semibold leading-tight rounded px-0.5 py-0.5 ${
-                                                rec.status === "present" ? "bg-green-100 text-green-700" :
-                                                rec.status === "late" ? "bg-yellow-100 text-yellow-700" :
-                                                rec.status === "half-day" ? "bg-orange-100 text-orange-700" :
-                                                rec.status === "early-leave" ? "bg-purple-100 text-purple-700" :
-                                                rec.status === "regularized" ? "bg-blue-100 text-blue-700" :
-                                                "bg-red-100 text-red-600"
-                                            }`}>
-                                                {inTime || "—"}
+                                            {/* Dots row */}
+                                            <div className="flex gap-0.5 mt-1 justify-center">
+                                                {rec && (
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${rec.status === "present" ? "bg-green-500" :
+                                                        rec.status === "late" ? "bg-yellow-400" :
+                                                            rec.status === "half-day" ? "bg-orange-400" :
+                                                                rec.status === "early-leave" ? "bg-purple-400" :
+                                                                    rec.status === "regularized" ? "bg-blue-500" :
+                                                                        "bg-red-400"
+                                                        }`} />
+                                                )}
+                                                {!rec && !holiday && (
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${isFuture || isWeekOff ? "bg-transparent" : "bg-gray-200"
+                                                        }`} />
+                                                )}
+                                                {holiday && <div className="w-1.5 h-1.5 rounded-full bg-pink-500" />}
+                                                {leave && !holiday && <div className={`w-1.5 h-1.5 rounded-full ${leave.status === "approved" ? "bg-teal-500" : "bg-yellow-400"}`} />}
                                             </div>
-                                            {outTime && (
-                                                <div className="w-full text-center text-[9px] sm:text-[10px] font-medium leading-tight rounded px-0.5 py-0.5 bg-gray-100 text-gray-500">
-                                                    {outTime}
+
+                                            {/* In/Out times */}
+                                            {rec && (
+                                                <div className="mt-0.5 w-full px-0.5 space-y-0.5">
+                                                    <div className={`w-full text-center text-[9px] sm:text-[10px] font-semibold leading-tight rounded px-0.5 py-0.5 ${rec.status === "present" ? "bg-green-100 text-green-700" :
+                                                        rec.status === "late" ? "bg-yellow-100 text-yellow-700" :
+                                                            rec.status === "half-day" ? "bg-orange-100 text-orange-700" :
+                                                                rec.status === "early-leave" ? "bg-purple-100 text-purple-700" :
+                                                                    rec.status === "regularized" ? "bg-blue-100 text-blue-700" :
+                                                                        "bg-red-100 text-red-600"
+                                                        }`}>
+                                                        {inTime || "—"}
+                                                    </div>
+                                                    {outTime && (
+                                                        <div className="w-full text-center text-[9px] sm:text-[10px] font-medium leading-tight rounded px-0.5 py-0.5 bg-gray-100 text-gray-500">
+                                                            {outTime}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
+
+                                            {/* Week off label */}
+                                            {isWeekOff && !holiday && !rec && (
+                                                <span className="mt-0.5 text-[8px] font-medium text-gray-400 leading-tight">off</span>
+                                            )}
+
+                                            {/* Leave label (no attendance) */}
+                                            {leave && !rec && !holiday && (
+                                                <span className="mt-0.5 text-[8px] sm:text-[9px] font-semibold leading-tight text-center px-0.5 line-clamp-1 w-full text-teal-600">
+                                                    {leave.leaveTypeId?.name || "Leave"}
+                                                </span>
+                                            )}
+
+                                            {/* Holiday label (no attendance) */}
+                                            {holiday && !rec && (
+                                                <span className="mt-0.5 text-[8px] sm:text-[9px] font-semibold text-pink-500 leading-tight text-center px-0.5 line-clamp-1 w-full">
+                                                    {holiday.name}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Legend */}
+                            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-gray-100">
+                                {Object.entries(STATUS).map(([, val]) => (
+                                    <div key={val.label} className="flex items-center gap-1.5">
+                                        <div className={`w-2 h-2 rounded-full ${val.dot}`} />
+                                        <span className="text-xs text-gray-500">{val.label}</span>
+                                    </div>
+                                ))}
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                    <span className="text-xs text-gray-500">Regularized</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-teal-500" />
+                                    <span className="text-xs text-gray-500">Leave (Approved)</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-yellow-400" />
+                                    <span className="text-xs text-gray-500">Leave (Pending)</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-pink-500" />
+                                    <span className="text-xs text-gray-500">Holiday</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-gray-300" />
+                                    <span className="text-xs text-gray-500">Week Off</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full bg-gray-200" />
+                                    <span className="text-xs text-gray-500">No record</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Detail panel ── */}
+                    <div className="flex-1">
+                        {selected ? (
+                            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 h-full">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div>
+                                        <p className="text-base font-semibold text-gray-800">{selectedDayLabel}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">{month}</p>
+                                    </div>
+                                    {selectedRecord && (
+                                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${STATUS[selectedRecord.status]?.cls}`}>
+                                            {selectedRecord.status}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {selectedHoliday && (
+                                    <div className="bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 mb-4 flex items-start gap-3">
+                                        <Palmtree size={16} className="text-pink-500 mt-0.5 shrink-0" />
+                                        <div>
+                                            <p className="text-sm font-semibold text-pink-700">{selectedHoliday.name}</p>
+                                            {selectedHoliday.description && <p className="text-xs text-pink-500 mt-0.5">{selectedHoliday.description}</p>}
+                                            <span className="text-[10px] text-pink-400 capitalize">{selectedHoliday.type}</span>
                                         </div>
-                                    )}
-
-                                    {/* Week off label */}
-                                    {isWeekOff && !holiday && !rec && (
-                                        <span className="mt-0.5 text-[8px] font-medium text-gray-400 leading-tight">off</span>
-                                    )}
-
-                                    {/* Leave label (no attendance) */}
-                                    {leave && !rec && !holiday && (
-                                        <span className="mt-0.5 text-[8px] sm:text-[9px] font-semibold leading-tight text-center px-0.5 line-clamp-1 w-full text-teal-600">
-                                            {leave.leaveTypeId?.name || "Leave"}
-                                        </span>
-                                    )}
-
-                                    {/* Holiday label (no attendance) */}
-                                    {holiday && !rec && (
-                                        <span className="mt-0.5 text-[8px] sm:text-[9px] font-semibold text-pink-500 leading-tight text-center px-0.5 line-clamp-1 w-full">
-                                            {holiday.name}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {/* Legend */}
-                    <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-gray-100">
-                        {Object.entries(STATUS).map(([, val]) => (
-                            <div key={val.label} className="flex items-center gap-1.5">
-                                <div className={`w-2 h-2 rounded-full ${val.dot}`} />
-                                <span className="text-xs text-gray-500">{val.label}</span>
-                            </div>
-                        ))}
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-blue-500" />
-                            <span className="text-xs text-gray-500">Regularized</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-teal-500" />
-                            <span className="text-xs text-gray-500">Leave (Approved)</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-yellow-400" />
-                            <span className="text-xs text-gray-500">Leave (Pending)</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-pink-500" />
-                            <span className="text-xs text-gray-500">Holiday</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-gray-300" />
-                            <span className="text-xs text-gray-500">Week Off</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-gray-200" />
-                            <span className="text-xs text-gray-500">No record</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Detail panel ── */}
-            <div className="flex-1">
-                {selected ? (
-                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 h-full">
-                        <div className="flex items-start justify-between mb-4">
-                            <div>
-                                <p className="text-base font-semibold text-gray-800">{selectedDayLabel}</p>
-                                <p className="text-xs text-gray-400 mt-0.5">{month}</p>
-                            </div>
-                            {selectedRecord && (
-                                <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${STATUS[selectedRecord.status]?.cls}`}>
-                                    {selectedRecord.status}
-                                </span>
-                            )}
-                        </div>
-
-                        {selectedHoliday && (
-                            <div className="bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 mb-4 flex items-start gap-3">
-                                <Palmtree size={16} className="text-pink-500 mt-0.5 shrink-0" />
-                                <div>
-                                    <p className="text-sm font-semibold text-pink-700">{selectedHoliday.name}</p>
-                                    {selectedHoliday.description && <p className="text-xs text-pink-500 mt-0.5">{selectedHoliday.description}</p>}
-                                    <span className="text-[10px] text-pink-400 capitalize">{selectedHoliday.type}</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {selectedLeave && (
-                            <div className={`border rounded-xl px-4 py-3 mb-4 flex items-start gap-3 ${
-                                selectedLeave.status === "approved" ? "bg-teal-50 border-teal-200" : "bg-yellow-50 border-yellow-200"
-                            }`}>
-                                <Palmtree size={16} className={`mt-0.5 shrink-0 ${selectedLeave.status === "approved" ? "text-teal-500" : "text-yellow-500"}`} />
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <p className={`text-sm font-semibold ${selectedLeave.status === "approved" ? "text-teal-700" : "text-yellow-700"}`}>
-                                            {selectedLeave.leaveTypeId?.name || "Leave"}
-                                        </p>
-                                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full capitalize ${
-                                            selectedLeave.status === "approved" ? "bg-teal-100 text-teal-700" : "bg-yellow-100 text-yellow-700"
-                                        }`}>{selectedLeave.status}</span>
-                                        {selectedLeave.isHalfDay && <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">Half Day</span>}
-                                    </div>
-                                    <p className="text-xs text-gray-500 mt-0.5">{selectedLeave.fromDate} → {selectedLeave.toDate} · {selectedLeave.days} day{selectedLeave.days !== 1 ? "s" : ""}</p>
-                                    {selectedLeave.reason && <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{selectedLeave.reason}</p>}
-                                </div>
-                            </div>
-                        )}
-
-                        {selectedRecord ? (
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-green-50 rounded-xl p-4">
-                                        <p className="text-xs text-gray-400 mb-1">Check In</p>
-                                        <p className="text-lg font-bold text-green-600">{fmt(selectedRecord.checkIn)}</p>
-                                    </div>
-                                    <div className="bg-red-50 rounded-xl p-4">
-                                        <p className="text-xs text-gray-400 mb-1">Check Out</p>
-                                        <p className="text-lg font-bold text-red-500">{fmt(selectedRecord.checkOut)}</p>
-                                    </div>
-                                    <div className="bg-blue-50 rounded-xl p-4">
-                                        <p className="text-xs text-gray-400 mb-1">Hours Worked</p>
-                                        <p className="text-lg font-bold text-blue-600">
-                                            {selectedRecord.workHours > 0
-                                                ? fmtHours(selectedRecord.workHours)
-                                                : (selectedRecord.checkIn && selectedRecord.checkOut)
-                                                    ? fmtHours((new Date(selectedRecord.checkOut) - new Date(selectedRecord.checkIn)) / 3600000)
-                                                    : "—"}
-                                        </p>
-                                    </div>
-                                    <div className="bg-gray-50 rounded-xl p-4">
-                                        <p className="text-xs text-gray-400 mb-1">Work Shift</p>
-                                        <p className="text-sm font-semibold text-gray-700">{selectedRecord.workShiftId?.name || "—"}</p>
-                                        {selectedRecord.workShiftId && (
-                                            <p className="text-xs text-gray-400 mt-0.5">
-                                                {selectedRecord.workShiftId.startTime} – {selectedRecord.workShiftId.endTime}
-                                            </p>
-                                        )}
-                                    </div>
-                                    
-                                    {/* EXTRA TIME BLACK TAB */}
-                                    {(() => {
-                                        let extraHours = 0;
-                                        if (selectedRecord.workHours > 0 && selectedRecord.workShiftId?.startTime && selectedRecord.workShiftId?.endTime) {
-                                            const [sH, sM] = selectedRecord.workShiftId.startTime.split(':').map(Number);
-                                            const [eH, eM] = selectedRecord.workShiftId.endTime.split(':').map(Number);
-                                            const reqH = (eH + eM/60) - (sH + sM/60);
-                                            extraHours = selectedRecord.workHours - reqH;
-                                        }
-                                        return (
-                                            <div className="bg-gray-900 rounded-xl p-4 col-span-2 shadow-md border border-gray-800">
-                                                <p className="text-xs text-gray-400 mb-1">Extra Time (Overtime)</p>
-                                                <p className="text-lg font-bold text-white">
-                                                    {extraHours > 0 ? fmtHours(extraHours) : "0m"}
-                                                </p>
-                                            </div>
-                                        );
-                                    })()}
-                                </div>
-
-                                {selectedRecord.checkInLocation?.latitude && (
-                                    <div className="bg-gray-50 rounded-xl p-4">
-                                        <p className="text-xs text-gray-400 mb-2">Check-in Location</p>
-                                        <a
-                                            href={`https://maps.google.com/?q=${selectedRecord.checkInLocation.latitude},${selectedRecord.checkInLocation.longitude}`}
-                                            target="_blank" rel="noreferrer"
-                                            className="flex items-center gap-2 text-sm text-blue-500 hover:text-blue-700 font-medium"
-                                        >
-                                            <MapPin size={14} /> View on Google Maps
-                                        </a>
-                                        {selectedRecord.checkInLocation.address && (
-                                            <p className="text-xs text-gray-400 mt-1 line-clamp-2">{selectedRecord.checkInLocation.address}</p>
-                                        )}
                                     </div>
                                 )}
+
+                                {selectedLeave && (
+                                    <div className={`border rounded-xl px-4 py-3 mb-4 flex items-start gap-3 ${selectedLeave.status === "approved" ? "bg-teal-50 border-teal-200" : "bg-yellow-50 border-yellow-200"
+                                        }`}>
+                                        <Palmtree size={16} className={`mt-0.5 shrink-0 ${selectedLeave.status === "approved" ? "text-teal-500" : "text-yellow-500"}`} />
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <p className={`text-sm font-semibold ${selectedLeave.status === "approved" ? "text-teal-700" : "text-yellow-700"}`}>
+                                                    {selectedLeave.leaveTypeId?.name || "Leave"}
+                                                </p>
+                                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full capitalize ${selectedLeave.status === "approved" ? "bg-teal-100 text-teal-700" : "bg-yellow-100 text-yellow-700"
+                                                    }`}>{selectedLeave.status}</span>
+                                                {selectedLeave.isHalfDay && <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">Half Day</span>}
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-0.5">{selectedLeave.fromDate} → {selectedLeave.toDate} · {selectedLeave.days} day{selectedLeave.days !== 1 ? "s" : ""}</p>
+                                            {selectedLeave.reason && <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{selectedLeave.reason}</p>}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedRecord ? (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-green-50 rounded-xl p-4">
+                                                <p className="text-xs text-gray-400 mb-1">Check In</p>
+                                                <p className="text-lg font-bold text-green-600">{fmt(selectedRecord.checkIn)}</p>
+                                            </div>
+                                            <div className="bg-red-50 rounded-xl p-4">
+                                                <p className="text-xs text-gray-400 mb-1">Check Out</p>
+                                                <p className="text-lg font-bold text-red-500">{fmt(selectedRecord.checkOut)}</p>
+                                            </div>
+                                            <div className="bg-blue-50 rounded-xl p-4">
+                                                <p className="text-xs text-gray-400 mb-1">Hours Worked</p>
+                                                <p className="text-lg font-bold text-blue-600">
+                                                    {selectedRecord.workHours > 0
+                                                        ? fmtHours(selectedRecord.workHours)
+                                                        : (selectedRecord.checkIn && selectedRecord.checkOut)
+                                                            ? fmtHours((new Date(selectedRecord.checkOut) - new Date(selectedRecord.checkIn)) / 3600000)
+                                                            : "—"}
+                                                </p>
+                                            </div>
+                                            <div className="bg-gray-50 rounded-xl p-4">
+                                                <p className="text-xs text-gray-400 mb-1">Work Shift</p>
+                                                <p className="text-sm font-semibold text-gray-700">{selectedRecord.workShiftId?.name || "—"}</p>
+                                                {selectedRecord.workShiftId && (
+                                                    <p className="text-xs text-gray-400 mt-0.5">
+                                                        {selectedRecord.workShiftId.startTime} – {selectedRecord.workShiftId.endTime}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* EXTRA TIME BLACK TAB */}
+                                            {(() => {
+                                                let extraHours = 0;
+                                                if (selectedRecord.workHours > 0 && selectedRecord.workShiftId?.startTime && selectedRecord.workShiftId?.endTime) {
+                                                    const [sH, sM] = selectedRecord.workShiftId.startTime.split(':').map(Number);
+                                                    const [eH, eM] = selectedRecord.workShiftId.endTime.split(':').map(Number);
+                                                    const reqH = (eH + eM / 60) - (sH + sM / 60);
+                                                    extraHours = selectedRecord.workHours - reqH;
+                                                }
+                                                return (
+                                                    <div className="bg-gray-900 rounded-xl p-4 col-span-2 shadow-md border border-gray-800">
+                                                        <p className="text-xs text-gray-400 mb-1">Extra Time (Overtime)</p>
+                                                        <p className="text-lg font-bold text-white">
+                                                            {extraHours > 0 ? fmtHours(extraHours) : "0m"}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+
+                                        {selectedRecord.checkInLocation?.latitude && (
+                                            <div className="bg-gray-50 rounded-xl p-4">
+                                                <p className="text-xs text-gray-400 mb-2">Check-in Location</p>
+                                                <a
+                                                    href={`https://maps.google.com/?q=${selectedRecord.checkInLocation.latitude},${selectedRecord.checkInLocation.longitude}`}
+                                                    target="_blank" rel="noreferrer"
+                                                    className="flex items-center gap-2 text-sm text-blue-500 hover:text-blue-700 font-medium"
+                                                >
+                                                    <MapPin size={14} /> View on Google Maps
+                                                </a>
+                                                {selectedRecord.checkInLocation.address && (
+                                                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{selectedRecord.checkInLocation.address}</p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : !selectedHoliday && !selectedLeave ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                                        <Calendar size={36} className="mb-3 opacity-20" />
+                                        <p className="text-sm font-medium">No attendance record</p>
+                                        <p className="text-xs mt-1">No data found for this day.</p>
+                                    </div>
+                                ) : null}
                             </div>
-                        ) : !selectedHoliday && !selectedLeave ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                                <Calendar size={36} className="mb-3 opacity-20" />
-                                <p className="text-sm font-medium">No attendance record</p>
-                                <p className="text-xs mt-1">No data found for this day.</p>
+                        ) : (
+                            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 h-full flex flex-col items-center justify-center text-gray-400 min-h-[200px]">
+                                <Calendar size={40} className="mb-3 opacity-20" />
+                                <p className="text-sm font-medium">Select a day</p>
+                                <p className="text-xs mt-1">Click any date on the calendar to view details.</p>
                             </div>
-                        ) : null}
+                        )}
                     </div>
-                ) : (
-                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 h-full flex flex-col items-center justify-center text-gray-400 min-h-[200px]">
-                        <Calendar size={40} className="mb-3 opacity-20" />
-                        <p className="text-sm font-medium">Select a day</p>
-                        <p className="text-xs mt-1">Click any date on the calendar to view details.</p>
-                    </div>
-                )}
-            </div>
-            </div>
+                </div>
             ) : (
                 <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50">
@@ -545,12 +539,12 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
                                 {records.length === 0 ? (
                                     <tr><td colSpan="6" className="px-5 py-8 text-center text-gray-400">No attendance data found for this month</td></tr>
                                 ) : (
-                                    records.sort((a,b) => a.date.localeCompare(b.date)).map(r => {
+                                    records.sort((a, b) => a.date.localeCompare(b.date)).map(r => {
                                         let extraHours = 0;
                                         if (r.workHours > 0 && r.workShiftId?.startTime && r.workShiftId?.endTime) {
                                             const [sH, sM] = r.workShiftId.startTime.split(':').map(Number);
                                             const [eH, eM] = r.workShiftId.endTime.split(':').map(Number);
-                                            const reqH = (eH + eM/60) - (sH + sM/60);
+                                            const reqH = (eH + eM / 60) - (sH + sM / 60);
                                             extraHours = r.workHours - reqH;
                                         }
                                         const s = STATUS[r.status] || { cls: "bg-gray-50 text-gray-600", label: r.status };
@@ -596,15 +590,15 @@ const exportToCSV = (rows, filename) => {
 // ── Main Component ────────────────────────────────────────────────────────────
 // ── Regularization Tab ───────────────────────────────────────────────────────
 const REG_TYPES = [
-    { value: "missed-checkin",  label: "Missed Check-in" },
+    { value: "missed-checkin", label: "Missed Check-in" },
     { value: "missed-checkout", label: "Missed Check-out" },
-    { value: "wrong-time",      label: "Wrong Time" },
-    { value: "absent",          label: "Marked Absent" },
+    { value: "wrong-time", label: "Wrong Time" },
+    { value: "absent", label: "Marked Absent" },
 ];
 const REG_STATUS = {
-    pending:  { cls: "bg-yellow-50 text-yellow-700 border-yellow-200",  label: "Pending" },
-    approved: { cls: "bg-green-50 text-green-700 border-green-200",    label: "Approved" },
-    rejected: { cls: "bg-red-50 text-red-600 border-red-200",          label: "Rejected" },
+    pending: { cls: "bg-yellow-50 text-yellow-700 border-yellow-200", label: "Pending" },
+    approved: { cls: "bg-green-50 text-green-700 border-green-200", label: "Approved" },
+    rejected: { cls: "bg-red-50 text-red-600 border-red-200", label: "Rejected" },
 };
 
 const RegularizationTab = ({ isAdmin, showTeamTab, canApprove, canReject }) => {
@@ -782,9 +776,8 @@ const RegularizationTab = ({ isAdmin, showTeamTab, canApprove, canReject }) => {
                     <div className="flex flex-wrap gap-2 mb-4">
                         {["pending", "approved", "rejected", ""].map(f => (
                             <button key={f} onClick={() => setTeamFilter(f)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition ${
-                                    teamFilter === f ? "bg-blue-600 text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-blue-300"
-                                }`}>
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition ${teamFilter === f ? "bg-blue-600 text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-blue-300"
+                                    }`}>
                                 {f || "All"}
                                 {f === "pending" && teamRegs.filter(r => r.status === "pending").length > 0 && (
                                     <span className="ml-1.5 bg-yellow-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
@@ -809,7 +802,7 @@ const RegularizationTab = ({ isAdmin, showTeamTab, canApprove, canReject }) => {
                                             ? <img src={r.userId.profilePic.url} className="w-9 h-9 rounded-full object-cover shrink-0" alt="" />
                                             : <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold shrink-0">
                                                 {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
-                                              </div>}
+                                            </div>}
                                         <div className="flex-1 min-w-0">
                                             <div className="flex flex-wrap items-center gap-2 mb-1">
                                                 <span className="font-semibold text-gray-800">{r.userId?.firstName} {r.userId?.lastName}</span>
@@ -933,7 +926,7 @@ const Attendance = () => {
 
     useEffect(() => {
         if (showTeamTab && canCreateAttendance) {
-            fetchUsers().then(d => setActiveUsers(d.users?.filter(u => u.isActive) || [])).catch(() => {});
+            fetchUsers().then(d => setActiveUsers(d.users?.filter(u => u.isActive) || [])).catch(() => { });
         }
     }, [showTeamTab, canCreateAttendance]);
 
@@ -1023,8 +1016,8 @@ const Attendance = () => {
         if (isAdmin) { setHasDirectReports(true); return; }
         getTeamAttendance({ month })
             .then(d => setHasDirectReports((d.records || []).length > 0 || true))
-            .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+            .catch(() => { });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAdmin]);
 
     const loadSummary = useCallback(async () => {
@@ -1049,7 +1042,7 @@ const Attendance = () => {
         const year = teamCalMonth.split("-")[0];
         getCompanyLeaves({ userId: filterEmployee, year })
             .then(d => setEmpLeaves(d.leaves || []))
-            .catch(() => {});
+            .catch(() => { });
     }, [filterEmployee, teamCalMonth]);
 
     const loadCompanyRecords = useCallback(async () => {
@@ -1220,13 +1213,13 @@ const Attendance = () => {
             {/* Summary Cards */}
             {summary && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
-                    <StatCard icon={CheckCircle} label="Present"      value={summary.present}    color="bg-green-50 text-green-600" />
-                    <StatCard icon={CheckCircle} label="Regularized"  value={summary.regularized || 0} color="bg-blue-50 text-blue-600" />
-                    <StatCard icon={AlertCircle} label="Late"         value={summary.late}       color="bg-yellow-50 text-yellow-600" />
-                    <StatCard icon={Clock}       label="Half Day"     value={summary.halfDay}    color="bg-orange-50 text-orange-600" />
-                    <StatCard icon={LogOut}      label="Early Leave"  value={summary.earlyLeave} color="bg-purple-50 text-purple-600" />
-                    <StatCard icon={Calendar}    label="Absent"       value={summary.absent}     color="bg-red-50 text-red-500" />
-                    <StatCard icon={TrendingUp}  label="Total Hours"  value={fmtHours(summary.totalHours)} color="bg-indigo-50 text-indigo-600" />
+                    <StatCard icon={CheckCircle} label="Present" value={summary.present} color="bg-green-50 text-green-600" />
+                    <StatCard icon={CheckCircle} label="Regularized" value={summary.regularized || 0} color="bg-blue-50 text-blue-600" />
+                    <StatCard icon={AlertCircle} label="Late" value={summary.late} color="bg-yellow-50 text-yellow-600" />
+                    <StatCard icon={Clock} label="Half Day" value={summary.halfDay} color="bg-orange-50 text-orange-600" />
+                    <StatCard icon={LogOut} label="Early Leave" value={summary.earlyLeave} color="bg-purple-50 text-purple-600" />
+                    <StatCard icon={Calendar} label="Absent" value={summary.absent} color="bg-red-50 text-red-500" />
+                    <StatCard icon={TrendingUp} label="Total Hours" value={fmtHours(summary.totalHours)} color="bg-indigo-50 text-indigo-600" />
                 </div>
             )}
 
@@ -1276,7 +1269,7 @@ const Attendance = () => {
                 const filtered = companyRecords.filter(r => {
                     if (filterEmployee && r.userId?._id !== filterEmployee) return false;
                     if (filterFrom && r.date < filterFrom) return false;
-                    if (filterTo   && r.date > filterTo)   return false;
+                    if (filterTo && r.date > filterTo) return false;
                     return true;
                 });
 
@@ -1382,7 +1375,7 @@ const Attendance = () => {
                                         ? <img src={selectedEmp.profilePic.url} className="w-9 h-9 rounded-full object-cover shrink-0" alt="" />
                                         : <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold shrink-0">
                                             {selectedEmp.firstName?.[0]}{selectedEmp.lastName?.[0]}
-                                          </div>}
+                                        </div>}
                                     <div>
                                         <p className="font-semibold text-gray-800">{selectedEmp.firstName} {selectedEmp.lastName}</p>
                                         {selectedEmp.employeeCode && <p className="text-xs text-gray-400">{selectedEmp.employeeCode}</p>}
@@ -1424,7 +1417,7 @@ const Attendance = () => {
                                                             ? <img src={r.userId.profilePic.url} className="w-7 h-7 rounded-full object-cover" alt="" />
                                                             : <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
                                                                 {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
-                                                              </div>}
+                                                            </div>}
                                                         <div>
                                                             <p className="font-medium text-gray-800">{r.userId?.firstName} {r.userId?.lastName}</p>
                                                             <p className="text-xs text-gray-400">{r.userId?.employeeCode}</p>
@@ -1451,7 +1444,7 @@ const Attendance = () => {
                                                             target="_blank" rel="noreferrer"
                                                             className="flex items-center gap-1 text-xs text-blue-500 hover:underline">
                                                             <MapPin size={11} /> View
-                                                          </a>
+                                                        </a>
                                                         : "—"}
                                                 </td>
                                                 {canUpdateAttendance && (
@@ -1471,12 +1464,12 @@ const Attendance = () => {
                         {!filterEmployee && totalPages > 1 && (
                             <div className="flex items-center justify-between mt-4 px-1">
                                 <span className="text-xs text-gray-400">
-                                    Showing {(teamPage-1)*ITEMS_PER_PAGE+1}&#8211;{Math.min(teamPage*ITEMS_PER_PAGE,filtered.length)} of {filtered.length}
+                                    Showing {(teamPage - 1) * ITEMS_PER_PAGE + 1}&#8211;{Math.min(teamPage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
                                 </span>
                                 <div className="flex gap-1">
-                                    <button onClick={()=>setTeamPage(p=>Math.max(1,p-1))} disabled={teamPage===1} className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40">Prev</button>
-                                    {Array.from({length:Math.min(5,totalPages)},(_,i)=>{const pg=Math.max(1,Math.min(totalPages-4,teamPage-2))+i;return(<button key={pg} onClick={()=>setTeamPage(pg)} className={pg===teamPage?"px-3 py-1.5 text-xs border rounded-lg bg-blue-600 text-white border-blue-600":"px-3 py-1.5 text-xs border rounded-lg border-gray-200 hover:bg-gray-50"}>{pg}</button>);})}
-                                    <button onClick={()=>setTeamPage(p=>Math.min(totalPages,p+1))} disabled={teamPage===totalPages} className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40">Next</button>
+                                    <button onClick={() => setTeamPage(p => Math.max(1, p - 1))} disabled={teamPage === 1} className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40">Prev</button>
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => { const pg = Math.max(1, Math.min(totalPages - 4, teamPage - 2)) + i; return (<button key={pg} onClick={() => setTeamPage(pg)} className={pg === teamPage ? "px-3 py-1.5 text-xs border rounded-lg bg-blue-600 text-white border-blue-600" : "px-3 py-1.5 text-xs border rounded-lg border-gray-200 hover:bg-gray-50"}>{pg}</button>); })}
+                                    <button onClick={() => setTeamPage(p => Math.min(totalPages, p + 1))} disabled={teamPage === totalPages} className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40">Next</button>
                                 </div>
                             </div>
                         )}
@@ -1484,26 +1477,26 @@ const Attendance = () => {
                 );
             })()}
             {tab === "report" && showTeamTab && (() => {
-                const lateRecs  = companyRecords.filter(r => r.status === "late");
+                const lateRecs = companyRecords.filter(r => r.status === "late");
                 const earlyRecs = companyRecords.filter(r => r.status === "early-leave");
-                const absentRecs= companyRecords.filter(r => r.status === "absent");
+                const absentRecs = companyRecords.filter(r => r.status === "absent");
                 const byEmp = {};
                 companyRecords.forEach(r => {
                     const id = r.userId?._id; if (!id) return;
-                    if (!byEmp[id]) byEmp[id] = { user: r.userId, present:0, late:0, half:0, early:0, absent:0, total:0, totalHours: 0 };
+                    if (!byEmp[id]) byEmp[id] = { user: r.userId, present: 0, late: 0, half: 0, early: 0, absent: 0, total: 0, totalHours: 0 };
                     byEmp[id].total++;
                     byEmp[id].totalHours += (r.workHours || 0);
-                    if (r.status==="present" || r.status==="regularized") byEmp[id].present++;
-                    if (r.status==="late") byEmp[id].late++;
-                    if (r.status==="half-day") byEmp[id].half++;
-                    if (r.status==="early-leave") byEmp[id].early++;
-                    if (r.status==="absent") byEmp[id].absent++;
+                    if (r.status === "present" || r.status === "regularized") byEmp[id].present++;
+                    if (r.status === "late") byEmp[id].late++;
+                    if (r.status === "half-day") byEmp[id].half++;
+                    if (r.status === "early-leave") byEmp[id].early++;
+                    if (r.status === "absent") byEmp[id].absent++;
                 });
-                const empStats = Object.values(byEmp).sort((a,b)=>(b.late+b.early+b.absent)-(a.late+a.early+a.absent));
+                const empStats = Object.values(byEmp).sort((a, b) => (b.late + b.early + b.absent) - (a.late + a.early + a.absent));
                 const handleExportReport = () => {
-                    const headers = ["Employee","Code","Present","Half Day","Late Days","Early Leave","Absent Days","Total Records","Total Hours"];
-                    const rows = empStats.map(e => [`${e.user?.firstName} ${e.user?.lastName}`,e.user?.employeeCode||"",e.present,e.half,e.late,e.early,e.absent,e.total,fmtHours(e.totalHours)]);
-                    exportToCSV([headers,...rows],`attendance_report_${month}.csv`);
+                    const headers = ["Employee", "Code", "Present", "Half Day", "Late Days", "Early Leave", "Absent Days", "Total Records", "Total Hours"];
+                    const rows = empStats.map(e => [`${e.user?.firstName} ${e.user?.lastName}`, e.user?.employeeCode || "", e.present, e.half, e.late, e.early, e.absent, e.total, fmtHours(e.totalHours)]);
+                    exportToCSV([headers, ...rows], `attendance_report_${month}.csv`);
                 };
                 return (
                     <div>
@@ -1550,11 +1543,11 @@ const Attendance = () => {
                                                     <div><p className="font-medium text-gray-800">{e.user?.firstName} {e.user?.lastName}</p><p className="text-xs text-gray-400">{e.user?.employeeCode}</p></div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-center"><span className={e.present>0?"text-green-600 font-semibold":"text-gray-400"}>{e.present}</span></td>
-                                            <td className="px-4 py-3 text-center"><span className={e.half>0?"text-orange-500 font-semibold":"text-gray-400"}>{e.half}</span></td>
-                                            <td className="px-4 py-3 text-center"><span className={e.late>0?"text-yellow-600 font-semibold":"text-gray-400"}>{e.late}</span></td>
-                                            <td className="px-4 py-3 text-center"><span className={e.early>0?"text-purple-600 font-semibold":"text-gray-400"}>{e.early}</span></td>
-                                            <td className="px-4 py-3 text-center"><span className={e.absent>0?"text-red-500 font-semibold":"text-gray-400"}>{e.absent}</span></td>
+                                            <td className="px-4 py-3 text-center"><span className={e.present > 0 ? "text-green-600 font-semibold" : "text-gray-400"}>{e.present}</span></td>
+                                            <td className="px-4 py-3 text-center"><span className={e.half > 0 ? "text-orange-500 font-semibold" : "text-gray-400"}>{e.half}</span></td>
+                                            <td className="px-4 py-3 text-center"><span className={e.late > 0 ? "text-yellow-600 font-semibold" : "text-gray-400"}>{e.late}</span></td>
+                                            <td className="px-4 py-3 text-center"><span className={e.early > 0 ? "text-purple-600 font-semibold" : "text-gray-400"}>{e.early}</span></td>
+                                            <td className="px-4 py-3 text-center"><span className={e.absent > 0 ? "text-red-500 font-semibold" : "text-gray-400"}>{e.absent}</span></td>
                                             <td className="px-4 py-3 text-center text-gray-600">{e.total}</td>
                                             <td className="px-4 py-3 text-center text-gray-900 font-medium">{fmtHours(e.totalHours)}</td>
                                         </tr>
@@ -1581,7 +1574,7 @@ const Attendance = () => {
                     <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-base font-semibold text-gray-900">Edit Attendance</h3>
-                            <button onClick={() => setEditPunchData(null)} className="text-gray-400 hover:text-gray-600"><X size={18}/></button>
+                            <button onClick={() => setEditPunchData(null)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
                         </div>
                         <form onSubmit={handleEditPunchSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
@@ -1625,7 +1618,7 @@ const Attendance = () => {
                     <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-base font-semibold text-gray-900">Add Attendance</h3>
-                            <button onClick={() => setShowCreatePunch(false)} className="text-gray-400 hover:text-gray-600"><X size={18}/></button>
+                            <button onClick={() => setShowCreatePunch(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
                         </div>
                         <form onSubmit={handleCreatePunchSubmit} className="space-y-4">
                             <div>
