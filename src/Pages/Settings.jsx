@@ -15,13 +15,13 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-dig
 // ─── Company Profile Tab ──────────────────────────────────────────────────────
 const CompanyProfileTab = ({ user }) => {
     const companyId = user?.companyId?._id || user?.companyId;
-    const isAdmin   = ["admin", "super_admin"].includes(user?.role?.name);
+    const isAdmin = ["admin", "super_admin"].includes(user?.role?.name);
 
     const [company, setCompany] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
-    const [saving,  setSaving]  = useState(false);
-    const [form, setForm]       = useState({ name: "", address: "", domain: "" });
+    const [saving, setSaving] = useState(false);
+    const [form, setForm] = useState({ name: "", address: "", domain: "" });
     const iconRef = useRef(null);
 
     const load = async () => {
@@ -34,13 +34,13 @@ const CompanyProfileTab = ({ user }) => {
         finally { setLoading(false); }
     };
 
-    useEffect(() => { 
-        if (companyId) load(); 
+    useEffect(() => {
+        if (companyId) load();
         else setLoading(false);
     }, [companyId]);
 
     const handleSave = async () => {
-        if (!form.name.trim())    return toast.error("Company name is required");
+        if (!form.name.trim()) return toast.error("Company name is required");
         if (!form.address.trim()) return toast.error("Address is required");
         try {
             setSaving(true);
@@ -227,19 +227,19 @@ const QUICK_LINKS = [
 ];
 
 const TABS = [
-    { id: "company",  label: "Company Profile" },
-    { id: "links",    label: "Quick Links" },
+    { id: "company", label: "Company Profile" },
+    { id: "links", label: "Quick Links" },
 ];
 
 const Settings = () => {
     const { user } = useStore();
-    const permissions  = user?.role?.permissions || [];
+    const permissions = user?.role?.permissions || [];
     const isSuperAdmin = user?.role?.name === "super_admin";
-    const isAdmin      = user?.role?.name === "admin" || isSuperAdmin;
+    const isAdmin = user?.role?.name === "admin" || isSuperAdmin;
     const canSee = (perms) => isSuperAdmin || !perms.length || perms.some(p => permissions.includes(p));
     const canSeeLink = (o) => {
         if (o.superAdminOnly) return isSuperAdmin;
-        if (o.adminOnly)      return isAdmin;
+        if (o.adminOnly) return isAdmin;
         return canSee(o.perms || []);
     };
 

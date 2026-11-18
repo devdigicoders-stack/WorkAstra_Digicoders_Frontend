@@ -36,7 +36,7 @@ const WishesModal = ({ user }) => {
         }
 
         // Check Anniversary
-        if (!isBirthday && user.joiningDate) { 
+        if (!isBirthday && user.joiningDate) {
             const dojString = typeof user.joiningDate === 'string' ? user.joiningDate.split('T')[0] : new Date(user.joiningDate).toISOString().split('T')[0];
             const parts = dojString.split('-');
             const dojYear = parseInt(parts[0], 10);
@@ -75,8 +75,8 @@ const WishesModal = ({ user }) => {
             });
             if (response.data.success) {
                 // Ensure the URL is absolute if it's relative
-                const url = response.data.url.startsWith('http') 
-                    ? response.data.url 
+                const url = response.data.url.startsWith('http')
+                    ? response.data.url
                     : `http://localhost:8008${response.data.url}`;
                 setCardUrl(url);
             }
@@ -94,7 +94,7 @@ const WishesModal = ({ user }) => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
             <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden animate-bounce-in max-w-4xl w-full">
                 {/* Close button */}
-                <button 
+                <button
                     onClick={() => setIsOpen(false)}
                     className="absolute top-4 right-4 text-white bg-black/40 hover:bg-black/60 rounded-full p-2 transition-colors z-10 backdrop-blur-md"
                 >
@@ -108,15 +108,15 @@ const WishesModal = ({ user }) => {
                             <p className="text-lg font-medium animate-pulse">Preparing your special greeting...</p>
                         </div>
                     ) : cardUrl ? (
-                        <img 
-                            src={cardUrl} 
-                            alt={`${wishType} Greeting`} 
+                        <img
+                            src={cardUrl}
+                            alt={`${wishType} Greeting`}
                             className="w-full h-auto object-contain max-h-[80vh]"
                         />
                     ) : (
                         <div className="text-center p-8">
                             <p className="text-xl text-gray-500">Could not load greeting card.</p>
-                            <button 
+                            <button
                                 onClick={() => setIsOpen(false)}
                                 className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg"
                             >
