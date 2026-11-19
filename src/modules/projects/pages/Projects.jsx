@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { useStore } from "../../../context/StoreContext";
 import { useNotifications } from "../../../context/NotificationContext";
 import { getProjects, createProject, updateProject, deleteProject } from "../services/projectService";
-import { fetchUsers } from "../../employee/services/UserService";
+import { fetchUsers, fetchClients } from "../../employee/services/UserService";
 import api from "../../../services/axios";
 import { ENDPOINTS } from "../../../services/endpoints";
 
@@ -102,7 +102,7 @@ const ProjectDrawer = ({ isOpen, onClose, initial, onSubmit, loading, users }) =
                     <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Clients</label>
                         <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto divide-y divide-gray-100">
-                            {users.filter(u => u.role?.name?.toLowerCase() === 'client').map(u => (
+                            {users.filter(u => (u.role?.name || u.role || "").toString().toLowerCase() === 'client').map(u => (
                                 <label key={u._id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer">
                                     <input type="checkbox" checked={form.clientIds.includes(u._id)}
                                         onChange={() => toggleClient(u._id)} className="rounded" />
@@ -112,13 +112,13 @@ const ProjectDrawer = ({ isOpen, onClose, initial, onSubmit, loading, users }) =
                                     <span className="text-sm text-gray-700">{u.firstName} {u.lastName} ({u.email})</span>
                                 </label>
                             ))}
-                            {!users.filter(u => u.role?.name?.toLowerCase() === 'client').length && <p className="px-3 py-3 text-xs text-gray-400">No clients available</p>}
+                            {!users.filter(u => (u.role?.name || u.role || "").toString().toLowerCase() === 'client').length && <p className="px-3 py-3 text-xs text-gray-400">No clients available</p>}
                         </div>
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">Members</label>
                         <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto divide-y divide-gray-100">
-                            {users.filter(u => u.role?.name?.toLowerCase() !== 'client').map(u => (
+                            {users.filter(u => (u.role?.name || u.role || "").toString().toLowerCase() !== 'client').map(u => (
                                 <label key={u._id} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer">
                                     <input type="checkbox" checked={form.members.includes(u._id)}
                                         onChange={() => toggleMember(u._id)} className="rounded" />
@@ -183,7 +183,18 @@ const Projects = () => {
         load();
         loadUnreadProjects();
         if (isAdmin) {
-            fetchUsers().then(r => setUsers(r.users || [])).catch(() => {});
+            Promise.all([
+                fetchUsers().catch(() => ({ users: [] })),
+                fetchClients().catch(() => ({ users: [] }))
+            ]).then(([usersRes, clientsRes]) => {
+                const uList = usersRes.users || [];
+                const cList = clientsRes.users || [];
+                const map = new Map();
+                [...uList, ...cList].forEach(u => {
+                    if (u && u._id) map.set(u._id.toString(), u);
+                });
+                setUsers(Array.from(map.values()));
+            }).catch(() => {});
         }
     }, []);
 
