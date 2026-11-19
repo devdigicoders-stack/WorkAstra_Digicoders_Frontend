@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import api from "../../../services/axios";
 import { toast } from "react-toastify";
-import { Printer } from "lucide-react";
+import { Printer, Download } from "lucide-react";
 import { useStore } from "../../../context/StoreContext";
 import { Navigate } from "react-router-dom";
 import { getImageUrl } from "../../../utils/imageUtils";
 
-export default function OfferLetter() {
+export default function OfferLetter({ userId = null, standalone = true }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const { user: currentUser } = useStore();
@@ -14,14 +14,18 @@ export default function OfferLetter() {
     const isSuperAdmin = currentUser?.role?.name === "super_admin";
     const isAdmin = currentUser?.role?.name === "admin" || isSuperAdmin;
 
-    if (isAdmin) {
+    // Only redirect if accessed as standalone employee page and user is admin without explicit userId
+    if (standalone && !userId && isAdmin) {
         return <Navigate to="/" replace />;
     }
 
     useEffect(() => {
         const fetchOfferLetter = async () => {
             try {
-                const res = await api.get("/api/onboarding/my-offer-letter");
+                const endpoint = userId 
+                    ? `/api/onboarding/user-offer-letter/${userId}` 
+                    : "/api/onboarding/my-offer-letter";
+                const res = await api.get(endpoint);
                 setData(res.data);
             } catch (error) {
                 toast.error("Failed to load offer letter");
@@ -30,18 +34,22 @@ export default function OfferLetter() {
             }
         };
         fetchOfferLetter();
-    }, []);
+    }, [userId]);
 
     const handleDownload = async () => {
         const toastId = toast.loading("Generating PDF, please wait...");
         try {
-            const res = await api.get("/api/onboarding/my-offer-letter/download", {
+            const endpoint = userId 
+                ? `/api/onboarding/user-offer-letter/${userId}/download`
+                : "/api/onboarding/my-offer-letter/download";
+            const res = await api.get(endpoint, {
                 responseType: "blob"
             });
             const url = window.URL.createObjectURL(new Blob([res.data]));
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute("download", `Offer_Letter_${currentUser?.firstName || 'Employee'}.pdf`);
+            const empName = data?.user?.firstName || currentUser?.firstName || "Employee";
+            link.setAttribute("download", `Offer_Letter_${empName}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -61,17 +69,32 @@ export default function OfferLetter() {
     const today = new Date().toLocaleDateString('en-US', dateOptions);
     const joinDate = new Date(user.dateOfJoining || Date.now()).toLocaleDateString('en-US', dateOptions);
 
+    const containerCls = standalone 
+        ? "p-4 md:p-8 w-full min-h-screen bg-gray-200 flex flex-col items-center overflow-y-auto pb-24"
+        : "p-2 md:p-4 w-full flex flex-col items-center";
+
     return (
-        <div className="p-4 md:p-8 w-full min-h-screen bg-gray-200 flex flex-col items-center overflow-y-auto pb-24">
+        <div className={containerCls}>
             {/* Toolbar */}
-            <div className="w-full max-w-[210mm] flex justify-between items-center mb-6 shrink-0 print:hidden">
-                <h1 className="text-2xl font-bold text-gray-800">My Offer Letter</h1>
-                <button 
-                    onClick={handleDownload}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg shadow-sm font-semibold transition-all"
-                >
-                    <Printer size={18} /> Download Official PDF
-                </button>
+            <div className="w-full max-w-[210mm] flex flex-wrap justify-between items-center gap-4 mb-6 shrink-0 print:hidden">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+                    {standalone ? "My Offer Letter" : `${user.firstName}'s Offer Letter`}
+                </h1>
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => window.print()}
+                        className="flex items-center gap-2 bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg shadow-sm font-semibold transition-all text-sm"
+                        title="Print / Save preview as PDF"
+                    >
+                        <Printer size={16} /> Print Preview
+                    </button>
+                    <button 
+                        onClick={handleDownload}
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-sm font-semibold transition-all text-sm"
+                    >
+                        <Download size={16} /> Download Official PDF
+                    </button>
+                </div>
             </div>
 
             {/* Page 1 */}
@@ -146,7 +169,7 @@ export default function OfferLetter() {
                 {/* Watermark Page 2 */}
                 {company?.icon?.url && (
                     <img 
-                        src={company.icon.url} 
+                        src={getImageUrl(company.icon.url)} 
                         alt="Watermark" 
                         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-[0.15] w-[85%] pointer-events-none"
                         style={{ zIndex: 0 }}

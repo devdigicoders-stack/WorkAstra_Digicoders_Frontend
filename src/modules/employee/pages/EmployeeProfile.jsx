@@ -19,6 +19,7 @@ import api from "../../../services/axios";
 import { useStore } from "../../../context/StoreContext";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import Swal from "sweetalert2";
+import OfferLetter from "../../onboarding/pages/OfferLetter";
 
 const EmployeeProfile = () => {
     const { id } = useParams();
@@ -868,20 +869,8 @@ const EmployeeProfile = () => {
                 )}
                 
                 {activeTab === "offer_letter" && (
-                    <div className="bg-white p-12 rounded-2xl border border-gray-200 shadow-sm text-center">
-                        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <FileText size={32} className="text-blue-500" />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-800">Employee Offer Letter</h3>
-                        <p className="text-sm text-gray-500 mt-2 max-w-md mx-auto mb-6">
-                            You can download the officially generated offer letter PDF for this employee.
-                        </p>
-                        <button 
-                            onClick={handleDownloadOfferLetter}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition flex items-center justify-center mx-auto gap-2 shadow-sm shadow-blue-500/30"
-                        >
-                            <Download size={18} /> Download Offer Letter
-                        </button>
+                    <div className="bg-gray-100 p-2 md:p-6 rounded-2xl border border-gray-200 shadow-sm">
+                        <OfferLetter userId={id} standalone={false} />
                     </div>
                 )}
 
