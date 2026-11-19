@@ -5,6 +5,7 @@ import { getImageUrl } from "../utils/imageUtils";
 const WishesModal = ({ user }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [wishType, setWishType] = useState(null); // 'birthday' or 'anniversary'
+    const [imgFailed, setImgFailed] = useState(false);
     const cardRef = useRef(null);
 
     useEffect(() => {
@@ -69,8 +70,9 @@ const WishesModal = ({ user }) => {
 
     if (!isOpen || !user) return null;
 
-    const userProfilePic = getImageUrl(user?.profilePic?.url) ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent((user?.firstName || "") + " " + (user?.lastName || ""))}&background=random&size=300`;
+    const rawPicUrl = user?.profilePic?.url || (typeof user?.profilePic === "string" ? user.profilePic : null);
+    const userProfilePic = rawPicUrl ? getImageUrl(rawPicUrl) : null;
+    const initials = `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`.toUpperCase() || "🎉";
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md p-3 sm:p-6 animate-fade-in">
@@ -120,17 +122,25 @@ const WishesModal = ({ user }) => {
 
                     {/* Right profile picture container */}
                     <div
-                        className="absolute top-[15.25%] right-[15.17%] w-[26.25%] aspect-square rounded-full overflow-hidden flex items-center justify-center bg-white shadow-xl border-2 border-white/60"
+                        className="absolute top-[15.25%] right-[15.17%] w-[26.25%] aspect-square rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-emerald-100 to-green-200 shadow-xl border-4 border-white"
                     >
-                        <img
-                            src={userProfilePic}
-                            alt="Profile"
-                            crossOrigin="anonymous"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent((user?.firstName || "") + " " + (user?.lastName || ""))}&background=random&size=300`;
-                            }}
-                        />
+                        {!imgFailed && userProfilePic ? (
+                            <img
+                                src={userProfilePic}
+                                alt="Profile"
+                                className="w-full h-full object-cover"
+                                onError={() => setImgFailed(true)}
+                            />
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-emerald-500 to-green-700 text-white select-none">
+                                <span
+                                    className="font-black tracking-wider drop-shadow-md"
+                                    style={{ fontSize: "clamp(24px, 5.5vw, 68px)" }}
+                                >
+                                    {initials}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
