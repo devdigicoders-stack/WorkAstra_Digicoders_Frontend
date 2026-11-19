@@ -103,7 +103,7 @@ const PayrollReport = () => {
     // Analytics Calculation for top widgets
     const totalNetPayout = runs.reduce((acc, curr) => acc + (curr.netSalary || 0), 0);
     const totalGross = runs.reduce((acc, curr) => acc + (curr.grossEarnings || 0), 0);
-    const totalDeductions = runs.reduce((acc, curr) => acc + (curr.totalDeductions || 0) + (curr.lopDeduction || 0), 0);
+    const totalDeductions = runs.reduce((acc, curr) => acc + (curr.totalDeductions || 0), 0);
     
     const handleExportReport = () => {
         const headers = ["Employee Name", "Code", "Department", "Working Days", "LOP Days", "Gross Salary", "Deductions", "Net Salary", "Status"];
@@ -114,7 +114,7 @@ const PayrollReport = () => {
             r.totalWorkingDays || 0,
             r.lopDays || 0,
             r.grossEarnings || 0,
-            (r.totalDeductions || 0) + (r.lopDeduction || 0),
+            r.totalDeductions || 0,
             r.netSalary || 0,
             r.status.toUpperCase()
         ]);
@@ -302,7 +302,7 @@ const PayrollReport = () => {
                                                         {r.lopDays > 0 ? <span className="text-red-500 font-bold">{r.lopDays} d</span> : <span className="text-gray-300">-</span>}
                                                     </td>
                                                     <td className="px-5 py-3 font-medium text-gray-600">₹{(r.grossEarnings || 0).toLocaleString()}</td>
-                                                    <td className="px-5 py-3 font-medium text-red-500">-₹{((r.totalDeductions || 0) + (r.lopDeduction || 0)).toLocaleString()}</td>
+                                                    <td className="px-5 py-3 font-medium text-red-500">-₹{(r.totalDeductions || 0).toLocaleString()}</td>
                                                     <td className="px-5 py-3 font-bold text-gray-900">₹{(r.netSalary || 0).toLocaleString()}</td>
                                                     <td className="px-5 py-3">
                                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
