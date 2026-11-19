@@ -59,7 +59,6 @@ const Profile = () => {
         { key: "employment", label: "Employment" },
         { key: "bank",       label: "Bank & UPI" },
         { key: "security",   label: "Security" },
-        { key: "face",       label: "Face ID" },
     ];
 
     const [form, setForm] = useState(EMPTY);
