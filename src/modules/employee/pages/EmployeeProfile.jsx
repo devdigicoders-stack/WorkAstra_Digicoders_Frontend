@@ -700,7 +700,7 @@ const EmployeeProfile = () => {
                                                                     </h5>
                                                                     <div className="flex flex-wrap gap-2">
                                                                         {bundle.files?.length > 0 ? bundle.files.map(file => (
-                                                                            <a key={file._id} href={file.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition flex items-center gap-1 border border-indigo-100 shadow-sm">
+                                                                            <a key={file._id} href={getImageUrl(file.url)} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition flex items-center gap-1 border border-indigo-100 shadow-sm">
                                                                                 <Download size={14} /> {file.name || 'View File'}
                                                                             </a>
                                                                         )) : (
@@ -904,7 +904,7 @@ const EmployeeProfile = () => {
                                             <div className="flex items-center gap-3 shrink-0">
                                                 {sig.signedDocumentUrl ? (
                                                     <a 
-                                                        href={sig.signedDocumentUrl} 
+                                                        href={getImageUrl(sig.signedDocumentUrl)} 
                                                         target="_blank" 
                                                         rel="noopener noreferrer"
                                                         className="px-4 py-2 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-lg text-sm font-medium transition flex items-center gap-2"
@@ -1160,20 +1160,30 @@ const EmployeeProfile = () => {
                                     { key: "aadharBack", label: "Aadhar Back" },
                                     { key: "panCard", label: "PAN Card" },
                                     { key: "bankPassbook", label: "Bank Passbook" },
+                                    { key: "passportPhoto", label: "Passport Photo" },
+                                    { key: "fullSizePhoto", label: "Full Size Photo" },
                                     { key: "highSchoolCertificate", label: "10th Certificate" },
                                     { key: "intermediateCertificate", label: "12th Certificate" },
-                                    { key: "graduationCertificate", label: "Graduation Certificate" }
-                                ].map(doc => onboardingData[doc.key] && onboardingData[doc.key].url ? (
-                                    <div key={doc.key} className="p-4 border border-gray-200 rounded-xl hover:shadow-md transition">
-                                        <div className="w-10 h-10 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center mb-3">
-                                            <FileText size={20} />
+                                    { key: "diplomaCertificate", label: "Diploma Certificate" },
+                                    { key: "graduationCertificate", label: "Graduation Certificate" },
+                                    { key: "offerLetterFile", label: "Previous Offer Letter", nested: "previousCompany" },
+                                    { key: "experienceLetterFile", label: "Experience Letter", nested: "previousCompany" },
+                                    { key: "relievingLetterFile", label: "Relieving Letter", nested: "previousCompany" },
+                                    { key: "salarySlipsFile", label: "Salary Slips", nested: "previousCompany" }
+                                ].map(doc => {
+                                    const docObj = doc.nested ? onboardingData[doc.nested]?.[doc.key] : onboardingData[doc.key];
+                                    return docObj && docObj.url ? (
+                                        <div key={doc.key} className="p-4 border border-gray-200 rounded-xl hover:shadow-md transition">
+                                            <div className="w-10 h-10 bg-orange-50 text-orange-500 rounded-lg flex items-center justify-center mb-3">
+                                                <FileText size={20} />
+                                            </div>
+                                            <p className="text-sm font-semibold text-gray-800 mb-1">{doc.label}</p>
+                                            <a href={getImageUrl(docObj.url)} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
+                                                View Document
+                                            </a>
                                         </div>
-                                        <p className="text-sm font-semibold text-gray-800 mb-1">{doc.label}</p>
-                                        <a href={onboardingData[doc.key].url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline">
-                                            View Document
-                                        </a>
-                                    </div>
-                                ) : null)}
+                                    ) : null;
+                                })}
                             </div>
                         ) : (
                             <div className="text-center py-8">
