@@ -29,3 +29,5 @@ export const getImageUrl = (url) => {
     // Already absolute external URL
     return url;
 };
+
+export const getFileUrl = getImageUrl;

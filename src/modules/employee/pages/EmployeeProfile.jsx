@@ -1051,22 +1051,22 @@ const EmployeeProfile = () => {
                                         <p className="text-xs text-gray-400 uppercase tracking-wide mb-3 font-semibold">Uploaded Documents</p>
                                         <div className="flex flex-wrap gap-4">
                                             {onboardingData.previousCompany.offerLetterFile?.url && (
-                                                <a href={onboardingData.previousCompany.offerLetterFile.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
+                                                <a href={getImageUrl(onboardingData.previousCompany.offerLetterFile.url)} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
                                                     <FileText size={16} /> Offer Letter
                                                 </a>
                                             )}
                                             {onboardingData.previousCompany.experienceLetterFile?.url && (
-                                                <a href={onboardingData.previousCompany.experienceLetterFile.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
+                                                <a href={getImageUrl(onboardingData.previousCompany.experienceLetterFile.url)} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
                                                     <FileText size={16} /> Experience Letter
                                                 </a>
                                             )}
                                             {onboardingData.previousCompany.relievingLetterFile?.url && (
-                                                <a href={onboardingData.previousCompany.relievingLetterFile.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
+                                                <a href={getImageUrl(onboardingData.previousCompany.relievingLetterFile.url)} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
                                                     <FileText size={16} /> Relieving Letter
                                                 </a>
                                             )}
                                             {onboardingData.previousCompany.salarySlipsFile?.url && (
-                                                <a href={onboardingData.previousCompany.salarySlipsFile.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
+                                                <a href={getImageUrl(onboardingData.previousCompany.salarySlipsFile.url)} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-100 transition border border-indigo-100 shadow-sm">
                                                     <FileText size={16} /> Salary Slips
                                                 </a>
                                             )}
