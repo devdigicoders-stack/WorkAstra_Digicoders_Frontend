@@ -936,8 +936,8 @@ const Attendance = () => {
         try {
             setPunchSubmitting(true);
             const data = {
-                checkIn: punchForm.checkIn ? `${editPunchData.date}T${punchForm.checkIn}` : null,
-                checkOut: punchForm.checkOut ? `${editPunchData.date}T${punchForm.checkOut}` : null,
+                checkIn: punchForm.checkIn ? `${editPunchData.date}T${punchForm.checkIn}:00+05:30` : null,
+                checkOut: punchForm.checkOut ? `${editPunchData.date}T${punchForm.checkOut}:00+05:30` : null,
                 status: punchForm.status,
                 note: punchForm.note
             };
@@ -972,7 +972,7 @@ const Attendance = () => {
         const formatTimeForInput = (dateStr) => {
             if (!dateStr) return "";
             const d = new Date(dateStr);
-            return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+            return new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
         };
         setPunchForm({
             checkIn: formatTimeForInput(rec.checkIn),
