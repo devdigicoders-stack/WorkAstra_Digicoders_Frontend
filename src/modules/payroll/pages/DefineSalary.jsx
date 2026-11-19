@@ -74,7 +74,7 @@ const SalaryModal = ({ initial, employees, onClose, onSaved }) => {
                                 className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-gray-600">Annual CTC (₹)</label>
+                            <label className="text-xs font-medium text-gray-600">Total CTC (₹)</label>
                             <input required type="number" min="0" value={form.ctc} onChange={e => setField("ctc", e.target.value)}
                                 className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </div>
@@ -173,7 +173,7 @@ const DefineSalary = () => {
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                             <th className="px-4 py-3 text-left">Employee</th>
                             <th className="px-4 py-3 text-left">Effective From</th>
-                            <th className="px-4 py-3 text-right">Annual CTC</th>
+                            <th className="px-4 py-3 text-right">Total CTC</th>
                             <th className="px-4 py-3 text-right">Monthly Basic</th>
                             <th className="px-4 py-3 text-right">Gross</th>
                             <th className="px-4 py-3 text-right">Net</th>
