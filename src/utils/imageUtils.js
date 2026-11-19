@@ -1,26 +1,31 @@
 /**
  * getImageUrl — Converts any stored image URL to a usable full URL
  *
- * Handles 3 cases:
- * 1. Old records: "http://localhost:8008/uploads/xxx.png" → replace with VITE_BASE_URL
- * 2. New records: "/uploads/xxx.png" → prepend VITE_BASE_URL
- * 3. Cloudinary / external URLs: "https://res.cloudinary.com/..." → use as-is
+ * Handles:
+ * 1. Old records with localhost: "http://localhost:8008/uploads/xxx.png" -> replace with VITE_BASE_URL
+ * 2. New records with relative path: "/uploads/xxx.png" -> prepend VITE_BASE_URL
+ * 3. Cloudinary / external CDN URLs: "https://res.cloudinary.com/..." -> use as-is
  */
-const BASE_URL = import.meta.env.VITE_BASE_URL || "";
+const getBaseUrl = () => {
+    const raw = import.meta.env.VITE_BASE_URL || "";
+    return raw.replace(/\/+$/, "");
+};
 
 export const getImageUrl = (url) => {
     if (!url) return null;
 
-    // Old localhost URLs — replace localhost part with live backend URL
-    if (url.startsWith("http://localhost")) {
-        return url.replace(/^http:\/\/localhost:\d+/, BASE_URL);
+    const baseUrl = getBaseUrl();
+
+    // Old localhost URLs (http://localhost:8008 or any port, or http://127.0.0.1)
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url)) {
+        return url.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i, baseUrl);
     }
 
-    // Relative path like /uploads/xxx.png — prepend backend base URL
+    // Relative path like /uploads/xxx.png -> prepend backend base URL
     if (url.startsWith("/")) {
-        return `${BASE_URL}${url}`;
+        return `${baseUrl}${url}`;
     }
 
-    // Already absolute URL (Cloudinary, external CDN etc.) — use as-is
+    // Already absolute external URL
     return url;
 };

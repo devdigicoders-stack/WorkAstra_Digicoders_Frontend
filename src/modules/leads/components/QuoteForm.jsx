@@ -20,6 +20,7 @@ import {
     buildClientPlaceholderContext,
     resolveQuoteText,
 } from "./quoteEmailUtils";
+import { getImageUrl } from "../../../utils/imageUtils";
 
 const inp = "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white";
 const btnPrimary = "px-4 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-60";
@@ -324,7 +325,7 @@ export default function QuoteForm({ leadId, lead, companyId, onOpenPreview, edit
                                     return (
                                         <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-1.5">
                                             <div className="flex items-center gap-2">
-                                                {sel.logo?.url && <img src={sel.logo.url} alt="" className="h-6 object-contain" />}
+                                                {sel.logo?.url && <img src={getImageUrl(sel.logo.url)} alt="" className="h-6 object-contain" />}
                                                 <p className="text-xs font-semibold text-gray-700">{sel.companyName}</p>
                                                 {sel.paymentQr?.url && (
                                                     <span className="ml-auto text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-0.5">

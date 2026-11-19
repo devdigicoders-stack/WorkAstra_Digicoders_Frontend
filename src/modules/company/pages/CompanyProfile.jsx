@@ -3,6 +3,7 @@ import { Building2, Pencil, X, Check, Upload, Globe, MapPin, Calendar, User } fr
 import { toast } from "react-toastify";
 import { useStore } from "../../../context/StoreContext";
 import { fetchCompanyById, updateCompany, uploadCompanyIcon } from "../services/companyService";
+import { getImageUrl } from "../../../utils/imageUtils";
 
 const inp = "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white";
 
@@ -84,7 +85,7 @@ const CompanyProfile = () => {
                             <div className="relative">
                                 <div className="w-20 h-20 rounded-2xl border-4 border-white bg-white shadow-md overflow-hidden flex items-center justify-center">
                                     {company.icon?.url
-                                        ? <img src={company.icon.url} alt="logo" className="w-full h-full object-cover" />
+                                        ? <img src={getImageUrl(company.icon.url)} alt="logo" className="w-full h-full object-cover" />
                                         : <Building2 size={32} className="text-blue-400" />}
                                 </div>
                                 {isAdmin && (

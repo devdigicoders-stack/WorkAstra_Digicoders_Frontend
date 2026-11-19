@@ -50,7 +50,7 @@ const Navbar = ({ onMenuClick }) => {
                 </button>
                 <div className="flex items-center gap-2">
                     {user?.companyId?.icon?.url && (
-                        <img src={user.companyId.icon.url} alt="company" className="w-6 h-6 rounded object-cover hidden sm:block" />
+                        <img src={getImageUrl(user.companyId.icon.url)} alt="company" className="w-6 h-6 rounded object-cover hidden sm:block" />
                     )}
                     <div>
                         <h1 className="text-base font-semibold text-gray-800">{pageTitle}</h1>

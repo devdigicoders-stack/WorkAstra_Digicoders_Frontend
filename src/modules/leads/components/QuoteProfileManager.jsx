@@ -21,6 +21,7 @@ import {
     uploadQuoteProfileLogo,
     uploadQuoteProfilePaymentQr,
 } from "../services/quoteProfileService";
+import { getImageUrl } from "../../../utils/imageUtils";
 
 const inp =
     "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
@@ -300,7 +301,7 @@ export default function QuoteProfileManager({ isOpen, onClose, onSave }) {
                                     >
                                         <div className="flex items-start gap-2">
                                             {p.logo?.url ? (
-                                                <img src={p.logo.url} alt="" className="h-8 w-8 object-contain rounded" />
+                                                <img src={getImageUrl(p.logo.url)} alt="" className="h-8 w-8 object-contain rounded" />
                                             ) : (
                                                 <div className="h-8 w-8 rounded bg-gray-100 flex items-center justify-center text-[10px] text-gray-400">
                                                     LOGO
@@ -453,7 +454,7 @@ export default function QuoteProfileManager({ isOpen, onClose, onSave }) {
                                         <div className="p-3 bg-gray-50 rounded-lg border space-y-2">
                                             <p className="text-xs font-semibold text-gray-700">Company logo</p>
                                             {form.logoUrl ? (
-                                                <img src={form.logoUrl} alt="Logo" className="h-14 object-contain" />
+                                                <img src={getImageUrl(form.logoUrl)} alt="Logo" className="h-14 object-contain" />
                                             ) : (
                                                 <span className="text-xs text-gray-400 block py-4">No logo uploaded</span>
                                             )}
@@ -469,7 +470,7 @@ export default function QuoteProfileManager({ isOpen, onClose, onSave }) {
                                         <div className="p-3 bg-gray-50 rounded-lg border space-y-2">
                                             <p className="text-xs font-semibold text-gray-700">Payment QR code</p>
                                             {form.paymentQrUrl ? (
-                                                <img src={form.paymentQrUrl} alt="Payment QR" className="h-28 w-28 object-contain mx-auto border rounded" />
+                                                <img src={getImageUrl(form.paymentQrUrl)} alt="Payment QR" className="h-28 w-28 object-contain mx-auto border rounded" />
                                             ) : (
                                                 <span className="text-xs text-gray-400 block py-4 text-center">No QR uploaded</span>
                                             )}

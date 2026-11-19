@@ -9,6 +9,7 @@ import {
     fetchAllCompaniesForSuperAdmin, createCompanyWithAdmin,
     updateCompany, updateCompanyWithAdmin, deleteCompany, toggleCompanyStatus, uploadCompanyIcon,
 } from "../services/companyService";
+import { getImageUrl } from "../../../utils/imageUtils";
 
 const Company = () => {
     const { user } = useStore();
@@ -28,17 +29,7 @@ const Company = () => {
         } catch (err) { console.error(err); }
     };
 
-    const getImageUrl = (url) => {
-        if (!url) return "";
-        const baseUrl = import.meta.env.VITE_BASE_URL?.replace(/\/$/, '') || "";
-        if (url.startsWith("http://localhost:8008")) {
-            return url.replace("http://localhost:8008", baseUrl);
-        }
-        if (url.startsWith("/")) {
-            return `${baseUrl}${url}`;
-        }
-        return url;
-    };
+
 
     useEffect(() => {
         if (isSuperAdmin) loadCompanies();

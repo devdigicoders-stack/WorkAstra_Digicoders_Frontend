@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { Printer } from "lucide-react";
 import { useStore } from "../../../context/StoreContext";
 import { Navigate } from "react-router-dom";
+import { getImageUrl } from "../../../utils/imageUtils";
 
 export default function OfferLetter() {
     const [data, setData] = useState(null);
@@ -78,7 +79,7 @@ export default function OfferLetter() {
                 {/* Watermark Page 1 */}
                 {company?.icon?.url && (
                     <img 
-                        src={company.icon.url} 
+                        src={getImageUrl(company.icon.url)} 
                         alt="Watermark" 
                         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-[0.15] w-[85%] pointer-events-none"
                         style={{ zIndex: 0 }}
@@ -89,7 +90,7 @@ export default function OfferLetter() {
                     {/* Header */}
                     <div className="text-center mb-6">
                         {company?.icon?.url ? (
-                            <img src={company.icon.url} alt="Company Logo" className="h-16 mx-auto object-contain" />
+                            <img src={getImageUrl(company.icon.url)} alt="Company Logo" className="h-16 mx-auto object-contain" />
                         ) : (
                             <h2 className="text-2xl font-black text-gray-900 tracking-tight">{company?.name || "Company Name"}</h2>
                         )}

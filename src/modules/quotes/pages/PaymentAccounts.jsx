@@ -13,6 +13,7 @@ import {
     uploadQuoteProfileLogo,
     uploadQuoteProfilePaymentQr,
 } from "../../leads/services/quoteProfileService";
+import { getImageUrl } from "../../../utils/imageUtils";
 
 const inp = "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white";
 const ta = `${inp} resize-none`;
@@ -187,7 +188,7 @@ export default function PaymentAccounts() {
                                 onClick={() => startEdit(p)}>
                                 <div className="flex items-start gap-3">
                                     {p.logo?.url ? (
-                                        <img src={p.logo.url} alt="" className="w-10 h-10 object-contain rounded-lg border border-gray-100 bg-white shrink-0" />
+                                        <img src={getImageUrl(p.logo.url)} alt="" className="w-10 h-10 object-contain rounded-lg border border-gray-100 bg-white shrink-0" />
                                     ) : (
                                         <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                                             <Building2 size={16} className="text-gray-400" />
@@ -358,7 +359,7 @@ export default function PaymentAccounts() {
                                             <p className="text-xs font-semibold text-gray-700">Company Logo</p>
                                             <div className="flex items-center justify-center h-24 bg-white border border-dashed border-gray-200 rounded-lg">
                                                 {form.logoUrl ? (
-                                                    <img src={form.logoUrl} alt="Logo" className="max-h-20 max-w-full object-contain" />
+                                                    <img src={getImageUrl(form.logoUrl)} alt="Logo" className="max-h-20 max-w-full object-contain" />
                                                 ) : (
                                                     <div className="text-center text-gray-300">
                                                         <Building2 size={28} className="mx-auto mb-1" />
@@ -378,7 +379,7 @@ export default function PaymentAccounts() {
                                             <p className="text-xs font-semibold text-gray-700">Payment QR Code</p>
                                             <div className="flex items-center justify-center h-24 bg-white border border-dashed border-gray-200 rounded-lg">
                                                 {form.paymentQrUrl ? (
-                                                    <img src={form.paymentQrUrl} alt="Payment QR" className="max-h-20 max-w-full object-contain" />
+                                                    <img src={getImageUrl(form.paymentQrUrl)} alt="Payment QR" className="max-h-20 max-w-full object-contain" />
                                                 ) : (
                                                     <div className="text-center text-gray-300">
                                                         <QrCode size={28} className="mx-auto mb-1" />
