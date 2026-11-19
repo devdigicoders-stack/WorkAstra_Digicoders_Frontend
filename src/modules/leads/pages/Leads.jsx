@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Plus, X, Pencil, Trash2, Eye, User, Send, MessageSquare, ChevronLeft, ChevronRight, Upload, Settings, FileText, Calendar } from "lucide-react";
+import { Plus, X, Pencil, Trash2, Eye, User, Send, MessageSquare, ChevronLeft, ChevronRight, Upload, Settings, FileText, Calendar, IndianRupee } from "lucide-react";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import { useStore } from "../../../context/StoreContext";
 import { fetchUsers } from "../../employee/services/UserService.jsx";
 import { getLeads, getLeadById, createLead, updateLead, deleteLead, addCommunication, getFieldConfig } from "../services/leadService";
@@ -58,6 +59,7 @@ const formDataFromLead = (lead, customFields) => {
         contactPerson: lead.contactPerson || "",
         email: lead.email || "",
         status: lead.status || "New Lead",
+        dealPrice: lead.dealPrice || "",
         assignedTo: lead.assignedTo?._id || lead.assignedTo || "",
     };
     customFields.forEach((f) => {
@@ -132,7 +134,7 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
     const emptyForm = useCallback(() => {
         const base = {
             contactNumber: "", orgName: "", address: "", contactPerson: "",
-            email: "", status: "New Lead", assignedTo: currentUserId || "",
+            email: "", status: "New Lead", dealPrice: "", assignedTo: currentUserId || "",
         };
         customFields.forEach(f => { base[f.key] = ""; });
         return base;
@@ -222,6 +224,7 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
             contactPerson: form.contactPerson,
             email: form.email,
             status: form.status,
+            dealPrice: form.dealPrice ? Number(form.dealPrice) : 0,
             assignedTo: form.assignedTo || null,
             customFields: {},
         };
@@ -362,6 +365,7 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                                         { label: "Contact Person",    value: activeLead?.contactPerson },
                                         { label: "Email",             value: activeLead?.email },
                                         { label: "Status",            value: activeLead?.status },
+                                        ...(activeLead?.dealPrice > 0 ? [{ label: "Deal Close Price", value: `₹${Number(activeLead.dealPrice).toLocaleString("en-IN")}` }] : []),
                                         {
                                             label: "Assigned To",
                                             value: activeLead?.assignedTo
@@ -418,6 +422,21 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                                             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                                         </select>
                                     </div>
+                                    {(form.status === "Project Done" || form.status === "Sent to Project Team") && (
+                                        <div>
+                                            <label className="block text-xs font-bold text-emerald-700 mb-1 flex items-center gap-1">
+                                                <IndianRupee size={12} /> Deal Close Price (₹) <span className="text-red-500">*</span>
+                                            </label>
+                                            <input 
+                                                type="number"
+                                                min="0"
+                                                value={form.dealPrice || ""} 
+                                                onChange={e => set("dealPrice", e.target.value)}
+                                                placeholder="e.g. 50000" 
+                                                className="w-full px-3 py-2 border border-emerald-300 rounded-lg text-sm bg-emerald-50/40 font-semibold text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500" 
+                                            />
+                                        </div>
+                                    )}
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 mb-1">Assigned To</label>
                                         <select value={form.assignedTo} onChange={e => set("assignedTo", e.target.value)} className={inp}>
@@ -624,6 +643,31 @@ const Leads = () => {
 
     const handleSubmit = async (form, matchedId, newComm) => {
         try {
+            const isDone = form.status === "Project Done" || form.status === "Sent to Project Team";
+            if (isDone && (!form.dealPrice || Number(form.dealPrice) <= 0)) {
+                const { value: price, isDismissed } = await Swal.fire({
+                    title: 'Deal Close Price',
+                    html: `Please enter the deal close price for <b>${form.orgName}</b>.<br/><span style="font-size: 12px; color: #6b7280;">A project will be created with this price.</span>`,
+                    input: 'number',
+                    inputLabel: 'Deal Close Price (₹)',
+                    inputPlaceholder: 'e.g. 50000',
+                    inputAttributes: { min: '0', step: '100' },
+                    showCancelButton: true,
+                    confirmButtonText: 'Save & Create Project',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonText: 'Cancel',
+                    inputValidator: (value) => {
+                        if (!value || Number(value) <= 0) {
+                            return 'Please enter a valid deal close price!';
+                        }
+                    }
+                });
+                if (isDismissed || !price) {
+                    return null;
+                }
+                form.dealPrice = Number(price);
+            }
+
             setSaving(true);
             const existingId = selected?._id || matchedId;
             if (existingId) {
@@ -766,6 +810,11 @@ const Leads = () => {
                                         <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-medium border whitespace-nowrap ${STATUS_COLORS[lead.status] || ""}`}>
                                             {lead.status}
                                         </span>
+                                        {lead.dealPrice > 0 && (
+                                            <div className="text-[11px] font-semibold text-emerald-600 mt-0.5">
+                                                ₹{Number(lead.dealPrice).toLocaleString("en-IN")}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3 text-gray-600">
                                         {lead.assignedTo && typeof lead.assignedTo === "object"

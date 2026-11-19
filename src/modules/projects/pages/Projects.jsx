@@ -18,7 +18,7 @@ const STATUS_COLORS = {
     cancelled: "bg-red-50 text-red-700 border-red-200",
 };
 
-const EMPTY = { name: "", description: "", status: "active", startDate: "", endDate: "", members: [], clientIds: [] };
+const EMPTY = { name: "", description: "", status: "active", price: "", startDate: "", endDate: "", members: [], clientIds: [] };
 
 const ProjectDrawer = ({ isOpen, onClose, initial, onSubmit, loading, users }) => {
     const [form, setForm] = useState(EMPTY);
@@ -29,6 +29,7 @@ const ProjectDrawer = ({ isOpen, onClose, initial, onSubmit, loading, users }) =
                 name: initial.name || "",
                 description: initial.description || "",
                 status: initial.status || "active",
+                price: initial.price !== undefined && initial.price !== null ? initial.price : "",
                 startDate: initial.startDate ? initial.startDate.slice(0, 10) : "",
                 endDate: initial.endDate ? initial.endDate.slice(0, 10) : "",
                 members: initial.members?.map(m => m._id || m) || [],
@@ -80,14 +81,20 @@ const ProjectDrawer = ({ isOpen, onClose, initial, onSubmit, loading, users }) =
                         <textarea value={form.description} onChange={e => set("description", e.target.value)}
                             rows={3} placeholder="Project overview..." className={inputCls} />
                     </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
-                        <select value={form.status} onChange={e => set("status", e.target.value)} className={inputCls}>
-                            <option value="active">Active</option>
-                            <option value="completed">Completed</option>
-                            <option value="on_hold">On Hold</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                            <select value={form.status} onChange={e => set("status", e.target.value)} className={inputCls}>
+                                <option value="active">Active</option>
+                                <option value="completed">Completed</option>
+                                <option value="on_hold">On Hold</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">Project Price (₹)</label>
+                            <input type="number" min="0" value={form.price} onChange={e => set("price", e.target.value)} placeholder="e.g. 50000" className={inputCls} />
+                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -300,6 +307,11 @@ const Projects = () => {
                                     <Users size={12} />
                                     <span>{p.members?.length || 0} members</span>
                                 </div>
+                                {p.price > 0 && (
+                                    <span className="font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                                        ₹{Number(p.price).toLocaleString("en-IN")}
+                                    </span>
+                                )}
                                 {p.endDate && (
                                     <div className="flex items-center gap-1">
                                         <Calendar size={12} />

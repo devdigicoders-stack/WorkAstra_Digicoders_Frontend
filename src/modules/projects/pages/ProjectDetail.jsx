@@ -342,7 +342,14 @@ const ProjectDetail = () => {
                     <ArrowLeft size={18} />
                 </button>
                 <div className="flex-1">
-                    <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
+                        {project.price > 0 && (
+                            <span className="px-2.5 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+                                ₹{Number(project.price).toLocaleString("en-IN")}
+                            </span>
+                        )}
+                    </div>
                     {project.description && <p className="text-sm text-gray-500 mt-0.5">{project.description}</p>}
                 </div>
                 <div className="flex items-center gap-2">
