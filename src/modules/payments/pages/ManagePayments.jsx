@@ -190,7 +190,7 @@ const ManagePayments = () => {
                                         </td>
                                         <td className="p-4 text-center">
                                             <button 
-                                                onClick={() => setSelectedImage(payment.screenshot?.url)}
+                                                onClick={() => setSelectedImage(getImageUrl(payment.screenshot?.url))}
                                                 className="inline-flex items-center justify-center w-10 h-10 bg-slate-100 hover:bg-blue-50 text-blue-600 rounded-lg transition"
                                                 title="View Screenshot"
                                             >
@@ -244,9 +244,9 @@ const ManagePayments = () => {
                         >
                             <XCircle className="w-8 h-8" />
                         </button>
-                        <img src={selectedImage} alt="Payment Screenshot" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+                        <img src={getImageUrl(selectedImage)} alt="Payment Screenshot" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" />
                         <div className="mt-4 text-center">
-                            <a href={selectedImage} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-white hover:text-blue-300 text-sm">
+                            <a href={getImageUrl(selectedImage)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-white hover:text-blue-300 text-sm">
                                 <ExternalLink className="w-4 h-4" /> Open original image
                             </a>
                         </div>
