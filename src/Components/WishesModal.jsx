@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
-import axios from "axios";
+import api from "../services/axios";
+import { getImageUrl } from "../utils/imageUtils";
 
 const WishesModal = ({ user }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -66,19 +67,9 @@ const WishesModal = ({ user }) => {
     const fetchGreetingCard = async (type) => {
         try {
             setLoading(true);
-            const token = localStorage.getItem("token") || document.cookie.replace(/(?:(?:^|.*;\s*)token\s*\=\s*([^;]*).*$)|^.*$/, "$1");
-            const response = await axios.get(`http://localhost:8008/api/user/greeting-card?type=${type}`, {
-                withCredentials: true,
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            if (response.data.success) {
-                // Ensure the URL is absolute if it's relative
-                const url = response.data.url.startsWith('http')
-                    ? response.data.url
-                    : `http://localhost:8008${response.data.url}`;
-                setCardUrl(url);
+            const response = await api.get(`/api/user/greeting-card?type=${type}`);
+            if (response.data.success && response.data.url) {
+                setCardUrl(getImageUrl(response.data.url));
             }
         } catch (error) {
             console.error("Failed to load greeting card", error);
