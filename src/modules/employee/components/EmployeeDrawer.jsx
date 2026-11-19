@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { getImageUrl } from "../../../utils/imageUtils";
+import { getImageUrl, getFileUrl } from "../../../utils/imageUtils";
 import { X, User, Mail, Phone, Lock, Briefcase, Calendar, Building2, ShieldCheck, Eye, EyeOff, Clock, Users, Search, ChevronDown, MapPin, ScanFace } from "lucide-react";
 
 const Field = ({ label, icon: Icon, children }) => (
@@ -339,7 +339,7 @@ const EmployeeDrawer = ({ isOpen, onClose, initialData, companies, roles, shifts
                                     className="w-full text-sm border border-gray-200 rounded-lg p-2"
                                 />
                                 {isEdit && initialData?.finalProposal?.url && (
-                                    <p className="text-xs text-gray-500 mt-1">Current: <a href={initialData.finalProposal.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">View Document</a></p>
+                                    <p className="text-xs text-gray-500 mt-1">Current: <a href={getFileUrl(initialData.finalProposal.url)} target="_blank" rel="noreferrer" className="text-blue-600 underline">View Document</a></p>
                                 )}
                             </div>
                         )}

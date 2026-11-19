@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { X, User, Mail, Phone, Lock, Building2, Eye, EyeOff, MapPin } from "lucide-react";
+import { getFileUrl } from "../../../utils/imageUtils";
 
 const Field = ({ label, icon: Icon, children }) => (
     <div>
@@ -202,7 +203,7 @@ const ClientDrawer = ({ isOpen, onClose, initialData, companies, roles, onSubmit
                                 className="w-full text-sm border border-gray-200 rounded-lg p-2"
                             />
                             {isEdit && initialData?.finalProposal?.url && (
-                                <p className="text-xs text-gray-500 mt-1">Current: <a href={initialData.finalProposal.url} target="_blank" rel="noreferrer" className="text-indigo-600 underline">View Document</a></p>
+                                <p className="text-xs text-gray-500 mt-1">Current: <a href={getFileUrl(initialData.finalProposal.url)} target="_blank" rel="noreferrer" className="text-indigo-600 underline">View Document</a></p>
                             )}
                         </div>
                     </section>

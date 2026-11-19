@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getImageUrl } from "../utils/imageUtils";
+import { getImageUrl, getFileUrl } from "../utils/imageUtils";
 import { useStore } from "../context/StoreContext";
 import { Link } from "react-router-dom";
 import {
@@ -989,7 +989,7 @@ const Home = () => {
                                 <p className="text-sm text-gray-500 mb-6">Review your final approved project proposal details and terms.</p>
                             </div>
                             <div className="flex justify-center pb-2">
-                                <a href={user.finalProposal.url} target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-sm font-medium transition shadow-sm">
+                                <a href={getFileUrl(user.finalProposal.url)} target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-sm font-medium transition shadow-sm">
                                     <FileText size={18} /> View Proposal
                                 </a>
                             </div>

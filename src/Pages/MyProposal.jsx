@@ -1,6 +1,7 @@
 import React from "react";
 import { useStore } from "../context/StoreContext";
 import { FileText, AlertCircle } from "lucide-react";
+import { getFileUrl } from "../utils/imageUtils";
 
 const MyProposal = () => {
     const { user } = useStore();
@@ -26,7 +27,7 @@ const MyProposal = () => {
                             </p>
                             
                             <a 
-                                href={user.finalProposal.url} 
+                                href={getFileUrl(user.finalProposal.url)} 
                                 target="_blank" 
                                 rel="noreferrer"
                                 className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-xl transition shadow-sm"
