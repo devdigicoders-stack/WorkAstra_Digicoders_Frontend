@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { useStore } from "../../../context/StoreContext";
 import api from "../../../services/axios";
 import { getClientNdaTemplate } from "../../../services/ndaService";
+import { getFileUrl } from "../../../utils/imageUtils";
 
 const ClientNdaPage = ({ inPanel = false }) => {
     const { user, setUser } = useStore();
@@ -25,7 +26,7 @@ const ClientNdaPage = ({ inPanel = false }) => {
         try {
             const res = await getClientNdaTemplate();
             if (res.success && res.nda?.document?.url) {
-                setTemplateUrl(res.nda.document.url);
+                setTemplateUrl(getFileUrl(res.nda.document.url));
             } else {
                 // No active Client NDA found — auto-skip silently and go to dashboard
                 try {
@@ -143,7 +144,7 @@ const ClientNdaPage = ({ inPanel = false }) => {
                     {/* PDF Viewer */}
                     <div className="w-full h-[60vh] bg-white border border-gray-300 rounded-md shadow-inner overflow-hidden mb-6">
                         <iframe 
-                            src={`${templateUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                            src={`${getFileUrl(templateUrl)}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                             className="w-full h-full"
                             title="Client NDA Document"
                         ></iframe>
