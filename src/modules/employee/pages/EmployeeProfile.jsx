@@ -241,7 +241,17 @@ const EmployeeProfile = () => {
             Swal.close();
         } catch (error) {
             console.error(error);
-            Swal.fire('Error', 'Could not download offer letter. Make sure employee is fully approved.', 'error');
+            let errMsg = 'Could not download offer letter. Make sure employee is fully approved.';
+            if (error.response?.data instanceof Blob) {
+                try {
+                    const text = await error.response.data.text();
+                    const parsed = JSON.parse(text);
+                    if (parsed.message) errMsg = parsed.message;
+                } catch (_) {}
+            } else if (error.response?.data?.message) {
+                errMsg = error.response.data.message;
+            }
+            Swal.fire('Error', errMsg, 'error');
         }
     };
 
