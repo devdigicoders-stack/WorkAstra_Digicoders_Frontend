@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { useStore } from "../../../context/StoreContext";
 import {
     checkIn, checkOut, getTodayAttendance,
@@ -799,7 +800,7 @@ const RegularizationTab = ({ isAdmin, showTeamTab, canApprove, canReject }) => {
                                 <div key={r._id} className="bg-white border border-gray-200 rounded-xl p-4">
                                     <div className="flex items-start gap-4">
                                         {r.userId?.profilePic?.url
-                                            ? <img src={r.userId.profilePic.url} className="w-9 h-9 rounded-full object-cover shrink-0" alt="" />
+                                            ? <img src={getImageUrl(r.userId.profilePic.url)} className="w-9 h-9 rounded-full object-cover shrink-0" alt="" />
                                             : <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold shrink-0">
                                                 {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
                                             </div>}
@@ -1372,7 +1373,7 @@ const Attendance = () => {
                             <div>
                                 <div className="flex items-center gap-3 mb-4 bg-white border border-gray-200 rounded-xl px-4 py-3">
                                     {selectedEmp.profilePic?.url
-                                        ? <img src={selectedEmp.profilePic.url} className="w-9 h-9 rounded-full object-cover shrink-0" alt="" />
+                                        ? <img src={getImageUrl(selectedEmp.profilePic.url)} className="w-9 h-9 rounded-full object-cover shrink-0" alt="" />
                                         : <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold shrink-0">
                                             {selectedEmp.firstName?.[0]}{selectedEmp.lastName?.[0]}
                                         </div>}
@@ -1414,7 +1415,7 @@ const Attendance = () => {
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-2">
                                                         {r.userId?.profilePic?.url
-                                                            ? <img src={r.userId.profilePic.url} className="w-7 h-7 rounded-full object-cover" alt="" />
+                                                            ? <img src={getImageUrl(r.userId.profilePic.url)} className="w-7 h-7 rounded-full object-cover" alt="" />
                                                             : <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
                                                                 {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
                                                             </div>}
@@ -1538,7 +1539,7 @@ const Attendance = () => {
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
                                                     {e.user?.profilePic?.url
-                                                        ? <img src={e.user.profilePic.url} className="w-7 h-7 rounded-full object-cover" alt="" />
+                                                        ? <img src={getImageUrl(e.user.profilePic.url)} className="w-7 h-7 rounded-full object-cover" alt="" />
                                                         : <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">{e.user?.firstName?.[0]}{e.user?.lastName?.[0]}</div>}
                                                     <div><p className="font-medium text-gray-800">{e.user?.firstName} {e.user?.lastName}</p><p className="text-xs text-gray-400">{e.user?.employeeCode}</p></div>
                                                 </div>

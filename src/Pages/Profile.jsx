@@ -10,8 +10,10 @@ import {
 import BankDetailsComponent from "../modules/employee/components/BankDetailsComponent";
 import * as faceapi from "face-api.js";
 import api from "../services/axios";
+import { getImageUrl } from "../utils/imageUtils";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+
 const inputCls = "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition";
 const labelCls = "block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5";
 
@@ -113,7 +115,7 @@ const Profile = () => {
                     const mapped = mapUser(profileRes.value.user);
                     setForm(mapped);
                     setRawUser(profileRes.value.user);
-                    setPreview(profileRes.value.user.profilePic?.url || null);
+                    setPreview(getImageUrl(profileRes.value.user.profilePic?.url) || null);
                 }
                 if (shiftsRes.status === "fulfilled") {
                     setShifts(shiftsRes.value.data || []);
@@ -210,7 +212,7 @@ const Profile = () => {
                 const mapped = mapUser(updated.user);
                 setForm(mapped);
                 setRawUser(updated.user);
-                setPreview(updated.user.profilePic?.url || null);
+                setPreview(getImageUrl(updated.user.profilePic?.url) || null);
             } else {
                 toast.error(data.message || "Update failed");
             }
@@ -225,7 +227,7 @@ const Profile = () => {
         setEditMode(false);
         if (rawUser) {
             setForm(mapUser(rawUser));
-            setPreview(rawUser.profilePic?.url || null);
+            setPreview(getImageUrl(rawUser.profilePic?.url) || null);
         }
     };
 

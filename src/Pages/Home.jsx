@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getImageUrl } from "../utils/imageUtils";
 import { useStore } from "../context/StoreContext";
 import { Link } from "react-router-dom";
 import {
@@ -453,7 +454,7 @@ const Home = () => {
                                 {teamToday.slice(0, 8).map(r => (
                                     <div key={r._id} className="flex items-center gap-3">
                                         {r.userId?.profilePic?.url
-                                            ? <img src={r.userId.profilePic.url} className="w-8 h-8 rounded-full object-cover shrink-0" alt="" />
+                                            ? <img src={getImageUrl(r.userId.profilePic.url)} className="w-8 h-8 rounded-full object-cover shrink-0" alt="" />
                                             : <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0">{r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}</div>}
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-gray-800 truncate">{r.userId?.firstName} {r.userId?.lastName}</p>

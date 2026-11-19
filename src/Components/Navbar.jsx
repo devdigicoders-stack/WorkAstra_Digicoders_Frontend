@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { LogOut, UserCircle, ChevronDown, Menu } from "lucide-react";
 import { authlogout } from "../modules/auth/services/authService";
 import NotificationBell from "./NotificationBell";
+import { getImageUrl } from "../utils/imageUtils";
 
 const ROUTE_LABELS = {
     "/": "Dashboard",
@@ -66,7 +67,7 @@ const Navbar = ({ onMenuClick }) => {
                         className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-200 transition"
                     >
                         {user?.profilePic?.url ? (
-                            <img src={user.profilePic.url} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
+                            <img src={getImageUrl(user.profilePic.url)} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
                         ) : (
                             <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
                                 {initials}

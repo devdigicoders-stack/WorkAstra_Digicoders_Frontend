@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { IndianRupee, Play, CheckCheck, Banknote, Trash2, X, ChevronDown, ChevronUp, FileText, Printer, Pencil, Download } from "lucide-react";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
@@ -423,7 +424,7 @@ const AdminPayroll = ({ can, company }) => {
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
                                             {run.userId?.profilePic?.url ? (
-                                                <img src={run.userId.profilePic.url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                                                <img src={getImageUrl(run.userId.profilePic.url)} alt="" className="w-8 h-8 rounded-full object-cover" />
                                             ) : (
                                                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
                                                     {run.userId?.firstName?.[0]}{run.userId?.lastName?.[0]}

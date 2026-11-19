@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getImageUrl } from "../utils/imageUtils";
 import { useStore } from "../context/StoreContext";
 import { Calendar, Clock, FileText, Users, TrendingUp, Plus, Check, XCircle, ChevronDown, CheckCircle2 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -516,7 +517,7 @@ const TeamLeavesTab = ({ year, isAdmin }) => {
                         <div key={leave._id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition">
                             <div className="flex items-start gap-4">
                                 {leave.userId?.profilePic?.url ? (
-                                    <img src={leave.userId.profilePic.url} className="w-10 h-10 rounded-full object-cover shrink-0" alt="" />
+                                    <img src={getImageUrl(leave.userId.profilePic.url)} className="w-10 h-10 rounded-full object-cover shrink-0" alt="" />
                                 ) : (
                                     <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold shrink-0">
                                         {leave.userId?.firstName?.[0]}{leave.userId?.lastName?.[0]}

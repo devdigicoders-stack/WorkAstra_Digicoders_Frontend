@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getImageUrl } from "../../../utils/imageUtils";
 import { useNavigate } from 'react-router-dom';
 import { resignationService } from '../../../services/resignationService';
 import { toast } from 'react-toastify';
@@ -282,7 +283,7 @@ const ManageResignations = () => {
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm overflow-hidden shrink-0">
                                                     {item.employeeId?.profilePic?.url ? (
-                                                        <img src={item.employeeId.profilePic.url} alt="Profile" className="w-full h-full object-cover" />
+                                                        <img src={getImageUrl(item.employeeId.profilePic.url)} alt="Profile" className="w-full h-full object-cover" />
                                                     ) : (
                                                         <span>{item.employeeId?.firstName?.[0]}{item.employeeId?.lastName?.[0]}</span>
                                                     )}

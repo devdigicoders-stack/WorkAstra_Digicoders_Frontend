@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { MessageSquare, AlertCircle, Clock, CheckCircle, XCircle, MoreVertical } from "lucide-react";
 import { getAllComplaints, updateComplaintStatus } from "../services/complaintService";
 import { toast } from "react-toastify";
@@ -105,7 +106,7 @@ const ManageComplaints = () => {
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
                                                 {complaint.userId?.profilePic?.url ? (
-                                                    <img src={complaint.userId.profilePic.url} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                                                    <img src={getImageUrl(complaint.userId.profilePic.url)} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
                                                 ) : (
                                                     <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
                                                         {complaint.userId?.firstName?.charAt(0) || "U"}

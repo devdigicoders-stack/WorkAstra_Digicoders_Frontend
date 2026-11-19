@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { useNavigate } from "react-router-dom";
 import EmployeeDrawer from "../components/EmployeeDrawer"
 import { Plus, Pencil, Users, Building2, ShieldCheck, Search, X, ToggleLeft, ToggleRight, KeyRound, Eye, EyeOff, Trash2 } from "lucide-react";
@@ -377,7 +378,7 @@ const User = () => {
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
                                             {u.profilePic?.url ? (
-                                                <img src={u.profilePic.url} alt="profile" className="w-9 h-9 rounded-full object-cover" />
+                                                <img src={getImageUrl(u.profilePic.url)} alt="profile" className="w-9 h-9 rounded-full object-cover" />
                                             ) : (
                                                 <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-semibold">
                                                     {u.firstName?.[0]}{u.lastName?.[0]}
@@ -403,7 +404,7 @@ const User = () => {
                                         {u.reportingTo ? (
                                             <div className="flex items-center gap-2">
                                                 {u.reportingTo.profilePic?.url
-                                                    ? <img src={u.reportingTo.profilePic.url} className="w-6 h-6 rounded-full object-cover" alt="" />
+                                                    ? <img src={getImageUrl(u.reportingTo.profilePic.url)} className="w-6 h-6 rounded-full object-cover" alt="" />
                                                     : <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">{u.reportingTo.firstName?.[0]}{u.reportingTo.lastName?.[0]}</div>}
                                                 <span className="text-xs text-gray-700">{u.reportingTo.firstName} {u.reportingTo.lastName}</span>
                                             </div>

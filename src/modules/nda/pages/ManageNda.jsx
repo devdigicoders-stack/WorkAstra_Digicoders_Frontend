@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { useStore } from "../../../context/StoreContext";
 import { FileText, Save, Plus, File, Edit3, ShieldCheck, X, UploadCloud, Download, Trash2, Users } from "lucide-react";
 import { toast } from "react-toastify";
@@ -448,7 +449,7 @@ const ManageNda = () => {
                                         <div key={sig._id} className="flex flex-col sm:flex-row items-center justify-between p-4 border border-gray-100 rounded-xl hover:shadow-sm transition">
                                             <div className="flex items-center gap-3 w-full sm:w-auto">
                                                 {sig.userId.profilePic?.url ? (
-                                                    <img src={sig.userId.profilePic.url} alt="" className="w-10 h-10 rounded-full object-cover" />
+                                                    <img src={getImageUrl(sig.userId.profilePic.url)} alt="" className="w-10 h-10 rounded-full object-cover" />
                                                 ) : (
                                                     <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
                                                         {sig.userId.firstName[0]}{sig.userId.lastName[0]}

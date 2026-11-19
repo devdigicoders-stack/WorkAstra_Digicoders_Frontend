@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useStore } from "../../../context/StoreContext";
 import { fetchUsers } from "../../employee/services/UserService";
@@ -271,7 +272,7 @@ const EmployeeReport = () => {
                                             <div key={idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-emerald-100 shadow-sm cursor-pointer hover:bg-emerald-50 transition" onClick={() => setSelectedEmployee(emp)}>
                                                 <div className="flex items-center gap-3 overflow-hidden">
                                                     <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0">
-                                                        {emp.profilePic?.url ? <img src={emp.profilePic.url} alt="Profile" className="w-full h-full rounded-full object-cover"/> : <>{emp.firstName?.[0]}{emp.lastName?.[0]}</>}
+                                                        {emp.profilePic?.url ? <img src={getImageUrl(emp.profilePic.url)} alt="Profile" className="w-full h-full rounded-full object-cover"/> : <>{emp.firstName?.[0]}{emp.lastName?.[0]}</>}
                                                     </div>
                                                     <div className="truncate">
                                                         <p className="text-sm font-semibold text-gray-800 truncate">{emp.firstName} {emp.lastName}</p>
@@ -371,7 +372,7 @@ const EmployeeReport = () => {
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
                                                                 {e.profilePic?.url ? (
-                                                                    <img src={e.profilePic.url} alt="Profile" className="w-full h-full object-cover" />
+                                                                    <img src={getImageUrl(e.profilePic.url)} alt="Profile" className="w-full h-full object-cover" />
                                                                 ) : (
                                                                     <>{e.firstName?.[0]}{e.lastName?.[0]}</>
                                                                 )}
@@ -435,7 +436,7 @@ const EmployeeReport = () => {
                         <div className="px-6 pt-12 pb-6 relative z-10 flex flex-col items-center">
                             <div className="w-24 h-24 rounded-full border-4 border-white bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-3xl overflow-hidden shadow-md mb-4">
                                 {selectedEmployee.profilePic?.url ? (
-                                    <img src={selectedEmployee.profilePic.url} alt="Profile" className="w-full h-full object-cover" />
+                                    <img src={getImageUrl(selectedEmployee.profilePic.url)} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
                                     <>{selectedEmployee.firstName?.[0]}{selectedEmployee.lastName?.[0]}</>
                                 )}

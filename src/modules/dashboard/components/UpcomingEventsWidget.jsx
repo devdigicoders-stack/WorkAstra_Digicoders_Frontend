@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getImageUrl } from "../../../utils/imageUtils";
 import api from '../../../services/axios';
 import { ENDPOINTS } from '../../../services/endpoints';
 import { Cake, Award, Calendar, User as UserIcon } from 'lucide-react';
@@ -86,7 +87,7 @@ const UpcomingEventsWidget = () => {
                                     {/* Avatar */}
                                     <div className="relative shrink-0">
                                         {item.user.profilePic?.url ? (
-                                            <img src={item.user.profilePic.url} alt={item.user.firstName} className="w-8 h-8 rounded-full object-cover border border-white shadow-sm" />
+                                            <img src={getImageUrl(item.user.profilePic.url)} alt={item.user.firstName} className="w-8 h-8 rounded-full object-cover border border-white shadow-sm" />
                                         ) : (
                                             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-white shadow-sm text-gray-500 font-bold text-xs">
                                                 {item.user.firstName[0]}

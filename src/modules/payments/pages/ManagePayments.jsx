@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { CheckCircle, XCircle, CreditCard, ExternalLink, Image as ImageIcon, QrCode, Save } from "lucide-react";
 import { getUpiDetails, updateUpiDetails, getAllPayments, updatePaymentStatus } from "../services/paymentService";
 import { toast } from "react-toastify";
@@ -168,7 +169,7 @@ const ManagePayments = () => {
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
                                                 {payment.userId?.profilePic?.url ? (
-                                                    <img src={payment.userId.profilePic.url} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                                                    <img src={getImageUrl(payment.userId.profilePic.url)} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
                                                 ) : (
                                                     <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold">
                                                         {payment.userId?.firstName?.charAt(0) || "U"}

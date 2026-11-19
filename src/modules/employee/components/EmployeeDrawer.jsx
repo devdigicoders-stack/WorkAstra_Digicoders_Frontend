@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { X, User, Mail, Phone, Lock, Briefcase, Calendar, Building2, ShieldCheck, Eye, EyeOff, Clock, Users, Search, ChevronDown, MapPin, ScanFace } from "lucide-react";
 
 const Field = ({ label, icon: Icon, children }) => (
@@ -46,7 +47,7 @@ const ManagerPicker = ({ value, onChange, options }) => {
                 {selected ? (
                     <div className="flex items-center gap-2 min-w-0">
                         {selected.profilePic?.url
-                            ? <img src={selected.profilePic.url} className="w-5 h-5 rounded-full object-cover shrink-0" alt="" />
+                            ? <img src={getImageUrl(selected.profilePic.url)} className="w-5 h-5 rounded-full object-cover shrink-0" alt="" />
                             : <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">{selected.firstName?.[0]}{selected.lastName?.[0]}</div>}
                         <span className="truncate text-gray-800">{selected.firstName} {selected.lastName}</span>
                         {selected.employeeCode && <span className="text-gray-400 text-xs shrink-0">({selected.employeeCode})</span>}
@@ -89,7 +90,7 @@ const ManagerPicker = ({ value, onChange, options }) => {
                             <button type="button" key={u._id} onClick={() => select(u._id)}
                                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-gray-50 transition text-left ${value === u._id ? "bg-blue-50" : ""}`}>
                                 {u.profilePic?.url
-                                    ? <img src={u.profilePic.url} className="w-7 h-7 rounded-full object-cover shrink-0" alt="" />
+                                    ? <img src={getImageUrl(u.profilePic.url)} className="w-7 h-7 rounded-full object-cover shrink-0" alt="" />
                                     : <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0">{u.firstName?.[0]}{u.lastName?.[0]}</div>}
                                 <div className="min-w-0">
                                     <p className="font-medium text-gray-800 truncate">{u.firstName} {u.lastName}</p>

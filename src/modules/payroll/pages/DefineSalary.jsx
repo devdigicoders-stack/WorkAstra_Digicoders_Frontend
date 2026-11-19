@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { Plus, Trash2, X, Pencil } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -193,7 +194,7 @@ const DefineSalary = () => {
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-2">
                                         {s.userId?.profilePic?.url
-                                            ? <img src={s.userId.profilePic.url} className="w-7 h-7 rounded-full object-cover" alt="" />
+                                            ? <img src={getImageUrl(s.userId.profilePic.url)} className="w-7 h-7 rounded-full object-cover" alt="" />
                                             : <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
                                                 {s.userId?.firstName?.[0]}{s.userId?.lastName?.[0]}
                                               </div>}

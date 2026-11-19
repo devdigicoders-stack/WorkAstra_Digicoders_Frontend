@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
     ChevronLeft, Mail, Phone, MapPin, Building2, Briefcase, 
@@ -311,7 +312,7 @@ const EmployeeProfile = () => {
                     {/* Profile Picture */}
                     <div className="shrink-0 relative">
                         {employee.profilePic?.url ? (
-                            <img src={employee.profilePic.url} alt="Profile" className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl object-cover shadow-lg border-4 border-white" />
+                            <img src={getImageUrl(employee.profilePic.url)} alt="Profile" className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl object-cover shadow-lg border-4 border-white" />
                         ) : (
                             <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-4xl sm:text-5xl font-bold shadow-lg border-4 border-white">
                                 {employee.firstName?.[0]}{employee.lastName?.[0]}
@@ -439,7 +440,7 @@ const EmployeeProfile = () => {
                                 {employee.reportingTo ? (
                                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
                                         {employee.reportingTo.profilePic?.url ? (
-                                            <img src={employee.reportingTo.profilePic.url} alt="" className="w-10 h-10 rounded-full object-cover shadow-sm" />
+                                            <img src={getImageUrl(employee.reportingTo.profilePic.url)} alt="" className="w-10 h-10 rounded-full object-cover shadow-sm" />
                                         ) : (
                                             <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm shadow-sm">
                                                 {employee.reportingTo.firstName?.[0]}{employee.reportingTo.lastName?.[0]}
