@@ -5,11 +5,12 @@ import { useStore } from "../../../context/StoreContext";
 import { getFileBundles, createFileBundle, deleteFileBundle, updateBundleAccess, updateFileBundle } from "../services/projectService";
 import api from "../../../services/axios";
 import { ENDPOINTS } from "../../../services/endpoints";
+import { getFileUrl } from "../../../utils/imageUtils";
 
 const inputCls = "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
 
 const getExt = (name) => name?.split(".").pop()?.toLowerCase();
-const VIEWABLE = ["jpg", "jpeg", "png", "gif", "webp", "svg", "mp4", "mov"];
+const VIEWABLE = ["jpg", "jpeg", "png", "gif", "webp", "svg", "mp4", "mov", "pdf"];
 
 const downloadFile = async (url, name) => {
     try {
@@ -18,12 +19,18 @@ const downloadFile = async (url, name) => {
             responseType: "blob",
             timeout: 0,
         });
+        const blobUrl = URL.createObjectURL(res.data);
         const a = document.createElement("a");
-        a.href = URL.createObjectURL(res.data);
-        a.download = name;
+        a.href = blobUrl;
+        a.download = name || "file";
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(a.href);
-    } catch { toast.error("Download failed"); }
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (err) {
+        console.error("Download failed:", err);
+        toast.error("Download failed");
+    }
 };
 
 const FileIcon = ({ name }) => {
@@ -465,17 +472,16 @@ const BundleCard = ({ bundle, canDelete, isAdmin, canEdit, onDelete, onManageAcc
                                     <div key={i} className="flex items-center gap-2 text-xs">
                                         <FileIcon name={f.name} />
                                         <span className="truncate flex-1 text-gray-700">{f.name}</span>
-                                        {VIEWABLE.includes(getExt(f.name)) ? (
-                                            <a href={f.url} target="_blank" rel="noreferrer"
-                                                className="flex items-center gap-1 text-white bg-blue-600 hover:bg-blue-700 px-2 py-0.5 rounded shrink-0 transition">
+                                        {VIEWABLE.includes(getExt(f.name)) && (
+                                            <a href={getFileUrl(f.url)} target="_blank" rel="noreferrer"
+                                                className="flex items-center gap-1 text-xs text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 px-2 py-0.5 rounded shrink-0 transition">
                                                 <ExternalLink size={11} /> View
                                             </a>
-                                        ) : (
-                                            <button onClick={() => downloadFile(f.url, f.name)}
-                                                className="flex items-center gap-1 text-white bg-blue-600 hover:bg-blue-700 px-2 py-0.5 rounded shrink-0 transition">
-                                                <Download size={11} /> Download
-                                            </button>
                                         )}
+                                        <button onClick={() => downloadFile(f.url, f.name)}
+                                            className="flex items-center gap-1 text-xs text-white bg-blue-600 hover:bg-blue-700 px-2 py-0.5 rounded shrink-0 transition">
+                                            <Download size={11} /> Download
+                                        </button>
                                     </div>
                                 ))}
                             </div>
