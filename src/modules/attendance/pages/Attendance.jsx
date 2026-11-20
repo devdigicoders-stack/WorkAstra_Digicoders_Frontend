@@ -1519,34 +1519,64 @@ const Attendance = () => {
     useEffect(() => { if (tab === "team" || tab === "report") loadCompanyRecords(); }, [tab, loadCompanyRecords]);
 
     const doCheckIn = async (faceDescriptor = null) => {
-        if (!location) return toast.error("Location unavailable. Please refresh location.");
-        if (user?.attendanceSettings?.faceRecognitionEnabled && !faceDescriptor) {
+        const validFace = Array.isArray(faceDescriptor) ? faceDescriptor : null;
+        console.log("👉 [Check-In Clicked] Current location:", location, "Face descriptor:", validFace);
+        if (!location) {
+            console.error("❌ Check-in blocked: Location is missing or not detected yet.");
+            return toast.error("Location unavailable. Please refresh location.");
+        }
+        if (user?.attendanceSettings?.faceRecognitionEnabled && !validFace) {
+            console.log("👉 Face recognition required. Opening camera scan modal...");
             setPendingCheckInType("in");
             setShowFaceScan(true);
             return;
         }
         try {
             setLoading(true);
-            await checkIn({ ...location, faceDescriptor });
-            toast.success("Checked in successfully!");
+            const payload = { ...location, faceDescriptor: validFace };
+            console.log("👉 Sending check-in payload to backend:", payload);
+            const res = await checkIn(payload);
+            console.log("✅ Check-in success response from backend:", res);
+            toast.success(res?.message || "Checked in successfully!");
             loadToday(); loadSummary(); loadMyRecords();
-        } catch (e) { toast.error(e?.response?.data?.message || "Check-in failed"); }
+        } catch (e) {
+            console.error("❌ Check-in error:", e);
+            console.error("❌ Check-in error response:", e?.response);
+            console.error("❌ Check-in error response data:", e?.response?.data);
+            const msg = e?.response?.data?.message || e?.message || "Check-in failed";
+            toast.error(msg);
+        }
         finally { setLoading(false); }
     };
 
     const doCheckOut = async (faceDescriptor = null) => {
-        if (!location) return toast.error("Location unavailable. Please refresh location.");
-        if (user?.attendanceSettings?.faceRecognitionEnabled && !faceDescriptor) {
+        const validFace = Array.isArray(faceDescriptor) ? faceDescriptor : null;
+        console.log("👉 [Check-Out Clicked] Current location:", location, "Face descriptor:", validFace);
+        if (!location) {
+            console.error("❌ Check-out blocked: Location is missing or not detected yet.");
+            return toast.error("Location unavailable. Please refresh location.");
+        }
+        if (user?.attendanceSettings?.faceRecognitionEnabled && !validFace) {
+            console.log("👉 Face recognition required. Opening camera scan modal...");
             setPendingCheckInType("out");
             setShowFaceScan(true);
             return;
         }
         try {
             setLoading(true);
-            await checkOut({ ...location, faceDescriptor });
-            toast.success("Checked out successfully!");
+            const payload = { ...location, faceDescriptor: validFace };
+            console.log("👉 Sending check-out payload to backend:", payload);
+            const res = await checkOut(payload);
+            console.log("✅ Check-out success response from backend:", res);
+            toast.success(res?.message || "Checked out successfully!");
             loadToday(); loadSummary(); loadMyRecords();
-        } catch (e) { toast.error(e?.response?.data?.message || "Check-out failed"); }
+        } catch (e) {
+            console.error("❌ Check-out error:", e);
+            console.error("❌ Check-out error response:", e?.response);
+            console.error("❌ Check-out error response data:", e?.response?.data);
+            const msg = e?.response?.data?.message || e?.message || "Check-out failed";
+            toast.error(msg);
+        }
         finally { setLoading(false); }
     };
 
@@ -1647,19 +1677,19 @@ const Attendance = () => {
                         {/* Action buttons */}
                         <div className="flex gap-3 pt-1">
                             {!checkedIn && (
-                                <button onClick={doCheckIn} disabled={loading || locating || !!locationError}
+                                <button onClick={() => doCheckIn()} disabled={loading || locating || !!locationError}
                                     className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50">
                                     <LogIn size={16} /> {loading ? "Processing..." : "Check In"}
                                 </button>
                             )}
                             {checkedIn && hasOpenPunch && (
-                                <button onClick={doCheckOut} disabled={loading || locating || !!locationError}
+                                <button onClick={() => doCheckOut()} disabled={loading || locating || !!locationError}
                                     className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50">
                                     <LogOut size={16} /> {loading ? "Processing..." : "Check Out"}
                                 </button>
                             )}
                             {checkedIn && !hasOpenPunch && (
-                                <button onClick={doCheckIn} disabled={loading || locating || !!locationError}
+                                <button onClick={() => doCheckIn()} disabled={loading || locating || !!locationError}
                                     className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50">
                                     <LogIn size={16} /> {loading ? "Processing..." : "Check In Again"}
                                 </button>

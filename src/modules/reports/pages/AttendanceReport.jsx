@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useStore } from "../../../context/StoreContext";
 import { getCompanyAttendance, getTeamAttendance } from "../../attendance/services/attendanceService";
-import { BarChart2, Users, CalendarDays, Wallet, Download, PieChart as PieChartIcon, FileSpreadsheet } from "lucide-react";
+import { BarChart2, Users, CalendarDays, Wallet, Download, PieChart as PieChartIcon, FileSpreadsheet, CheckCircle2 } from "lucide-react";
 
 const exportToCSV = (rows, filename) => {
     const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -302,7 +302,14 @@ const AttendanceReport = () => {
                     <div className="py-10 text-center text-gray-400">Loading records...</div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/60 rounded-2xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition duration-300">
+                                <div>
+                                    <p className="text-sm font-semibold text-emerald-600 mb-1 tracking-wide">Total Presents</p>
+                                    <p className="text-3xl font-bold text-emerald-800">{presentRecs.length}</p>
+                                </div>
+                                <div className="p-3.5 bg-white/60 backdrop-blur-sm rounded-full text-emerald-600 shadow-sm border border-emerald-100"><CheckCircle2 size={26} /></div>
+                            </div>
                             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 border border-yellow-200/60 rounded-2xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition duration-300">
                                 <div>
                                     <p className="text-sm font-semibold text-yellow-600 mb-1 tracking-wide">Late Arrivals</p>
