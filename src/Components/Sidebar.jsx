@@ -44,6 +44,7 @@ const NAV = [
         groupIcon: Banknote,
         items: [
             { name: "Manage Payments", icon: Banknote, path: "/manage-payments", permissions: ["MANAGE_PAYMENTS"] },
+            { name: "Project Finances", icon: FolderKanban, path: "/project-finances", permissions: ["MANAGE_PAYMENTS", "VIEW_ALL_PROJECTS"] },
             { name: "Submit Payment", icon: Receipt, path: "/submit-payment", permissions: ["SUBMIT_PAYMENT"] },
         ],
     },

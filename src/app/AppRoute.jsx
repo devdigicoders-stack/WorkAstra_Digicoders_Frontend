@@ -48,6 +48,7 @@ import MyTickets from "../modules/tickets/pages/MyTickets";
 import ManageTickets from "../modules/tickets/pages/ManageTickets";
 import SubmitPayment from "../modules/payments/pages/SubmitPayment";
 import ManagePayments from "../modules/payments/pages/ManagePayments";
+import ProjectFinances from "../modules/payments/pages/ProjectFinances";
 import AttendanceReport from "../modules/reports/pages/AttendanceReport";
 import PayrollReport from "../modules/reports/pages/PayrollReport";
 import LeaveReport from "../modules/reports/pages/LeaveReport";
@@ -128,6 +129,7 @@ const AppRoute = createBrowserRouter([
             { path: "/manage-resignations/view", element: <ViewResignation /> },
             { path: "/submit-payment", element: <SubmitPayment /> },
             { path: "/manage-payments", element: <ManagePayments /> },
+            { path: "/project-finances", element: <ProjectFinances /> },
             { path: "/notifications", element: <Notifications /> },
             { path: "/settings", element: <Settings /> },
             { path: "/settings/asset-types", element: <AssetTypes /> },

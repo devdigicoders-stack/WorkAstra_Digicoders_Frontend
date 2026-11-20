@@ -345,9 +345,25 @@ const ProjectDetail = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                         <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
                         {project.price > 0 && (
-                            <span className="px-2.5 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
-                                ₹{Number(project.price).toLocaleString("en-IN")}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="px-2.5 py-0.5 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-full">
+                                    Deal: ₹{Number(project.price).toLocaleString("en-IN")}
+                                </span>
+                                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
+                                    (project.receivedAmount || 0) >= project.price
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                        : (project.receivedAmount || 0) > 0
+                                        ? "bg-amber-50 text-amber-700 border-amber-200"
+                                        : "bg-slate-50 text-slate-600 border-slate-200"
+                                }`}>
+                                    Received: ₹{Number(project.receivedAmount || 0).toLocaleString("en-IN")}
+                                </span>
+                                {Math.max(0, project.price - (project.receivedAmount || 0)) > 0 && (
+                                    <span className="px-2.5 py-0.5 text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded-full">
+                                        Due: ₹{Number(project.price - (project.receivedAmount || 0)).toLocaleString("en-IN")}
+                                    </span>
+                                )}
+                            </div>
                         )}
                     </div>
                     {project.description && <p className="text-sm text-gray-500 mt-0.5">{project.description}</p>}

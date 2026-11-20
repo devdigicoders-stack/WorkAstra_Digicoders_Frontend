@@ -308,8 +308,14 @@ const Projects = () => {
                                     <span>{p.members?.length || 0} members</span>
                                 </div>
                                 {p.price > 0 && (
-                                    <span className="font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                                        ₹{Number(p.price).toLocaleString("en-IN")}
+                                    <span className={`font-semibold px-2 py-0.5 rounded-md text-[11px] border ${
+                                        (p.receivedAmount || 0) >= p.price
+                                            ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                            : (p.receivedAmount || 0) > 0
+                                            ? "text-amber-700 bg-amber-50 border-amber-200"
+                                            : "text-slate-600 bg-slate-50 border-slate-200"
+                                    }`} title="Received / Deal Price">
+                                        ₹{Number(p.receivedAmount || 0).toLocaleString("en-IN")} / ₹{Number(p.price).toLocaleString("en-IN")}
                                     </span>
                                 )}
                                 {p.endDate && (

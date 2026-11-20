@@ -33,3 +33,8 @@ export const updatePaymentStatus = async (id, data) => {
     const response = await api.put(`/api/payments/${id}/status`, data);
     return response.data;
 };
+
+export const getProjectFinances = async () => {
+    const response = await api.get(`/api/payments/project-finances`);
+    return response.data;
+};

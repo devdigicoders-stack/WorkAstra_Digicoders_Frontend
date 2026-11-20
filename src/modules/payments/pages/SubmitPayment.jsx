@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Upload, FileImage, CreditCard, Send, CheckCircle, Clock, XCircle, FileText, AlertCircle } from "lucide-react";
+import { Upload, FileImage, CreditCard, Send, CheckCircle, Clock, XCircle, FileText, AlertCircle, FolderKanban } from "lucide-react";
 import { getUpiDetails, submitPayment, getMyPayments } from "../services/paymentService";
+import { getProjects } from "../../projects/services/projectService";
 import { toast } from "react-toastify";
 import QRCode from "react-qr-code";
 
 const SubmitPayment = () => {
     const [upiDetails, setUpiDetails] = useState({ upiId: "", payeeName: "" });
     const [payments, setPayments] = useState([]);
+    const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
@@ -14,19 +16,25 @@ const SubmitPayment = () => {
         amount: "",
         transactionId: "",
         remark: "",
+        projectId: "",
         screenshot: null
     });
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [qrRes, payRes] = await Promise.all([
+            const [qrRes, payRes, projRes] = await Promise.all([
                 getUpiDetails().catch(e => null),
-                getMyPayments().catch(e => null)
+                getMyPayments().catch(e => null),
+                getProjects().catch(e => null)
             ]);
 
             if (qrRes && qrRes.success) setUpiDetails(qrRes.upiDetails);
             if (payRes && payRes.success) setPayments(payRes.payments);
+            if (projRes && projRes.data) {
+                const list = Array.isArray(projRes.data) ? projRes.data : (projRes.data.data || []);
+                setProjects(list);
+            }
         } catch (error) {
             console.error("Fetch error:", error);
         } finally {
@@ -61,12 +69,15 @@ const SubmitPayment = () => {
             formDataObj.append("amount", formData.amount);
             formDataObj.append("transactionId", formData.transactionId);
             formDataObj.append("remark", formData.remark);
+            if (formData.projectId) {
+                formDataObj.append("projectId", formData.projectId);
+            }
             formDataObj.append("screenshot", formData.screenshot);
 
             const res = await submitPayment(formDataObj);
             if (res.success) {
                 toast.success("Payment submitted successfully");
-                setFormData({ amount: "", transactionId: "", remark: "", screenshot: null });
+                setFormData({ amount: "", transactionId: "", remark: "", projectId: "", screenshot: null });
                 fetchData();
             } else {
                 toast.error(res.message || "Submission failed");
@@ -120,6 +131,40 @@ const SubmitPayment = () => {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Select Project</label>
+                            <select
+                                name="projectId"
+                                value={formData.projectId}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition text-sm bg-white"
+                            >
+                                <option value="">-- General Payment / No Project --</option>
+                                {projects.map((proj) => (
+                                    <option key={proj._id} value={proj._id}>
+                                        {proj.name} {proj.price ? `(Deal: ₹${Number(proj.price).toLocaleString("en-IN")})` : ""}
+                                    </option>
+                                ))}
+                            </select>
+                            {formData.projectId && (
+                                <div className="mt-2 p-2.5 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-blue-800 flex flex-wrap items-center justify-between gap-2">
+                                    {(() => {
+                                        const sel = projects.find(p => p._id === formData.projectId);
+                                        if (!sel) return null;
+                                        const pr = Number(sel.price) || 0;
+                                        const rc = Number(sel.receivedAmount) || 0;
+                                        const du = Math.max(0, pr - rc);
+                                        return (
+                                            <>
+                                                <span>Price: <strong>₹{pr.toLocaleString("en-IN")}</strong></span>
+                                                <span className="text-emerald-700">Paid: <strong>₹{rc.toLocaleString("en-IN")}</strong></span>
+                                                <span className="text-amber-700">Due: <strong>₹{du.toLocaleString("en-IN")}</strong></span>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+                            )}
+                        </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Amount Paid (₹)</label>
                             <input
@@ -224,6 +269,12 @@ const SubmitPayment = () => {
                                                 {payment.status}
                                             </span>
                                         </div>
+                                        {payment.projectId && (
+                                            <div className="flex items-center gap-1.5 text-xs text-blue-600 font-medium mb-1">
+                                                <FolderKanban className="w-3.5 h-3.5" />
+                                                <span className="truncate">{payment.projectId.name}</span>
+                                            </div>
+                                        )}
                                         <p className="text-xs text-slate-500 truncate">Txn ID: {payment.transactionId}</p>
                                         {payment.remark && <p className="text-xs text-slate-600 mt-1 italic">"{payment.remark}"</p>}
                                         <p className="text-[10px] text-slate-400 mt-2">{new Date(payment.createdAt).toLocaleString()}</p>

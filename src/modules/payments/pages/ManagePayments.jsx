@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getImageUrl } from "../../../utils/imageUtils";
-import { CheckCircle, XCircle, CreditCard, ExternalLink, Image as ImageIcon, QrCode, Save } from "lucide-react";
+import { CheckCircle, XCircle, CreditCard, ExternalLink, Image as ImageIcon, QrCode, Save, FolderKanban, Receipt } from "lucide-react";
 import { getUpiDetails, updateUpiDetails, getAllPayments, updatePaymentStatus } from "../services/paymentService";
 import { toast } from "react-toastify";
 import QRCode from "react-qr-code";
@@ -59,6 +59,7 @@ const ManagePayments = () => {
             if (res.success) {
                 toast.success(`Payment ${status} successfully`);
                 setPayments(payments.map(p => p._id === id ? { ...p, status } : p));
+                fetchData();
             } else {
                 toast.error(res.message || "Failed to update status");
             }
@@ -156,6 +157,7 @@ const ManagePayments = () => {
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-wider">
                                     <th className="p-4">User</th>
+                                    <th className="p-4">Project</th>
                                     <th className="p-4">Amount & Txn ID</th>
                                     <th className="p-4">Remark</th>
                                     <th className="p-4 text-center">Screenshot</th>
@@ -180,6 +182,23 @@ const ManagePayments = () => {
                                                     <p className="text-xs text-slate-500">{new Date(payment.createdAt).toLocaleDateString()}</p>
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td className="p-4">
+                                            {payment.projectId ? (
+                                                <div>
+                                                    <p className="font-semibold text-slate-900 flex items-center gap-1.5">
+                                                        <FolderKanban className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                                        {payment.projectId.name}
+                                                    </p>
+                                                    {payment.projectId.price ? (
+                                                        <p className="text-xs text-slate-500 mt-0.5">
+                                                            Price: ₹{Number(payment.projectId.price).toLocaleString("en-IN")}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-slate-400 italic">No Project</span>
+                                            )}
                                         </td>
                                         <td className="p-4">
                                             <p className="font-semibold text-slate-900">₹{payment.amount}</p>
