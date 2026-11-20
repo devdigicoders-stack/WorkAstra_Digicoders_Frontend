@@ -631,16 +631,64 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
                     <div className="flex-1">
                         {selected ? (
                             <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 h-full">
-                                <div className="flex items-start justify-between mb-4">
+                                <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
                                     <div>
                                         <p className="text-base font-semibold text-gray-800">{selectedDayLabel}</p>
                                         <p className="text-xs text-gray-400 mt-0.5">{month}</p>
                                     </div>
-                                    {selectedRecord && (
-                                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${STATUS[selectedRecord.status]?.cls}`}>
-                                            {selectedRecord.status}
-                                        </span>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {selectedRecord && (
+                                            <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${STATUS[selectedRecord.status]?.cls}`}>
+                                                {selectedRecord.status}
+                                            </span>
+                                        )}
+                                        {onUpdateStatus && (
+                                            <div className="flex items-center gap-1.5 ml-1">
+                                                {updatingId === (selectedRecord?._id || selectedDateStr) ? (
+                                                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin my-1" />
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onUpdateStatus(selectedRecord || { date: selectedDateStr }, "present")}
+                                                            title="Mark Present (Auto-fill Shift Time)"
+                                                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                                                                selectedRecord?.status === "present"
+                                                                    ? "bg-green-600 text-white font-semibold shadow-sm"
+                                                                    : "bg-white border border-gray-200 text-gray-600 hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+                                                            }`}
+                                                        >
+                                                            <Check size={12} className={selectedRecord?.status === "present" ? "text-white" : "text-green-600"} />
+                                                            Present
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onUpdateStatus(selectedRecord || { date: selectedDateStr }, "absent")}
+                                                            title="Mark Absent"
+                                                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                                                                selectedRecord?.status === "absent"
+                                                                    ? "bg-red-600 text-white font-semibold shadow-sm"
+                                                                    : "bg-white border border-gray-200 text-gray-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                                                            }`}
+                                                        >
+                                                            <X size={12} className={selectedRecord?.status === "absent" ? "text-white" : "text-red-600"} />
+                                                            Absent
+                                                        </button>
+                                                        {selectedRecord && onEditPunch && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => onEditPunch(selectedRecord)}
+                                                                className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition ml-0.5"
+                                                                title="Edit Details"
+                                                            >
+                                                                <FileEdit size={14} />
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {selectedHoliday && (
@@ -744,7 +792,25 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
                                     <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                                         <Calendar size={36} className="mb-3 opacity-20" />
                                         <p className="text-sm font-medium">No attendance record</p>
-                                        <p className="text-xs mt-1">No data found for this day.</p>
+                                        <p className="text-xs mt-1 mb-4">No data found for this day.</p>
+                                        {onUpdateStatus && (
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onUpdateStatus({ date: selectedDateStr }, "present")}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-600 hover:bg-green-700 text-white transition shadow-sm"
+                                                >
+                                                    <Check size={13} /> Mark Present (Shift Time)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onUpdateStatus({ date: selectedDateStr }, "absent")}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white transition shadow-sm"
+                                                >
+                                                    <X size={13} /> Mark Absent
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : null}
                             </div>
@@ -1217,21 +1283,68 @@ const Attendance = () => {
     const [punchSubmitting, setPunchSubmitting] = useState(false);
     const [updatingPunchId, setUpdatingPunchId] = useState(null);
 
-    const handleQuickStatusUpdate = async (record, newStatus) => {
-        if (!record?._id) return;
-        if (record.status === newStatus) return;
-        try {
-            setUpdatingPunchId(record._id);
-            // Optimistic local state update for instant UI feedback
-            setEmpMonthRecords(prev => prev ? prev.map(item => item._id === record._id ? { ...item, status: newStatus } : item) : prev);
-            setCompanyRecords(prev => prev ? prev.map(item => item._id === record._id ? { ...item, status: newStatus } : item) : prev);
+    const handleQuickStatusUpdate = async (recordOrDate, newStatus) => {
+        const isExisting = Boolean(recordOrDate?._id);
+        const date = recordOrDate?.date;
+        const empId = filterEmployee || recordOrDate?.userId?._id || recordOrDate?.userId;
 
-            await manualPunch(record._id, { status: newStatus });
-            toast.success(`Marked as ${newStatus === "present" ? "Present" : "Absent"}`);
+        if (!empId || !date) return;
+        if (isExisting && recordOrDate.status === newStatus) return;
+
+        // Resolve employee work shift for automatic Check In & Check Out times
+        const empUser = activeUsers.find(u => String(u._id) === String(empId));
+        const shift = recordOrDate?.workShiftId
+            || empUser?.workShift
+            || empRecords.find(r => r.workShiftId)?.workShiftId
+            || (companyRecords.find(r => (r.userId?._id === empId || r.userId === empId) && r.workShiftId)?.workShiftId);
+
+        const startTime = shift?.startTime || "10:00";
+        const endTime = shift?.endTime || "19:00";
+
+        try {
+            setUpdatingPunchId(isExisting ? recordOrDate._id : date);
+
+            if (isExisting) {
+                const payload = { status: newStatus };
+                if (newStatus === "present") {
+                    payload.checkIn = `${date}T${startTime}:00+05:30`;
+                    payload.checkOut = `${date}T${endTime}:00+05:30`;
+                } else if (newStatus === "absent") {
+                    payload.checkIn = null;
+                    payload.checkOut = null;
+                }
+
+                // Optimistic local state update
+                const checkInDate = newStatus === "present" ? new Date(`${date}T${startTime}:00+05:30`).toISOString() : null;
+                const checkOutDate = newStatus === "present" ? new Date(`${date}T${endTime}:00+05:30`).toISOString() : null;
+                const hours = newStatus === "present" ? parseFloat(((new Date(checkOutDate) - new Date(checkInDate)) / 3600000).toFixed(2)) : 0;
+
+                setEmpMonthRecords(prev => prev ? prev.map(item => item._id === recordOrDate._id ? {
+                    ...item,
+                    status: newStatus,
+                    checkIn: checkInDate,
+                    checkOut: checkOutDate,
+                    workHours: hours,
+                    workShiftId: item.workShiftId || shift,
+                } : item) : prev);
+
+                await manualPunch(recordOrDate._id, payload);
+            } else {
+                const payload = {
+                    userId: empId,
+                    date: date,
+                    status: newStatus,
+                    checkIn: newStatus === "present" ? startTime : "",
+                    checkOut: newStatus === "present" ? endTime : "",
+                };
+                await adminCreatePunch(payload);
+            }
+
+            toast.success(`Marked as ${newStatus === "present" ? "Present (" + startTime + " - " + endTime + ")" : "Absent"}`);
             loadCompanyRecords();
             setEmpRefreshKey(k => k + 1);
         } catch (err) {
-            toast.error(err?.response?.data?.message || "Failed to update attendance status");
+            toast.error(err?.response?.data?.message || "Failed to update attendance");
             loadCompanyRecords();
             setEmpRefreshKey(k => k + 1);
         } finally {
