@@ -13,7 +13,8 @@ import { getHolidays, getMyLeaves, getCompanyLeaves } from "../../leave/services
 import {
     MapPin, Clock, LogIn, LogOut, CheckCircle, AlertCircle,
     Timer, TrendingUp, Calendar, RefreshCw, ChevronLeft, ChevronRight, Palmtree,
-    FileEdit, Check, X, Download, BarChart2, ScanFace, Camera
+    FileEdit, Check, X, Download, BarChart2, ScanFace, Camera,
+    Search, ChevronDown
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as faceapi from "face-api.js";
@@ -59,6 +60,242 @@ const getLocation = () => new Promise((resolve, reject) => {
         { enableHighAccuracy: true, timeout: 10000 }
     );
 });
+
+// ── Searchable Employee Dropdown ──────────────────────────────────────────────
+const SearchableEmployeeSelect = ({
+    value,
+    onChange,
+    options = [],
+    placeholder = "Select Employee",
+    allOptionLabel = null,
+    className = "",
+    error = false,
+}) => {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const containerRef = useRef(null);
+    const inputRef = useRef(null);
+
+    // Deduplicate options by _id
+    const uniqueOptions = React.useMemo(() => {
+        const seen = new Set();
+        return (options || []).filter(u => {
+            if (!u || !u._id || seen.has(String(u._id))) return false;
+            seen.add(String(u._id));
+            return true;
+        });
+    }, [options]);
+
+    // Find selected item
+    const selected = uniqueOptions.find(u => String(u._id) === String(value));
+
+    // Filter by search text (name, code, role)
+    const filtered = uniqueOptions.filter(u => {
+        const q = search.trim().toLowerCase();
+        if (!q) return true;
+        const name = `${u.firstName || ""} ${u.lastName || ""}`.toLowerCase();
+        const code = (u.employeeCode || "").toLowerCase();
+        const role = (u.role?.name || (typeof u.role === "string" ? u.role : "") || "").toLowerCase();
+        return name.includes(q) || code.includes(q) || role.includes(q);
+    });
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        const handleKeyDown = (e) => {
+            if (e.key === "Escape") setOpen(false);
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (open) {
+            setTimeout(() => inputRef.current?.focus(), 50);
+        } else {
+            setSearch("");
+        }
+    }, [open]);
+
+    const handleSelect = (id) => {
+        onChange(id);
+        setOpen(false);
+        setSearch("");
+    };
+
+    return (
+        <div className={`relative ${className}`} ref={containerRef}>
+            {/* Trigger Button */}
+            <button
+                type="button"
+                onClick={() => setOpen(p => !p)}
+                className={`w-full flex items-center justify-between gap-2 border rounded-lg px-3 py-2 text-sm bg-white text-left transition focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    error ? "border-red-400" : "border-gray-200 hover:border-gray-300"
+                }`}
+            >
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                    {selected ? (
+                        <>
+                            {selected.profilePic?.url ? (
+                                <img
+                                    src={getImageUrl(selected.profilePic.url)}
+                                    className="w-5 h-5 rounded-full object-cover shrink-0"
+                                    alt=""
+                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                />
+                            ) : (
+                                <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                                    {(selected.firstName?.[0] || "").toUpperCase()}
+                                    {(selected.lastName?.[0] || "").toUpperCase()}
+                                </div>
+                            )}
+                            <span className="truncate font-medium text-gray-800">
+                                {selected.firstName} {selected.lastName}
+                            </span>
+                            {selected.employeeCode && (
+                                <span className="text-gray-400 text-xs shrink-0">
+                                    ({selected.employeeCode})
+                                </span>
+                            )}
+                        </>
+                    ) : (
+                        <span className="text-gray-500 truncate">
+                            {allOptionLabel || placeholder}
+                        </span>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                    {value && allOptionLabel && (
+                        <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelect("");
+                            }}
+                            className="p-0.5 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100 cursor-pointer"
+                            title="Clear selection"
+                        >
+                            <X size={13} />
+                        </span>
+                    )}
+                    <ChevronDown
+                        size={14}
+                        className={`text-gray-400 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+                    />
+                </div>
+            </button>
+
+            {/* Dropdown Popover */}
+            {open && (
+                <div className="absolute z-50 mt-1 w-full min-w-[260px] bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+                    {/* Search Input Box */}
+                    <div className="p-2 border-b border-gray-100 bg-gray-50/70">
+                        <div className="relative">
+                            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                placeholder="Search employee or code..."
+                                className="w-full pl-8 pr-7 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            {search && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearch("")}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5"
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Options list */}
+                    <div className="max-h-60 overflow-y-auto divide-y divide-gray-50">
+                        {allOptionLabel && (!search || "all employees".includes(search.toLowerCase())) && (
+                            <button
+                                type="button"
+                                onClick={() => handleSelect("")}
+                                className={`w-full flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-blue-50/60 transition ${
+                                    !value ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-700"
+                                }`}
+                            >
+                                <span className="flex items-center gap-2">
+                                    <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-[10px]">
+                                        *
+                                    </span>
+                                    {allOptionLabel}
+                                </span>
+                                {!value && <Check size={14} className="text-blue-600" />}
+                            </button>
+                        )}
+
+                        {filtered.length === 0 ? (
+                            <div className="py-6 text-center text-xs text-gray-400">
+                                No employees found
+                            </div>
+                        ) : (
+                            filtered.map(u => {
+                                const isSelected = String(value) === String(u._id);
+                                return (
+                                    <button
+                                        type="button"
+                                        key={u._id}
+                                        onClick={() => handleSelect(u._id)}
+                                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left hover:bg-blue-50/60 transition ${
+                                            isSelected ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-800"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            {u.profilePic?.url ? (
+                                                <img
+                                                    src={getImageUrl(u.profilePic.url)}
+                                                    className="w-7 h-7 rounded-full object-cover shrink-0"
+                                                    alt=""
+                                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                                />
+                                            ) : (
+                                                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-semibold shrink-0 shadow-sm">
+                                                    {(u.firstName?.[0] || "").toUpperCase()}
+                                                    {(u.lastName?.[0] || "").toUpperCase()}
+                                                </div>
+                                            )}
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm leading-tight text-gray-900 font-medium">
+                                                    {u.firstName} {u.lastName}
+                                                </p>
+                                                <p className="text-[11px] text-gray-400 truncate mt-0.5">
+                                                    {u.employeeCode && (
+                                                        <span className="font-mono bg-gray-100 text-gray-600 px-1 py-0.5 rounded mr-1.5">
+                                                            {u.employeeCode}
+                                                        </span>
+                                                    )}
+                                                    {u.role?.name || (typeof u.role === "string" ? u.role : "")}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {isSelected && <Check size={15} className="text-blue-600 shrink-0 ml-2" />}
+                                    </button>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 // ── Face Scan Modal ──────────────────────────────────────────────────────────
 const FaceScanModal = ({ onSuccess, onCancel }) => {
@@ -175,7 +412,7 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
 );
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
-const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonthChange }) => {
+const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonthChange, onUpdateStatus, onEditPunch, updatingId }) => {
     const [selected, setSelected] = useState(null);
     const [viewMode, setViewMode] = useState("calendar");
 
@@ -206,6 +443,9 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
 
     const monthLabel = new Date(year, mon - 1, 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    // Filter records by the current viewing month for table view
+    const monthRecords = records.filter(r => r.date && r.date.startsWith(month));
 
     const cells = [];
     for (let i = 0; i < firstDay; i++) cells.push(null);
@@ -534,13 +774,14 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
                                     <th className="px-5 py-3 font-medium">Check Out</th>
                                     <th className="px-5 py-3 font-medium">Work Hours</th>
                                     <th className="px-5 py-3 font-medium">Extra Time</th>
+                                    {onUpdateStatus && <th className="px-5 py-3 font-medium text-center">Action</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {records.length === 0 ? (
-                                    <tr><td colSpan="6" className="px-5 py-8 text-center text-gray-400">No attendance data found for this month</td></tr>
+                                {monthRecords.length === 0 ? (
+                                    <tr><td colSpan={onUpdateStatus ? 7 : 6} className="px-5 py-8 text-center text-gray-400">No attendance data found for this month</td></tr>
                                 ) : (
-                                    records.sort((a, b) => a.date.localeCompare(b.date)).map(r => {
+                                    monthRecords.sort((a, b) => a.date.localeCompare(b.date)).map(r => {
                                         let extraHours = 0;
                                         if (r.workHours > 0 && r.workShiftId?.startTime && r.workShiftId?.endTime) {
                                             const [sH, sM] = r.workShiftId.startTime.split(':').map(Number);
@@ -563,6 +804,54 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
                                                         <span className="bg-gray-900 text-white px-2 py-1 rounded text-xs shadow">{fmtHours(extraHours)}</span>
                                                     ) : <span className="text-gray-400">0m</span>}
                                                 </td>
+                                                {onUpdateStatus && (
+                                                    <td className="px-5 py-3 text-center">
+                                                        <div className="flex items-center justify-center gap-1.5">
+                                                            {updatingId === r._id ? (
+                                                                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin my-1" />
+                                                            ) : (
+                                                                <>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => onUpdateStatus(r, "present")}
+                                                                        title="Mark Present"
+                                                                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition ${
+                                                                            r.status === "present"
+                                                                                ? "bg-green-600 text-white font-semibold shadow-sm"
+                                                                                : "bg-white border border-gray-200 text-gray-600 hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+                                                                        }`}
+                                                                    >
+                                                                        <Check size={12} className={r.status === "present" ? "text-white" : "text-green-600"} />
+                                                                        Present
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => onUpdateStatus(r, "absent")}
+                                                                        title="Mark Absent"
+                                                                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition ${
+                                                                            r.status === "absent"
+                                                                                ? "bg-red-600 text-white font-semibold shadow-sm"
+                                                                                : "bg-white border border-gray-200 text-gray-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                                                                        }`}
+                                                                    >
+                                                                        <X size={12} className={r.status === "absent" ? "text-white" : "text-red-600"} />
+                                                                        Absent
+                                                                    </button>
+                                                                    {onEditPunch && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => onEditPunch(r)}
+                                                                            className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition ml-0.5"
+                                                                            title="Edit Details"
+                                                                        >
+                                                                            <FileEdit size={14} />
+                                                                        </button>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                )}
                                             </tr>
                                         )
                                     })
@@ -903,6 +1192,8 @@ const Attendance = () => {
     const [filterTo, setFilterTo] = useState("");
     const [teamCalMonth, setTeamCalMonth] = useState(currentMonth());
     const [empLeaves, setEmpLeaves] = useState([]);
+    const [empMonthRecords, setEmpMonthRecords] = useState(null);
+    const [empRefreshKey, setEmpRefreshKey] = useState(0);
     const [locating, setLocating] = useState(false);
     const [loading, setLoading] = useState(false);
     const [tab, setTab] = useState("my");
@@ -924,12 +1215,35 @@ const Attendance = () => {
     const [activeUsers, setActiveUsers] = useState([]);
     const [punchForm, setPunchForm] = useState({ userId: "", date: "", checkIn: "", checkOut: "", status: "present", note: "" });
     const [punchSubmitting, setPunchSubmitting] = useState(false);
+    const [updatingPunchId, setUpdatingPunchId] = useState(null);
+
+    const handleQuickStatusUpdate = async (record, newStatus) => {
+        if (!record?._id) return;
+        if (record.status === newStatus) return;
+        try {
+            setUpdatingPunchId(record._id);
+            // Optimistic local state update for instant UI feedback
+            setEmpMonthRecords(prev => prev ? prev.map(item => item._id === record._id ? { ...item, status: newStatus } : item) : prev);
+            setCompanyRecords(prev => prev ? prev.map(item => item._id === record._id ? { ...item, status: newStatus } : item) : prev);
+
+            await manualPunch(record._id, { status: newStatus });
+            toast.success(`Marked as ${newStatus === "present" ? "Present" : "Absent"}`);
+            loadCompanyRecords();
+            setEmpRefreshKey(k => k + 1);
+        } catch (err) {
+            toast.error(err?.response?.data?.message || "Failed to update attendance status");
+            loadCompanyRecords();
+            setEmpRefreshKey(k => k + 1);
+        } finally {
+            setUpdatingPunchId(null);
+        }
+    };
 
     useEffect(() => {
-        if (showTeamTab && canCreateAttendance) {
+        if (showTeamTab) {
             fetchUsers().then(d => setActiveUsers(d.users?.filter(u => u.isActive) || [])).catch(() => { });
         }
-    }, [showTeamTab, canCreateAttendance]);
+    }, [showTeamTab]);
 
     const handleEditPunchSubmit = async (e) => {
         e.preventDefault();
@@ -945,6 +1259,7 @@ const Attendance = () => {
             toast.success("Attendance updated successfully");
             setEditPunchData(null);
             loadCompanyRecords();
+            setEmpRefreshKey(k => k + 1);
         } catch (e) {
             toast.error(e?.response?.data?.message || "Failed to update attendance");
         } finally {
@@ -954,12 +1269,17 @@ const Attendance = () => {
 
     const handleCreatePunchSubmit = async (e) => {
         e.preventDefault();
+        if (!punchForm.userId) {
+            toast.error("Please select an employee");
+            return;
+        }
         try {
             setPunchSubmitting(true);
             await adminCreatePunch(punchForm);
             toast.success("Attendance created successfully");
             setShowCreatePunch(false);
             loadCompanyRecords();
+            setEmpRefreshKey(k => k + 1);
         } catch (e) {
             toast.error(e?.response?.data?.message || "Failed to create attendance");
         } finally {
@@ -1045,6 +1365,31 @@ const Attendance = () => {
             .then(d => setEmpLeaves(d.leaves || []))
             .catch(() => { });
     }, [filterEmployee, teamCalMonth]);
+
+    // Fetch selected employee's attendance records for the selected month
+    useEffect(() => {
+        if (!filterEmployee) {
+            setEmpMonthRecords(null);
+            return;
+        }
+        let cancelled = false;
+        const fetchEmpAttendance = async () => {
+            try {
+                const params = { month: teamCalMonth, userId: filterEmployee };
+                const d = isAdmin
+                    ? await getCompanyAttendance(params)
+                    : await getTeamAttendance(params);
+                if (!cancelled) {
+                    const recs = (d.records || []).filter(r => !filterEmployee || r.userId?._id === filterEmployee);
+                    setEmpMonthRecords(recs);
+                }
+            } catch {
+                if (!cancelled) setEmpMonthRecords([]);
+            }
+        };
+        fetchEmpAttendance();
+        return () => { cancelled = true; };
+    }, [filterEmployee, teamCalMonth, isAdmin, empRefreshKey]);
 
     const loadCompanyRecords = useCallback(async () => {
         if (!showTeamTab) return;
@@ -1265,7 +1610,13 @@ const Attendance = () => {
                     if (r.userId?._id && !employeeMap[r.userId._id])
                         employeeMap[r.userId._id] = r.userId;
                 });
-                const employees = Object.values(employeeMap);
+                activeUsers.forEach(u => {
+                    if (u._id && !employeeMap[u._id])
+                        employeeMap[u._id] = u;
+                });
+                const employees = Object.values(employeeMap).sort((a, b) =>
+                    (a.firstName || "").localeCompare(b.firstName || "")
+                );
 
                 const filtered = companyRecords.filter(r => {
                     if (filterEmployee && r.userId?._id !== filterEmployee) return false;
@@ -1278,7 +1629,9 @@ const Attendance = () => {
                 const hasFilter = filterEmployee || filterFrom || filterTo;
 
                 const empRecords = filterEmployee
-                    ? companyRecords.filter(r => r.userId?._id === filterEmployee)
+                    ? (empMonthRecords !== null
+                        ? empMonthRecords
+                        : companyRecords.filter(r => r.userId?._id === filterEmployee))
                     : [];
                 const selectedEmp = filterEmployee ? employeeMap[filterEmployee] : null;
                 const empWeekOff = empRecords[0]?.workShiftId?.weekOff ?? [0, 6];
@@ -1307,17 +1660,15 @@ const Attendance = () => {
                     <div>
                         {/* Filter bar */}
                         <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-end">
-                            <div className="flex flex-col gap-1 min-w-[180px]">
+                            <div className="flex flex-col gap-1 min-w-[220px]">
                                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Employee</label>
-                                <select value={filterEmployee} onChange={e => { setFilterEmployee(e.target.value); setTeamCalMonth(currentMonth()); }}
-                                    className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                                    <option value="">All employees</option>
-                                    {employees.map(e => (
-                                        <option key={e._id} value={e._id}>
-                                            {e.firstName} {e.lastName}{e.employeeCode ? ` (${e.employeeCode})` : ""}
-                                        </option>
-                                    ))}
-                                </select>
+                                <SearchableEmployeeSelect
+                                    value={filterEmployee}
+                                    onChange={id => { setFilterEmployee(id); setTeamCalMonth(currentMonth()); }}
+                                    options={employees}
+                                    allOptionLabel="All employees"
+                                    placeholder="All employees"
+                                />
                             </div>
 
                             {!filterEmployee && (
@@ -1389,6 +1740,9 @@ const Attendance = () => {
                                     weekOff={empWeekOff}
                                     month={teamCalMonth}
                                     onMonthChange={setTeamCalMonth}
+                                    onUpdateStatus={canUpdateAttendance ? handleQuickStatusUpdate : null}
+                                    onEditPunch={canUpdateAttendance ? openEditModal : null}
+                                    updatingId={updatingPunchId}
                                 />
                             </div>
                         ) : (
@@ -1450,10 +1804,48 @@ const Attendance = () => {
                                                 </td>
                                                 {canUpdateAttendance && (
                                                     <td className="px-4 py-3 text-center">
-                                                        <button onClick={() => openEditModal(r)}
-                                                            className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition">
-                                                            <FileEdit size={14} />
-                                                        </button>
+                                                        <div className="flex items-center justify-center gap-1.5">
+                                                            {updatingPunchId === r._id ? (
+                                                                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                                            ) : (
+                                                                <>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleQuickStatusUpdate(r, "present")}
+                                                                        title="Mark Present"
+                                                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition ${
+                                                                            r.status === "present"
+                                                                                ? "bg-green-600 text-white font-semibold shadow-sm"
+                                                                                : "bg-white border border-gray-200 text-gray-600 hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+                                                                        }`}
+                                                                    >
+                                                                        <Check size={11} className={r.status === "present" ? "text-white" : "text-green-600"} />
+                                                                        Present
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleQuickStatusUpdate(r, "absent")}
+                                                                        title="Mark Absent"
+                                                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition ${
+                                                                            r.status === "absent"
+                                                                                ? "bg-red-600 text-white font-semibold shadow-sm"
+                                                                                : "bg-white border border-gray-200 text-gray-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                                                                        }`}
+                                                                    >
+                                                                        <X size={11} className={r.status === "absent" ? "text-white" : "text-red-600"} />
+                                                                        Absent
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => openEditModal(r)}
+                                                                        className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition"
+                                                                        title="Edit Details"
+                                                                    >
+                                                                        <FileEdit size={14} />
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 )}
                                             </tr>
@@ -1624,12 +2016,12 @@ const Attendance = () => {
                         <form onSubmit={handleCreatePunchSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Employee <span className="text-red-500">*</span></label>
-                                <select value={punchForm.userId} onChange={e => setPunchForm(f => ({ ...f, userId: e.target.value }))} className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-blue-500" required>
-                                    <option value="">Select Employee</option>
-                                    {activeUsers.map(u => (
-                                        <option key={u._id} value={u._id}>{u.firstName} {u.lastName} ({u.employeeCode})</option>
-                                    ))}
-                                </select>
+                                <SearchableEmployeeSelect
+                                    value={punchForm.userId}
+                                    onChange={id => setPunchForm(f => ({ ...f, userId: id }))}
+                                    options={activeUsers}
+                                    placeholder="Select Employee"
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Date <span className="text-red-500">*</span></label>
