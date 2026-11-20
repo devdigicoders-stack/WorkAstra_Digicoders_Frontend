@@ -21,8 +21,8 @@ export const getMyAttendance = async (month) => {
     return res.data;
 };
 
-export const getAttendanceSummary = async (month) => {
-    const res = await api.get(ENDPOINTS.ATTENDANCE.SUMMARY, { params: { month } });
+export const getAttendanceSummary = async (month, params = {}) => {
+    const res = await api.get(ENDPOINTS.ATTENDANCE.SUMMARY, { params: { month, ...params } });
     return res.data;
 };
 

@@ -11,6 +11,7 @@ import {
     PhoneCall, FileCheck, Percent
 } from "lucide-react";
 import api from "../services/axios";
+import { ENDPOINTS } from "../services/endpoints";
 import { fetchUsers } from "../modules/employee/services/UserService";
 import { fetchAllCompaniesList } from "../modules/company/services/companyService";
 import { getAllCompanyDepartments } from "../modules/department/services/departmentService";
@@ -168,7 +169,7 @@ const Home = () => {
     useEffect(() => {
         if (!isClient) {
             getTodayAttendance().then(d => setToday(d.record)).catch(() => {});
-            getAttendanceSummary(currentMonth()).then(d => setSummary(d.summary)).catch(() => {});
+            getAttendanceSummary(currentMonth(), isAdmin ? { scope: "team" } : {}).then(d => setSummary(d.summary)).catch(() => {});
         }
         if (isAdmin) {
             const todayStr = new Date().toISOString().split("T")[0];
@@ -237,7 +238,7 @@ const Home = () => {
 
         // Payslips
         if (canViewMyPayroll) {
-            getMyPayslips().then(d => setMyPayslips(d.payslips || [])).catch(() => {});
+            getMyPayslips().then(d => setMyPayslips(d.payslips || d.runs || [])).catch(() => {});
         }
     }, [isClient, isAdmin]); // eslint-disable-line
 
@@ -253,19 +254,84 @@ const Home = () => {
         if (!canViewSales) return;
         Promise.allSettled([
             getLeads({ limit: 100 }),
-            getAllQuotes({ limit: 200 })
-        ]).then(([leadsRes, quotesRes]) => {
+            getAllQuotes({ limit: 200 }),
+            api.get(ENDPOINTS.MEETING.GET_ALL),
+        ]).then(([leadsRes, quotesRes, meetingsRes]) => {
             const leads = leadsRes.value?.leads || [];
             const quotes = quotesRes.value?.quotes || [];
-            const todayStr = new Date().toISOString().split("T")[0];
+            const meetings = meetingsRes.value?.data?.meetings || [];
+            
+            const today = new Date();
+            const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            
+            const isDateToday = (d) => {
+                if (!d) return false;
+                try {
+                    const dt = new Date(d);
+                    const dStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+                    return dStr === todayDateStr;
+                } catch { return false; }
+            };
+
+            const todayFollowUpsList = [];
+
+            // 1. Scheduled meetings for today
+            for (const m of meetings) {
+                if ((isDateToday(m.date) || isDateToday(m.nextFollowUp)) && m.status !== "Cancelled") {
+                    todayFollowUpsList.push({
+                        _id: m._id,
+                        title: m.title || "Meeting",
+                        orgName: m.leadId?.orgName || m.leadId?.contactPerson || "Lead Meeting",
+                        contactPerson: m.leadId?.contactPerson || "",
+                        time: m.time || "Today",
+                        status: m.status,
+                        type: "meeting",
+                        link: "/meetings",
+                    });
+                }
+            }
+
+            // 2. Pending quote follow-ups for today
+            for (const q of quotes) {
+                for (const f of (q.followUps || [])) {
+                    if (isDateToday(f.scheduledAt) && f.status === "pending") {
+                        todayFollowUpsList.push({
+                            _id: f._id,
+                            title: f.note || q.title || "Quote Follow-up",
+                            orgName: q.leadId?.orgName || q.leadId?.contactPerson || "Proposal Follow-up",
+                            contactPerson: q.leadId?.contactPerson || "",
+                            time: f.scheduledAt ? new Date(f.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Today",
+                            status: f.status,
+                            type: "quote",
+                            link: "/quotes",
+                        });
+                    }
+                }
+            }
+
+            // 3. Lead follow-ups (if any lead has nextFollowUp)
+            for (const l of leads) {
+                if (isDateToday(l.nextFollowUp)) {
+                    todayFollowUpsList.push({
+                        _id: l._id,
+                        title: "Lead Follow-up",
+                        orgName: l.orgName || l.contactPerson || "Lead",
+                        contactPerson: l.contactPerson || "",
+                        time: "Today",
+                        status: l.status,
+                        type: "lead",
+                        link: "/leads",
+                    });
+                }
+            }
             
             setBdeStats({
                 totalLeads: leadsRes.value?.total || 0,
-                newLeads: leads.filter(l => l.status === 'new').length,
-                todayFollowUps: leads.filter(l => l.nextFollowUp && l.nextFollowUp.split("T")[0] === todayStr),
+                newLeads: leads.filter(l => l.status === "New Lead" || l.status?.toLowerCase().includes("new")).length,
+                todayFollowUps: todayFollowUpsList,
                 totalQuotes: quotesRes.value?.total || 0,
-                acceptedQuotes: quotes.filter(q => q.status === 'accepted').length,
-                rejectedQuotes: quotes.filter(q => q.status === 'rejected').length,
+                acceptedQuotes: quotes.filter(q => q.status === "accepted").length,
+                rejectedQuotes: quotes.filter(q => q.status === "rejected").length,
             });
         }).catch(() => {});
     }, [canViewSales]);
@@ -294,6 +360,16 @@ const Home = () => {
 
     const checkedIn = !!today?.checkIn;
     const checkedOut = !!today?.checkOut;
+
+    const activePmProjects = pmProjects.filter(p => p.status === 'active' || p.status === 'in_progress' || !p.status);
+    const totalPendingTasks = pmProjects.reduce((acc, p) => acc + (p.pendingTasksCount ?? (p.tasks?.filter(t => t.status !== 'completed' && t.status !== 'done')?.length || 0)), 0);
+    const allProjectMembers = Array.from(
+        new Map(
+            pmProjects.flatMap(p => p.members || [])
+                .filter(m => m && (m._id || m.id))
+                .map(m => [(m._id || m.id).toString(), m])
+        ).values()
+    );
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen space-y-6">
@@ -329,7 +405,14 @@ const Home = () => {
                     <StatCard icon={FolderKanban} label="Departments" value={stats.departments} sub="Across all companies" color="bg-green-50 text-green-600" to="/departments" />
                 )}
                 {summary && !isClient && (
-                    <StatCard icon={TrendingUp} label="Hours This Month" value={`${summary.totalHours}h`} sub={`${summary.totalDays} days tracked`} color="bg-indigo-50 text-indigo-600" to="/attendance" />
+                    <StatCard 
+                        icon={TrendingUp} 
+                        label={isAdmin ? "Total Team Hours" : "Hours This Month"} 
+                        value={`${summary.totalHours}h`} 
+                        sub={`${summary.totalDays} ${isAdmin ? "shifts" : "days"} tracked`} 
+                        color="bg-indigo-50 text-indigo-600" 
+                        to="/attendance" 
+                    />
                 )}
             </div>
 
@@ -345,7 +428,7 @@ const Home = () => {
 
             {/* Admin / Employee Dashboard Grid */}
             {!isClient && (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className={`grid grid-cols-1 ${isAdmin ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-6`}>
                 {/* Check-in Card */}
                 <div className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-6 flex flex-col gap-4">
                     <div className="flex items-center justify-between">
@@ -409,7 +492,7 @@ const Home = () => {
                 {/* Monthly Summary */}
                 <div className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="font-semibold text-gray-800">Monthly Summary</h2>
+                        <h2 className="font-semibold text-gray-800">{isAdmin ? "Team Monthly Summary" : "Monthly Summary"}</h2>
                         <span className="text-xs text-gray-400">{currentMonth()}</span>
                     </div>
                     {summary ? (
@@ -440,72 +523,46 @@ const Home = () => {
                     )}
                 </div>
 
-                {/* Team Today or Task History */}
-                {isAdmin ? (
+                {/* Employee Task History (only for employees) */}
+                {!isAdmin && (
                     <div className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="font-semibold text-gray-800">Team Today</h2>
-                            <Link to="/attendance" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View all <ArrowRight size={12} /></Link>
+                            <h2 className="font-semibold text-gray-800">My Task History</h2>
+                            <Link to="/projects" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View projects <ArrowRight size={12} /></Link>
                         </div>
-                        {teamToday.length === 0 ? (
-                            <p className="text-sm text-gray-400 text-center py-8">No check-ins today yet.</p>
+                        {taskHistory.length === 0 ? (
+                            <p className="text-sm text-gray-400 text-center py-8">No task assignments yet.</p>
                         ) : (
                             <div className="space-y-3 max-h-64 overflow-y-auto no-scrollbar">
-                                {teamToday.slice(0, 8).map(r => (
-                                    <div key={r._id} className="flex items-center gap-3">
-                                        {r.userId?.profilePic?.url
-                                            ? <img src={getImageUrl(r.userId.profilePic.url)} className="w-8 h-8 rounded-full object-cover shrink-0" alt="" />
-                                            : <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0">{r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}</div>}
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-gray-800 truncate">{r.userId?.firstName} {r.userId?.lastName}</p>
-                                            <p className="text-xs text-gray-400">{fmt(r.checkIn)} {r.checkOut ? `→ ${fmt(r.checkOut)}` : "· still in"}</p>
+                                {taskHistory.map(t => (
+                                    <div key={t._id} className="border border-gray-100 rounded-xl p-3">
+                                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                                            <p className="text-sm font-medium text-gray-800 truncate">{t.title}</p>
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize shrink-0">{t.status?.replace("_", " ")}</span>
                                         </div>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${STATUS[r.status]}`}>{r.status}</span>
+                                        {t.project?.name && (
+                                            <p className="text-[10px] text-blue-500 mb-1.5">{t.project.name}</p>
+                                        )}
+                                        <div className="space-y-1">
+                                            {t.history.slice(0, 3).map((h, i) => (
+                                                <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                                                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                                        h.action === "assigned" ? "bg-green-500" : "bg-red-400"
+                                                    }`} />
+                                                    <span className={h.action === "assigned" ? "text-green-600 font-medium" : "text-red-500 font-medium"}>
+                                                        {h.action === "assigned" ? "Assigned" : "Removed"}
+                                                    </span>
+                                                    <span className="text-gray-400 ml-auto">
+                                                        {new Date(h.at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
-                ) : (
-                    /* Employee Task History */
-                    <div className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-6">
-                        <div className="flex items-center justify-between mb-4">
-                                <h2 className="font-semibold text-gray-800">My Task History</h2>
-                                <Link to="/projects" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View projects <ArrowRight size={12} /></Link>
-                            </div>
-                            {taskHistory.length === 0 ? (
-                                <p className="text-sm text-gray-400 text-center py-8">No task assignments yet.</p>
-                            ) : (
-                                <div className="space-y-3 max-h-64 overflow-y-auto no-scrollbar">
-                                    {taskHistory.map(t => (
-                                        <div key={t._id} className="border border-gray-100 rounded-xl p-3">
-                                            <div className="flex items-center justify-between gap-2 mb-1.5">
-                                                <p className="text-sm font-medium text-gray-800 truncate">{t.title}</p>
-                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize shrink-0">{t.status?.replace("_", " ")}</span>
-                                            </div>
-                                            {t.project?.name && (
-                                                <p className="text-[10px] text-blue-500 mb-1.5">{t.project.name}</p>
-                                            )}
-                                            <div className="space-y-1">
-                                                {t.history.slice(0, 3).map((h, i) => (
-                                                    <div key={i} className="flex items-center gap-1.5 text-[10px]">
-                                                        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                                            h.action === "assigned" ? "bg-green-500" : "bg-red-400"
-                                                        }`} />
-                                                        <span className={h.action === "assigned" ? "text-green-600 font-medium" : "text-red-500 font-medium"}>
-                                                            {h.action === "assigned" ? "Assigned" : "Removed"}
-                                                        </span>
-                                                        <span className="text-gray-400 ml-auto">
-                                                            {new Date(h.at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
                 )}
                 
                 {/* Upcoming Events Widget */}
@@ -533,18 +590,25 @@ const Home = () => {
                         <p className="text-sm text-gray-400 text-center py-6">No leave balances found</p>
                     ) : (
                         <div className="space-y-3 max-h-52 overflow-y-auto no-scrollbar">
-                            {myLeaveBalance.map(b => (
-                                <div key={b._id} className="flex flex-col gap-1">
-                                    <div className="flex justify-between text-xs font-medium text-gray-700">
-                                        <span>{b.leaveType?.name}</span>
-                                        <span>{b.used} / {b.total} Used</span>
+                            {myLeaveBalance.map(b => {
+                                const name = b.leaveTypeId?.name || b.leaveType?.name || "Leave";
+                                const total = b.total ?? ((b.allocated || 0) + (b.carried || 0));
+                                const used = b.used || 0;
+                                const remaining = b.remaining ?? Math.max(0, total - used - (b.pending || 0));
+                                const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+                                return (
+                                    <div key={b._id} className="flex flex-col gap-1">
+                                        <div className="flex justify-between text-xs font-medium text-gray-700">
+                                            <span>{name}</span>
+                                            <span>{used} / {total} Used</span>
+                                        </div>
+                                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                            <div className="h-full rounded-full bg-blue-500" style={{ width: `${pct}%` }} />
+                                        </div>
+                                        <div className="text-right text-[10px] text-gray-400">{remaining} remaining</div>
                                     </div>
-                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                        <div className="h-full rounded-full bg-blue-500" style={{ width: `${(b.used / (b.total || 1)) * 100}%` }} />
-                                    </div>
-                                    <div className="text-right text-[10px] text-gray-400">{b.remaining} remaining</div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -556,7 +620,7 @@ const Home = () => {
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-gray-800 flex items-center gap-2">
                             <span className="p-1.5 bg-green-100 rounded-lg"><Banknote size={15} className="text-green-600" /></span>
-                            Salary Overview
+                            {isAdmin ? "Recent Salary Runs" : "Salary Overview"}
                         </h2>
                         <Link to="/payroll" className="text-xs text-blue-500 hover:underline flex items-center gap-1">Payslips <ArrowRight size={12} /></Link>
                     </div>
@@ -564,13 +628,19 @@ const Home = () => {
                         <p className="text-sm text-gray-400 text-center py-6">No payslips found</p>
                     ) : (
                         <div className="space-y-2 max-h-52 overflow-y-auto no-scrollbar">
-                            {myPayslips.slice(0, 3).map(p => (
-                                <div key={p._id} className="flex justify-between items-center p-3 border border-gray-100 rounded-lg">
+                            {myPayslips.slice(0, 4).map(p => (
+                                <div key={p._id} className="flex justify-between items-center p-3 border border-gray-100 rounded-lg hover:bg-gray-50/70 transition">
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-800">{p.month}</p>
-                                        <p className={`text-[10px] font-bold capitalize ${p.status === 'paid' ? 'text-green-600' : 'text-amber-500'}`}>{p.status}</p>
+                                        <p className="text-sm font-semibold text-gray-800">
+                                            {isAdmin && p.userId ? `${p.userId.firstName} ${p.userId.lastName} · ` : ""}{p.month}
+                                        </p>
+                                        <p className={`text-[10px] font-bold capitalize ${
+                                            p.status === 'paid' ? 'text-green-600' :
+                                            p.status === 'approved' ? 'text-blue-600' :
+                                            'text-amber-500'
+                                        }`}>{p.status}</p>
                                     </div>
-                                    <p className="font-bold text-gray-800">₹{p.netPay?.toLocaleString("en-IN")}</p>
+                                    <p className="font-bold text-gray-800">₹{Number(p.netSalary ?? p.netPay ?? 0).toLocaleString("en-IN")}</p>
                                 </div>
                             ))}
                         </div>
@@ -629,18 +699,26 @@ const Home = () => {
                         </h2>
                         <Link to="/projects" className="text-xs text-blue-500 hover:underline">View</Link>
                     </div>
-                    {pmProjects.filter(p => p.status === 'in_progress' || !p.status).length === 0 ? (
+                    {activePmProjects.length === 0 ? (
                         <p className="text-sm text-gray-400 text-center py-4">No active projects</p>
                     ) : (
                         <div className="space-y-3 max-h-52 overflow-y-auto no-scrollbar">
-                            {pmProjects.filter(p => p.status === 'in_progress' || !p.status).map(p => (
-                                <div key={p._id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50 transition">
-                                    <p className="text-sm font-semibold text-gray-800 truncate">{p.name}</p>
-                                    <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${p.progress || Math.floor(Math.random()*100)}%` }} />
+                            {activePmProjects.map(p => (
+                                <Link to={`/projects/${p._id}`} key={p._id} className="block border border-gray-100 rounded-lg p-3 hover:bg-gray-50 hover:border-indigo-100 transition">
+                                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                                        <p className="text-sm font-semibold text-gray-800 truncate">{p.name}</p>
+                                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 shrink-0 capitalize">
+                                            {(p.status || 'active').replace('_', ' ')}
+                                        </span>
                                     </div>
-                                    <p className="text-[10px] text-gray-400 text-right mt-1">{p.progress || 0}% completed</p>
-                                </div>
+                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                        <div className="h-full rounded-full bg-indigo-500 transition-all duration-300" style={{ width: `${p.progress || 0}%` }} />
+                                    </div>
+                                    <div className="flex items-center justify-between text-[10px] text-gray-400 mt-1">
+                                        <span>{p.members?.length || 0} members</span>
+                                        <span>{p.progress || 0}% completed</span>
+                                    </div>
+                                </Link>
                             ))}
                         </div>
                     )}
@@ -653,11 +731,12 @@ const Home = () => {
                             <span className="p-1.5 bg-orange-100 rounded-lg"><ListTodo size={15} className="text-orange-500" /></span>
                             Pending Tasks
                         </h2>
+                        <Link to="/projects" className="text-xs text-blue-500 hover:underline">View</Link>
                     </div>
                     <div className="flex items-center gap-4 mt-6">
                         <div className="w-14 h-14 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
                             <span className="text-xl text-orange-600 font-bold">
-                                {pmProjects.reduce((acc, p) => acc + (p.tasks?.filter(t => t.status !== 'completed')?.length || 0), 0) || pmProjects.length * 3}
+                                {totalPendingTasks}
                             </span>
                         </div>
                         <div>
@@ -712,18 +791,22 @@ const Home = () => {
                     <div className="mt-4">
                         <p className="text-[10px] text-gray-500 mb-3">Team engagement across projects</p>
                         <div className="flex -space-x-2 mb-3">
-                            {Array.from(new Set(pmProjects.flatMap(p => p.members?.map(m => m.user?._id) || [1,2,3]))).slice(0, 5).map((id, i) => (
-                                <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-600 shadow-sm z-10">
-                                    U
+                            {allProjectMembers.slice(0, 5).map((m, i) => (
+                                <div key={m._id || i} title={`${m.firstName || ''} ${m.lastName || ''}`} className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-white flex items-center justify-center text-[10px] font-bold text-white shadow-sm z-10 overflow-hidden">
+                                    {m.profilePic ? (
+                                        <img src={m.profilePic} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span>{(m.firstName?.[0] || 'U').toUpperCase()}</span>
+                                    )}
                                 </div>
                             ))}
-                            {new Set(pmProjects.flatMap(p => p.members?.map(m => m.user?._id) || [1,2,3])).size > 5 && (
+                            {allProjectMembers.length > 5 && (
                                 <div className="w-8 h-8 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-600 shadow-sm z-0">
-                                    +{new Set(pmProjects.flatMap(p => p.members?.map(m => m.user?._id) || [])).size - 5}
+                                    +{allProjectMembers.length - 5}
                                 </div>
                             )}
                         </div>
-                        <p className="text-xs font-semibold text-gray-800">{new Set(pmProjects.flatMap(p => p.members?.map(m => m.user?._id) || [1,2,3])).size} active members</p>
+                        <p className="text-xs font-semibold text-gray-800">{allProjectMembers.length} active members</p>
                     </div>
                 </div>
 
@@ -767,16 +850,22 @@ const Home = () => {
                             <span className="p-1.5 bg-rose-100 rounded-lg"><PhoneCall size={15} className="text-rose-600" /></span>
                             Today's Follow-ups
                         </h2>
+                        <Link to="/meetings" className="text-xs text-blue-500 hover:underline">View All</Link>
                     </div>
                     {bdeStats.todayFollowUps.length === 0 ? (
                         <p className="text-sm text-gray-400 text-center py-4 mt-2">No follow-ups for today 🎉</p>
                     ) : (
                         <div className="space-y-2 max-h-32 overflow-y-auto no-scrollbar">
-                            {bdeStats.todayFollowUps.map(l => (
-                                <div key={l._id} className="flex justify-between items-center p-2 rounded-lg bg-rose-50 border border-rose-100">
-                                    <p className="text-xs font-semibold text-gray-800 truncate pr-2">{l.firstName} {l.lastName}</p>
-                                    <span className="text-[10px] font-bold text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full shrink-0">Due</span>
-                                </div>
+                            {bdeStats.todayFollowUps.map(item => (
+                                <Link to={item.link || "/meetings"} key={item._id} className="flex justify-between items-center p-2 rounded-lg bg-rose-50 border border-rose-100 hover:bg-rose-100/60 transition block">
+                                    <div className="truncate pr-2">
+                                        <p className="text-xs font-semibold text-gray-800 truncate">{item.orgName}</p>
+                                        <p className="text-[10px] text-gray-500 truncate">{item.title}</p>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full shrink-0">
+                                        {item.time || "Due"}
+                                    </span>
+                                </Link>
                             ))}
                         </div>
                     )}

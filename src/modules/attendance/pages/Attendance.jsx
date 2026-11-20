@@ -1022,7 +1022,7 @@ const Attendance = () => {
     }, [isAdmin]);
 
     const loadSummary = useCallback(async () => {
-        try { const d = await getAttendanceSummary(month); setSummary(d.summary); } catch { }
+        try { const d = await getAttendanceSummary(month, { scope: 'my' }); setSummary(d.summary); } catch { }
     }, [month]);
 
     const loadMyRecords = useCallback(async () => {
@@ -1681,3 +1681,4 @@ const Attendance = () => {
 };
 
 export default Attendance;
+
