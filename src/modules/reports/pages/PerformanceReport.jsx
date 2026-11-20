@@ -4,6 +4,7 @@ import { ENDPOINTS } from "../../../services/endpoints";
 import { toast } from "react-toastify";
 import { Users, CheckCircle, Calendar, Target, Filter, RefreshCw, BarChart2, Download } from "lucide-react";
 import { useStore } from "../../../context/StoreContext";
+import { getImageUrl } from "../../../utils/imageUtils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 
 const PerformanceReport = () => {
@@ -284,10 +285,29 @@ const PerformanceReport = () => {
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">
                                                             <div className="flex items-center gap-3">
                                                                 {dev.profilePic ? (
-                                                                    <img src={dev.profilePic} alt={dev.name} className="w-8 h-8 rounded-full object-cover border" />
+                                                                    <>
+                                                                        <img 
+                                                                            src={getImageUrl(dev.profilePic?.url || dev.profilePic)} 
+                                                                            alt={dev.name} 
+                                                                            className="w-8 h-8 rounded-full object-cover border" 
+                                                                            onError={(e) => {
+                                                                                e.target.onerror = null;
+                                                                                e.target.style.display = "none";
+                                                                                if (e.target.nextElementSibling) {
+                                                                                    e.target.nextElementSibling.style.display = "flex";
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                        <div 
+                                                                            style={{ display: "none" }}
+                                                                            className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold border border-indigo-200 text-xs shrink-0"
+                                                                        >
+                                                                            {dev.name?.charAt(0)?.toUpperCase() || "U"}
+                                                                        </div>
+                                                                    </>
                                                                 ) : (
-                                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold border border-indigo-200">
-                                                                        {dev.name.charAt(0).toUpperCase()}
+                                                                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold border border-indigo-200 text-xs shrink-0">
+                                                                        {dev.name?.charAt(0)?.toUpperCase() || "U"}
                                                                     </div>
                                                                 )}
                                                                 <span className="flex items-center gap-1.5">

@@ -824,10 +824,19 @@ const Home = () => {
                             {allProjectMembers.slice(0, 5).map((m, i) => (
                                 <div key={m._id || i} title={`${m.firstName || ''} ${m.lastName || ''}`} className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-white flex items-center justify-center text-[10px] font-bold text-white shadow-sm z-10 overflow-hidden">
                                     {m.profilePic ? (
-                                        <img src={m.profilePic} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span>{(m.firstName?.[0] || 'U').toUpperCase()}</span>
-                                    )}
+                                        <img 
+                                            src={getImageUrl(m.profilePic?.url || m.profilePic)} 
+                                            alt="" 
+                                            className="w-full h-full object-cover" 
+                                            onError={(e) => {
+                                                e.target.style.display = "none";
+                                                if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = "inline";
+                                            }}
+                                        />
+                                    ) : null}
+                                    <span style={m.profilePic ? { display: "none" } : undefined}>
+                                        {(m.firstName?.[0] || 'U').toUpperCase()}
+                                    </span>
                                 </div>
                             ))}
                             {allProjectMembers.length > 5 && (
