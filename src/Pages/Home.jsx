@@ -371,6 +371,22 @@ const Home = () => {
         ).values()
     );
 
+    const perfData = pmPerformance?.data || (Array.isArray(pmPerformance) ? pmPerformance : []);
+    const perfSummary = pmPerformance?.summary || {};
+    const teamCompletionRate = perfSummary.avgCompletionRate ?? (
+        perfData.length > 0
+            ? Math.round((perfData.reduce((s, d) => s + (d.tasksCompleted || 0), 0) / Math.max(1, perfData.reduce((s, d) => s + (d.tasksAssigned || 0), 0))) * 100)
+            : 0
+    );
+    const teamScore = perfSummary.avgScore ?? (
+        perfData.length > 0
+            ? Math.round(perfData.reduce((s, d) => s + (d.performanceScore || 0), 0) / perfData.length)
+            : 0
+    );
+    const teamAvgHours = perfSummary.avgCompletionHours ?? pmPerformance?.avgCompletionTime ?? 0;
+    const totalTasksAssigned = perfSummary.totalAssigned ?? perfData.reduce((s, d) => s + (d.tasksAssigned || 0), 0);
+    const totalTasksCompleted = perfSummary.totalCompleted ?? perfData.reduce((s, d) => s + (d.tasksCompleted || 0), 0);
+
     return (
         <div className="p-6 bg-gray-50 min-h-screen space-y-6">
 
@@ -753,31 +769,45 @@ const Home = () => {
                             <span className="p-1.5 bg-teal-100 rounded-lg"><Target size={15} className="text-teal-600" /></span>
                             Team Performance
                         </h2>
+                        <Link to="/reports/performance" className="text-xs text-blue-500 hover:underline">View</Link>
                     </div>
-                    {pmPerformance ? (
-                        <div className="space-y-4">
+
+                    <div className="space-y-3">
+                        <div>
+                            <div className="flex justify-between text-xs mb-1">
+                                <span className="text-gray-600">Task Completion</span>
+                                <span className="font-bold text-teal-700">{teamCompletionRate}%</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full rounded-full bg-teal-500 transition-all duration-300" 
+                                    style={{ width: `${Math.min(100, Math.max(0, teamCompletionRate))}%` }} 
+                                />
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1">
+                                {totalTasksCompleted} of {totalTasksAssigned} tasks completed
+                            </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
                             <div>
-                                <div className="flex justify-between text-xs mb-1">
-                                    <span className="text-gray-600">Avg Completion Time</span>
-                                    <span className="font-medium">{pmPerformance.avgCompletionTime || 0} hrs</span>
-                                </div>
-                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                    <div className="h-full rounded-full bg-teal-500 w-3/4" />
-                                </div>
+                                <span className="text-gray-500 text-[11px]">Avg Time: </span>
+                                <span className="font-semibold text-gray-800 text-xs">
+                                    {teamAvgHours > 0 ? `${teamAvgHours} hrs` : "—"}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-gray-500 text-[11px]">Score:</span>
+                                <span className={`font-semibold px-2 py-0.5 rounded-full text-[11px] border ${
+                                    teamScore >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                    teamScore >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                    'bg-slate-50 text-slate-600 border-slate-200'
+                                }`}>
+                                    {teamScore > 0 ? `${teamScore} Pts` : `${teamCompletionRate}%`}
+                                </span>
                             </div>
                         </div>
-                    ) : (
-                        <div className="space-y-3 mt-4">
-                             <div className="flex justify-between text-xs mb-1">
-                                <span className="text-gray-600">Avg Completion Time</span>
-                                <span className="font-medium text-teal-600">24 hrs</span>
-                            </div>
-                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div className="h-full rounded-full bg-teal-400 w-3/4" />
-                            </div>
-                            <p className="text-[10px] text-gray-400 mt-2">Data syncing from past week</p>
-                        </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* Resource Utilization */}

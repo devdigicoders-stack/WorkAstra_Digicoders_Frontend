@@ -287,17 +287,29 @@ export default function QuoteSendPanel({ quote, lead, onQuoteUpdated, sendEmail,
                 </div>
 
                 {/* Status update */}
-                {quote.status === "sent" && (
-                    <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-blue-100">
-                        <span className="text-xs text-gray-600 font-medium">Customer response:</span>
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-blue-100">
+                    <span className="text-xs text-gray-600 font-medium">Proposal Status:</span>
+                    {quote.status !== "accepted" && (
                         <button type="button" disabled={statusLoading} onClick={() => handleStatus("accepted")} className={btnSuccess}>
-                            <CheckCircle2 size={14} /> Accepted
+                            <CheckCircle2 size={14} /> Mark as Accepted
                         </button>
+                    )}
+                    {quote.status !== "rejected" && (
                         <button type="button" disabled={statusLoading} onClick={() => handleStatus("rejected")} className={btnDanger}>
-                            <XCircle size={14} /> Rejected
+                            <XCircle size={14} /> Mark as Rejected
                         </button>
-                    </div>
-                )}
+                    )}
+                    {quote.status !== "sent" && (
+                        <button type="button" disabled={statusLoading} onClick={() => handleStatus("sent")} className={btnSecondary} title="Mark as sent manually">
+                            Mark as Sent
+                        </button>
+                    )}
+                    {quote.status !== "draft" && (
+                        <button type="button" disabled={statusLoading} onClick={() => handleStatus("draft")} className={btnSecondary} title="Revert to draft">
+                            Back to Draft
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Follow-ups */}
