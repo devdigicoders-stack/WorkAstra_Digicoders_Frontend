@@ -1354,7 +1354,7 @@ const Attendance = () => {
 
     useEffect(() => {
         if (showTeamTab) {
-            fetchUsers().then(d => setActiveUsers(d.users?.filter(u => u.isActive) || [])).catch(() => { });
+            fetchUsers().then(d => setActiveUsers(d.users?.filter(u => u.isActive && (u.role?.name || u.role)?.toLowerCase() !== "client") || [])).catch(() => { });
         }
     }, [showTeamTab]);
 
@@ -1493,7 +1493,7 @@ const Attendance = () => {
                     ? await getCompanyAttendance(params)
                     : await getTeamAttendance(params);
                 if (!cancelled) {
-                    const recs = (d.records || []).filter(r => !filterEmployee || r.userId?._id === filterEmployee);
+                    const recs = (d.records || []).filter(r => (!filterEmployee || r.userId?._id === filterEmployee) && (r.userId?.role?.name || r.userId?.role)?.toLowerCase() !== "client");
                     setEmpMonthRecords(recs);
                 }
             } catch {
@@ -1511,7 +1511,7 @@ const Attendance = () => {
             const d = isAdmin
                 ? await getCompanyAttendance(params)
                 : await getTeamAttendance(params);
-            setCompanyRecords(d.records || []);
+            setCompanyRecords((d.records || []).filter(r => (r.userId?.role?.name || r.userId?.role)?.toLowerCase() !== "client"));
         } catch { }
     }, [isAdmin, showTeamTab, month]);
 
@@ -1718,13 +1718,19 @@ const Attendance = () => {
 
             {/* ── Team Attendance — Table + Calendar ── */}
             {tab === "team" && showTeamTab && (() => {
+                const isNotClient = (userObj) => {
+                    if (!userObj) return false;
+                    const roleName = userObj.role?.name || userObj.role;
+                    return String(roleName || "").toLowerCase() !== "client";
+                };
+
                 const employeeMap = {};
                 companyRecords.forEach(r => {
-                    if (r.userId?._id && !employeeMap[r.userId._id])
+                    if (r.userId?._id && isNotClient(r.userId) && !employeeMap[r.userId._id])
                         employeeMap[r.userId._id] = r.userId;
                 });
                 activeUsers.forEach(u => {
-                    if (u._id && !employeeMap[u._id])
+                    if (u._id && isNotClient(u) && !employeeMap[u._id])
                         employeeMap[u._id] = u;
                 });
                 const employees = Object.values(employeeMap).sort((a, b) =>
@@ -1732,6 +1738,7 @@ const Attendance = () => {
                 );
 
                 const filtered = companyRecords.filter(r => {
+                    if (!isNotClient(r.userId)) return false;
                     if (filterEmployee && r.userId?._id !== filterEmployee) return false;
                     if (filterFrom && r.date < filterFrom) return false;
                     if (filterTo && r.date > filterTo) return false;
@@ -1743,8 +1750,8 @@ const Attendance = () => {
 
                 const empRecords = filterEmployee
                     ? (empMonthRecords !== null
-                        ? empMonthRecords
-                        : companyRecords.filter(r => r.userId?._id === filterEmployee))
+                        ? empMonthRecords.filter(r => isNotClient(r.userId))
+                        : companyRecords.filter(r => r.userId?._id === filterEmployee && isNotClient(r.userId)))
                     : [];
                 const selectedEmp = filterEmployee ? employeeMap[filterEmployee] : null;
                 const empWeekOff = empRecords[0]?.workShiftId?.weekOff ?? [0, 6];
