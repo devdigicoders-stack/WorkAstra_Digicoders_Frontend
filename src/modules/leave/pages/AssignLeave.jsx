@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Users, UserCheck, ChevronDown } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Users, UserCheck, ChevronDown, Search, Check } from "lucide-react";
 import { toast } from "react-toastify";
 import { useStore } from "../../../context/StoreContext";
 import {
@@ -9,6 +9,126 @@ import api from "../../../services/axios";
 import { ENDPOINTS } from "../../../services/endpoints";
 
 const inputCls = "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+
+// ── Searchable Employee Dropdown ──────────────────────────────
+const SearchableEmployeeSelect = ({ employees, selectedUserId, onSelect, disabled, placeholder }) => {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const ref = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const selectedEmp = employees.find(e => e._id === selectedUserId);
+
+    const filtered = employees.filter(e => {
+        const name = `${e.firstName || ""} ${e.lastName || ""}`.toLowerCase();
+        const code = (e.employeeCode || "").toLowerCase();
+        const q = search.toLowerCase().trim();
+        return name.includes(q) || code.includes(q);
+    });
+
+    return (
+        <div className="relative" ref={ref}>
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+                Employee <span className="text-red-500">*</span>
+            </label>
+
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={() => setOpen(!open)}
+                className={`w-full flex items-center justify-between border rounded-lg px-3 py-2 text-sm bg-white transition text-left ${
+                    open ? "border-blue-500 ring-2 ring-blue-100" : "border-gray-200 hover:border-gray-300"
+                } ${disabled ? "bg-gray-100 cursor-not-allowed text-gray-400" : "cursor-pointer"}`}
+            >
+                {selectedEmp ? (
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs shrink-0">
+                            {selectedEmp.firstName?.[0]}{selectedEmp.lastName?.[0]}
+                        </div>
+                        <span className="font-medium text-gray-800 truncate">
+                            {selectedEmp.firstName} {selectedEmp.lastName}
+                        </span>
+                        {selectedEmp.employeeCode && (
+                            <span className="text-xs text-gray-400 shrink-0">({selectedEmp.employeeCode})</span>
+                        )}
+                    </div>
+                ) : (
+                    <span className="text-gray-400">{placeholder || "Select employee..."}</span>
+                )}
+                <ChevronDown size={16} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+
+            {open && (
+                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="p-2 border-b border-gray-100 bg-gray-50/70">
+                        <div className="relative">
+                            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                autoFocus
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search by employee name or code..."
+                                className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="max-h-56 overflow-y-auto divide-y divide-gray-50">
+                        {filtered.length === 0 ? (
+                            <div className="p-4 text-center text-xs text-gray-400">
+                                No employees found
+                            </div>
+                        ) : (
+                            filtered.map(emp => {
+                                const isSelected = emp._id === selectedUserId;
+
+                                return (
+                                    <div
+                                        key={emp._id}
+                                        onClick={() => {
+                                            onSelect(emp._id);
+                                            setOpen(false);
+                                            setSearch("");
+                                        }}
+                                        className={`px-3 py-2.5 flex items-center justify-between gap-2 cursor-pointer transition ${
+                                            isSelected ? "bg-blue-50" : "hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-semibold flex items-center justify-center text-xs shrink-0">
+                                                {emp.firstName?.[0]}{emp.lastName?.[0]}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-semibold text-gray-800 truncate">
+                                                    {emp.firstName} {emp.lastName}
+                                                </p>
+                                                <p className="text-[10px] text-gray-400">
+                                                    {emp.employeeCode ? `ID: ${emp.employeeCode}` : ""} {emp.department?.name ? `• ${emp.department.name}` : ""}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {isSelected && <Check size={14} className="text-blue-600 shrink-0" />}
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const AssignLeave = () => {
     const { user } = useStore();
@@ -35,7 +155,10 @@ const AssignLeave = () => {
         if (isSuperAdmin) {
             api.get(ENDPOINTS.COMPANY.GET_ALL_COMPANIES).then(r => setCompanies(r.data.companies || r.data || [])).catch(() => {});
         } else {
-            api.get(ENDPOINTS.USER.GET_ALL).then(r => setEmployees(r.data.users || [])).catch(() => {});
+            api.get(ENDPOINTS.USER.GET_ALL).then(r => {
+                const users = r.data?.users || r.data || [];
+                setEmployees(users.filter(u => u.role?.name?.trim().toLowerCase() !== "client"));
+            }).catch(() => {});
         }
     }, [isSuperAdmin]);
 
@@ -43,13 +166,17 @@ const AssignLeave = () => {
         const cId = e.target.value;
         if (formType === "ind") {
             setIndForm(f => ({ ...f, companyId: cId, userId: "" }));
+            setUserBalance([]);
         } else {
             setBulkForm(f => ({ ...f, companyId: cId }));
         }
         
         if (cId) {
             api.get(ENDPOINTS.USER.GET_ALL_BY_COMPANY(cId))
-                .then(r => setEmployees(r.data.users || r.data || []))
+                .then(r => {
+                    const users = r.data?.users || r.data || [];
+                    setEmployees(users.filter(u => u.role?.name?.trim().toLowerCase() !== "client"));
+                })
                 .catch(() => setEmployees([]));
         } else {
             setEmployees([]);
@@ -130,7 +257,7 @@ const AssignLeave = () => {
             {/* Individual */}
             {tab === "individual" && canAssign && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-white border border-gray-200 rounded-xl p-6">
+                    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                         <h2 className="text-base font-semibold text-gray-900 mb-4">Assign to Employee</h2>
                         <form onSubmit={handleIndividual} className="space-y-4">
                             {isSuperAdmin && (
@@ -144,19 +271,19 @@ const AssignLeave = () => {
                                     </select>
                                 </div>
                             )}
-                            <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Employee</label>
-                                <select value={indForm.userId}
-                                    onChange={e => { setInd("userId", e.target.value); loadUserBalance(e.target.value); }}
-                                    className={inputCls}>
-                                    <option value="">Select employee</option>
-                                    {employees.map(emp => (
-                                        <option key={emp._id} value={emp._id}>
-                                            {emp.firstName} {emp.lastName} {emp.employeeCode ? `(${emp.employeeCode})` : ""}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+
+                            {/* Searchable Employee Selector with Live Search Bar */}
+                            <SearchableEmployeeSelect
+                                employees={employees}
+                                selectedUserId={indForm.userId}
+                                onSelect={(empId) => {
+                                    setInd("userId", empId);
+                                    loadUserBalance(empId);
+                                }}
+                                disabled={isSuperAdmin && !indForm.companyId}
+                                placeholder={isSuperAdmin && !indForm.companyId ? "Select company first" : "Select employee..."}
+                            />
+
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Leave Type</label>
                                 <select value={indForm.leaveTypeId} onChange={e => setInd("leaveTypeId", e.target.value)} className={inputCls}>
@@ -176,12 +303,15 @@ const AssignLeave = () => {
                                 <div>
                                     <label className="block text-xs font-medium text-gray-500 mb-1">Year</label>
                                     <input type="number" value={indForm.year}
-                                        onChange={e => setInd("year", e.target.value)}
+                                        onChange={e => {
+                                            setInd("year", e.target.value);
+                                            if (indForm.userId) loadUserBalance(indForm.userId);
+                                        }}
                                         className={inputCls} />
                                 </div>
                             </div>
                             <button type="submit" disabled={loading}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50">
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50 shadow-sm">
                                 {loading ? "Assigning..." : "Assign Leave Balance"}
                             </button>
                         </form>
@@ -189,7 +319,7 @@ const AssignLeave = () => {
 
                     {/* Current balance preview */}
                     {indForm.userId && (
-                        <div className="bg-white border border-gray-200 rounded-xl p-6">
+                        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                             <h2 className="text-base font-semibold text-gray-900 mb-4">Current Balance ({indForm.year})</h2>
                             {userBalance.length === 0 ? (
                                 <p className="text-sm text-gray-400">No balance records found.</p>
@@ -218,7 +348,7 @@ const AssignLeave = () => {
             {/* Bulk */}
             {tab === "bulk" && canBulkAssign && (
                 <div className="max-w-lg">
-                    <div className="bg-white border border-gray-200 rounded-xl p-6">
+                    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                         <h2 className="text-base font-semibold text-gray-900 mb-1">Bulk Assign to All Employees</h2>
                         <p className="text-xs text-gray-400 mb-4">This will assign leave balance to all active employees in your company.</p>
                         <form onSubmit={handleBulk} className="space-y-4">
@@ -260,7 +390,7 @@ const AssignLeave = () => {
                                 ⚠ This will overwrite existing allocations for the selected leave type and year.
                             </div>
                             <button type="submit" disabled={loading}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50">
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50 shadow-sm">
                                 {loading ? "Assigning..." : "Bulk Assign to All Employees"}
                             </button>
                         </form>

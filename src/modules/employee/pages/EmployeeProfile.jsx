@@ -131,15 +131,29 @@ const EmployeeProfile = () => {
                     
                     // Fetch dynamic Leave Data
                     try {
-                        const balances = await getUserBalance(id);
-                        if (balances && balances.data) {
-                            const formattedLeaves = balances.data.map(l => ({
-                                name: l.leaveType?.name || 'Leave',
-                                Total: l.totalLeaves || 0,
-                                Consumed: l.consumedLeaves || 0
-                            }));
-                            setLeaveData(formattedLeaves.length > 0 ? formattedLeaves : []);
-                        }
+                        const balancesRes = await getUserBalance(id);
+                        const rawBalances = balancesRes?.balances || balancesRes?.data || (Array.isArray(balancesRes) ? balancesRes : []);
+                        const formattedLeaves = rawBalances.map(l => {
+                            const name = l.leaveTypeId?.name || l.leaveType?.name || 'Leave';
+                            const total = (l.allocated || 0) + (l.carried || 0) || (l.totalLeaves || 0) || (l.total || 0);
+                            const consumed = l.used || l.consumedLeaves || 0;
+                            const remaining = l.remaining !== undefined 
+                                ? l.remaining 
+                                : Math.max(0, total - consumed - (l.pending || 0));
+                            return {
+                                name,
+                                code: l.leaveTypeId?.code || l.leaveType?.code || "",
+                                Total: total,
+                                Consumed: consumed,
+                                Remaining: remaining,
+                                isPaid: l.leaveTypeId?.isPaid,
+                                allocated: l.allocated || 0,
+                                carried: l.carried || 0,
+                                used: consumed,
+                                pending: l.pending || 0
+                            };
+                        });
+                        setLeaveData(formattedLeaves);
                     } catch (e) { console.error("Leave error", e); }
 
 
@@ -748,21 +762,64 @@ const EmployeeProfile = () => {
                 )}
 
                 {activeTab === "leaves" && (
-                    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                        <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                            <CalendarDays size={18} className="text-teal-500"/> Leave Balances
-                        </h3>
-                        <div className="h-80 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={leaveData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                                    <XAxis dataKey="name" />
-                                    <YAxis />
-                                    <Tooltip cursor={{fill: '#f3f4f6'}} />
-                                    <Legend />
-                                    <Bar dataKey="Total" fill="#e5e7eb" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Consumed" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                    <div className="space-y-6">
+                        {/* Leave Type Cards Grid */}
+                        {leaveData.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {leaveData.map((l, i) => (
+                                    <div key={i} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="font-semibold text-gray-800 text-sm">{l.name}</span>
+                                            {l.code && (
+                                                <span className="text-[10px] px-2 py-0.5 rounded bg-teal-50 text-teal-700 font-bold border border-teal-100">
+                                                    {l.code}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-baseline gap-2 mb-2">
+                                            <span className="text-2xl font-bold text-gray-900">{l.Remaining}</span>
+                                            <span className="text-xs text-gray-400">/ {l.Total} days remaining</span>
+                                        </div>
+                                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full rounded-full bg-teal-500 transition-all duration-300"
+                                                style={{ width: `${l.Total > 0 ? Math.min(100, Math.round((l.Consumed / l.Total) * 100)) : 0}%` }}
+                                            />
+                                        </div>
+                                        <div className="flex justify-between items-center text-[11px] text-gray-400 mt-2">
+                                            <span>Consumed: <strong>{l.Consumed}d</strong></span>
+                                            {l.pending > 0 && <span className="text-amber-600 font-medium">Pending: {l.pending}d</span>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Chart Box */}
+                        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                            <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                <CalendarDays size={18} className="text-teal-500"/> Leave Balances
+                            </h3>
+                            {leaveData.length === 0 ? (
+                                <div className="text-center py-12 text-gray-400">
+                                    <PalmtreeIcon size={36} className="mx-auto mb-2 text-gray-300" />
+                                    <p className="text-sm font-medium text-gray-600">No leave balance records found for this employee</p>
+                                    <p className="text-xs text-gray-400 mt-1">Leave balances can be assigned in Leave Management &gt; Assign Leave.</p>
+                                </div>
+                            ) : (
+                                <div className="h-80 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={leaveData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                                            <XAxis dataKey="name" />
+                                            <YAxis />
+                                            <Tooltip cursor={{fill: '#f3f4f6'}} />
+                                            <Legend />
+                                            <Bar dataKey="Total" fill="#e5e7eb" radius={[4, 4, 0, 0]} />
+                                            <Bar dataKey="Consumed" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

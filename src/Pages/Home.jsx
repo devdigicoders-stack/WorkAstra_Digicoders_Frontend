@@ -94,7 +94,7 @@ const Home = () => {
     const canViewPayroll      = isSuperAdmin || canSee(["MANAGE_PAYROLL"]);
     
     // Permission flags for employee widgets
-    const canViewMyLeave      = !isClient && canSee(["VIEW_LEAVE", "VIEW_ALL_LEAVES"]);
+    const canViewMyLeave      = !isClient && !isSuperAdmin && canSee(["VIEW_LEAVE", "VIEW_ALL_LEAVES"]);
     const canViewMyPayroll    = !isClient && canSee(["VIEW_PAYROLL", "MANAGE_PAYROLL"]);
     
     // Permission flag for PM widgets
@@ -628,7 +628,7 @@ const Home = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* Leave Balance */}
-                {canViewMyLeave && (
+                {canViewMyLeave && !isSuperAdmin && (
                 <div className="bg-white border border-gray-200 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-gray-800 flex items-center gap-2">
