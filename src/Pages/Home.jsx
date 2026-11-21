@@ -8,11 +8,11 @@ import {
     ArrowRight, Calendar, Timer, MapPin, IndianRupee, FileText, AlertCircle, PieChart,
     UserX, ClockAlert, Palmtree, PartyPopper, Activity, Banknote, Sun,
     Briefcase, Target, ListTodo, BarChart2,
-    PhoneCall, FileCheck, Percent
+    PhoneCall, FileCheck, Percent, UserCheck
 } from "lucide-react";
 import api from "../services/axios";
 import { ENDPOINTS } from "../services/endpoints";
-import { fetchUsers } from "../modules/employee/services/UserService";
+import { fetchUsers, fetchClients } from "../modules/employee/services/UserService";
 import { fetchAllCompaniesList } from "../modules/company/services/companyService";
 import { getAllCompanyDepartments } from "../modules/department/services/departmentService";
 import { getTodayAttendance, getAttendanceSummary, getCompanyAttendance } from "../modules/attendance/services/attendanceService";
@@ -99,7 +99,7 @@ const Home = () => {
     const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
     const [time, setTime] = useState(new Date());
-    const [stats, setStats] = useState({ users: null, companies: null, departments: null });
+    const [stats, setStats] = useState({ users: null, clients: null, companies: null, departments: null });
     const [salesStats, setSalesStats] = useState({ leads: null, quotesTotal: null, accepted: null, revenue: null });
     const [today, setToday] = useState(null);
     const [summary, setSummary] = useState(null);
@@ -134,13 +134,35 @@ const Home = () => {
     // Load org + sales stats
     useEffect(() => {
         const load = async () => {
+            const canViewUsers = canSee(["VIEW_USER", "VIEW_ALL_USERS"]);
+            const canViewClients = isAdmin || canSee(["VIEW_USER", "VIEW_ALL_USERS", "VIEW_ALL_PROJECTS"]);
+
             const results = await Promise.allSettled([
-                canSee(["VIEW_USER", "VIEW_ALL_USERS"]) ? fetchUsers() : Promise.resolve(null),
+                canViewUsers ? fetchUsers() : Promise.resolve(null),
                 isSuperAdmin ? fetchAllCompaniesList() : Promise.resolve(null),
                 canSee(["VIEW_DEPARTMENT", "VIEW_ALL_DEPARTMENTS"]) ? getAllCompanyDepartments() : Promise.resolve(null),
+                canViewClients ? fetchClients() : Promise.resolve(null),
             ]);
+
+            const allUsers = results[0].value?.users;
+            const employeesOnly = Array.isArray(allUsers)
+                ? allUsers.filter(u => u.role?.name?.trim().toLowerCase() !== "client")
+                : null;
+            const clientsFromUsers = Array.isArray(allUsers)
+                ? allUsers.filter(u => u.role?.name?.trim().toLowerCase() === "client")
+                : null;
+            const directClients = results[3].value?.users;
+
+            let clientsCount = null;
+            if (Array.isArray(directClients)) {
+                clientsCount = directClients.length;
+            } else if (clientsFromUsers) {
+                clientsCount = clientsFromUsers.length;
+            }
+
             setStats({
-                users:       results[0].value?.users?.length ?? null,
+                users:       employeesOnly ? employeesOnly.length : null,
+                clients:     clientsCount,
                 companies:   results[1].value?.companies?.length ?? null,
                 departments: results[2].value?.departments?.length ?? null,
             });
@@ -410,9 +432,12 @@ const Home = () => {
             </div>
 
             {/* Org Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                 {canSee(["VIEW_USER", "VIEW_ALL_USERS"]) && (
                     <StatCard icon={Users} label="Employees" value={stats.users} sub="Total registered" color="bg-blue-50 text-blue-600" to="/users" />
+                )}
+                {(isAdmin || canSee(["VIEW_USER", "VIEW_ALL_USERS", "VIEW_ALL_PROJECTS"])) && (
+                    <StatCard icon={UserCheck} label="Clients" value={stats.clients} sub="Registered clients" color="bg-amber-50 text-amber-600" to="/clients" />
                 )}
                 {isSuperAdmin && (
                     <StatCard icon={Building2} label="Companies" value={stats.companies} sub="Active organizations" color="bg-purple-50 text-purple-600" to="/companies" />
@@ -1202,9 +1227,10 @@ const Home = () => {
             {isAdmin && (
                 <div>
                     <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Quick Access</h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
                         {[
                             { label: "Employees",        icon: Users,        path: "/users",             color: "bg-blue-50 text-blue-600",     perms: ["VIEW_USER","VIEW_ALL_USERS"] },
+                            { label: "Clients",          icon: UserCheck,    path: "/clients",           color: "bg-amber-50 text-amber-600",   perms: ["VIEW_USER","VIEW_ALL_USERS","VIEW_ALL_PROJECTS"] },
                             { label: "Departments",      icon: FolderKanban, path: "/departments",       color: "bg-green-50 text-green-600",   perms: ["VIEW_DEPARTMENT","VIEW_ALL_DEPARTMENTS"] },
                             { label: "Leads",            icon: TrendingUp,   path: "/leads",             color: "bg-sky-50 text-sky-600",       perms: [] },
                             { label: "Quotes",           icon: Receipt,      path: "/quotes",            color: "bg-indigo-50 text-indigo-600", perms: [] },
