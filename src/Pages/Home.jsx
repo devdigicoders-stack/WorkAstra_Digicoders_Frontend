@@ -30,6 +30,14 @@ const currentMonth = () => new Date().toISOString().slice(0, 7);
 
 const fmt = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "—";
 const fmtDate = (d) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+const fmtSalary = (val) => {
+    if (val === undefined || val === null || val === "" || val === "••••••" || (typeof val === "string" && (val.includes("•") || val.toLowerCase().includes("nan")))) {
+        return "••••••";
+    }
+    const num = Number(val);
+    if (isNaN(num)) return "••••••";
+    return `₹${num.toLocaleString("en-IN")}`;
+};
 
 const STATUS = {
     present:       "bg-green-50 text-green-700",
@@ -86,14 +94,14 @@ const Home = () => {
     const canViewPayroll      = isSuperAdmin || canSee(["MANAGE_PAYROLL"]);
     
     // Permission flags for employee widgets
-    const canViewMyLeave      = canSee(["VIEW_LEAVE", "VIEW_ALL_LEAVES"]);
-    const canViewMyPayroll    = canSee(["VIEW_PAYROLL", "MANAGE_PAYROLL"]);
+    const canViewMyLeave      = !isClient && canSee(["VIEW_LEAVE", "VIEW_ALL_LEAVES"]);
+    const canViewMyPayroll    = !isClient && canSee(["VIEW_PAYROLL", "MANAGE_PAYROLL"]);
     
     // Permission flag for PM widgets
-    const canViewPM           = canSee(["VIEW_PROJECT", "MANAGE_PROJECT", "VIEW_ALL_PROJECTS"]);
+    const canViewPM           = !isClient && canSee(["VIEW_PROJECT", "MANAGE_PROJECT", "VIEW_ALL_PROJECTS"]);
     
     // Permission flag for BDE widgets
-    const canViewSales        = canSee(["VIEW_LEAD", "VIEW_ALL_LEADS", "MANAGE_LEADS"]);
+    const canViewSales        = !isClient && canSee(["VIEW_LEAD", "VIEW_ALL_LEADS", "MANAGE_LEADS"]);
 
     const hour = new Date().getHours();
     const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -432,30 +440,32 @@ const Home = () => {
             </div>
 
             {/* Org Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                {canSee(["VIEW_USER", "VIEW_ALL_USERS"]) && (
-                    <StatCard icon={Users} label="Employees" value={stats.users} sub="Total registered" color="bg-blue-50 text-blue-600" to="/users" />
-                )}
-                {(isAdmin || canSee(["VIEW_USER", "VIEW_ALL_USERS", "VIEW_ALL_PROJECTS"])) && (
-                    <StatCard icon={UserCheck} label="Clients" value={stats.clients} sub="Registered clients" color="bg-amber-50 text-amber-600" to="/clients" />
-                )}
-                {isSuperAdmin && (
-                    <StatCard icon={Building2} label="Companies" value={stats.companies} sub="Active organizations" color="bg-purple-50 text-purple-600" to="/companies" />
-                )}
-                {canSee(["VIEW_DEPARTMENT", "VIEW_ALL_DEPARTMENTS"]) && (
-                    <StatCard icon={FolderKanban} label="Departments" value={stats.departments} sub="Across all companies" color="bg-green-50 text-green-600" to="/departments" />
-                )}
-                {summary && !isClient && (
-                    <StatCard 
-                        icon={TrendingUp} 
-                        label={isAdmin ? "Total Team Hours" : "Hours This Month"} 
-                        value={`${summary.totalHours}h`} 
-                        sub={`${summary.totalDays} ${isAdmin ? "shifts" : "days"} tracked`} 
-                        color="bg-indigo-50 text-indigo-600" 
-                        to="/attendance" 
-                    />
-                )}
-            </div>
+            {!isClient && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {canSee(["VIEW_USER", "VIEW_ALL_USERS"]) && (
+                        <StatCard icon={Users} label="Employees" value={stats.users} sub="Total registered" color="bg-blue-50 text-blue-600" to="/users" />
+                    )}
+                    {(isAdmin || canSee(["VIEW_USER", "VIEW_ALL_USERS", "VIEW_ALL_PROJECTS"])) && (
+                        <StatCard icon={UserCheck} label="Clients" value={stats.clients} sub="Registered clients" color="bg-amber-50 text-amber-600" to="/clients" />
+                    )}
+                    {isSuperAdmin && (
+                        <StatCard icon={Building2} label="Companies" value={stats.companies} sub="Active organizations" color="bg-purple-50 text-purple-600" to="/companies" />
+                    )}
+                    {canSee(["VIEW_DEPARTMENT", "VIEW_ALL_DEPARTMENTS"]) && (
+                        <StatCard icon={FolderKanban} label="Departments" value={stats.departments} sub="Across all companies" color="bg-green-50 text-green-600" to="/departments" />
+                    )}
+                    {summary && (
+                        <StatCard 
+                            icon={TrendingUp} 
+                            label={isAdmin ? "Total Team Hours" : "Hours This Month"} 
+                            value={`${summary.totalHours}h`} 
+                            sub={`${summary.totalDays} ${isAdmin ? "shifts" : "days"} tracked`} 
+                            color="bg-indigo-50 text-indigo-600" 
+                            to="/attendance" 
+                        />
+                    )}
+                </div>
+            )}
 
             {/* Sales Stats — admin only */}
             {isAdmin && salesStats.leads !== null && (
@@ -463,7 +473,7 @@ const Home = () => {
                     <StatCard icon={TrendingUp}   label="Total Leads"      value={salesStats.leads}       sub="All time"          color="bg-blue-50 text-blue-600"    to="/leads" />
                     <StatCard icon={FileText}     label="Total Quotes"     value={salesStats.quotesTotal} sub="All statuses"      color="bg-indigo-50 text-indigo-600" to="/quotes" />
                     <StatCard icon={CheckCircle}  label="Accepted Quotes"  value={salesStats.accepted}    sub="Won deals"         color="bg-emerald-50 text-emerald-600" to="/quotes" />
-                    <StatCard icon={IndianRupee}  label="Revenue"          value={salesStats.revenue !== null ? `₹${Number(salesStats.revenue).toLocaleString("en-IN")}` : "—"} sub="Accepted quotes" color="bg-green-50 text-green-600" to="/quotes" />
+                    <StatCard icon={IndianRupee}  label="Revenue"          value={salesStats.revenue !== null && !isNaN(Number(salesStats.revenue)) ? `₹${Number(salesStats.revenue).toLocaleString("en-IN")}` : "—"} sub="Accepted quotes" color="bg-green-50 text-green-600" to="/quotes" />
                 </div>
             )}
 
@@ -681,7 +691,7 @@ const Home = () => {
                                             'text-amber-500'
                                         }`}>{p.status}</p>
                                     </div>
-                                    <p className="font-bold text-gray-800">₹{Number(p.netSalary ?? p.netPay ?? 0).toLocaleString("en-IN")}</p>
+                                    <p className="font-bold text-gray-800 tracking-wider">{fmtSalary(p.netSalary ?? p.netPay)}</p>
                                 </div>
                             ))}
                         </div>
@@ -728,7 +738,7 @@ const Home = () => {
             )}
 
             {/* ── PROJECT MANAGER WIDGETS ── */}
-            {canViewPM && (
+            {canViewPM && !isClient && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 
                 {/* Active Projects */}
@@ -878,7 +888,7 @@ const Home = () => {
             )}
 
             {/* ── BDE / SALES WIDGETS ── */}
-            {canViewSales && (
+            {canViewSales && !isClient && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 
                 {/* Lead Summary */}
@@ -1122,7 +1132,7 @@ const Home = () => {
                     </div>
                     <div className="bg-blue-50 rounded-xl p-4">
                         <p className="text-xs text-blue-500 font-semibold uppercase tracking-wide mb-1">Net Payout</p>
-                        <p className="text-xl font-bold text-blue-800">₹{(payrollSummary.totalNet ?? 0).toLocaleString("en-IN")}</p>
+                        <p className="text-xl font-bold text-blue-800 tracking-wider">{fmtSalary(payrollSummary.totalNet)}</p>
                     </div>
                 </div>
             </div>
