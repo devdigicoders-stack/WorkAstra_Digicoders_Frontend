@@ -76,7 +76,8 @@ const User = () => {
         try {
             const res = await fetchUsers();
             const fetchedUsers = res.users || [];
-            const sortedUsers = fetchedUsers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            const nonClientUsers = fetchedUsers.filter(u => u.role?.name?.trim().toLowerCase() !== "client");
+            const sortedUsers = nonClientUsers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             setUsers(
                 sortedUsers.map((u) => ({
                     ...u,
@@ -94,7 +95,8 @@ const User = () => {
     const loadRoles = async () => {
         try {
             const res = isSuperAdmin ? await getAllRolesForAdmin() : await fetchRoles();
-            setRoles(res.data || []);
+            const allRoles = res.data || [];
+            setRoles(allRoles.filter(r => r.name?.trim().toLowerCase() !== "client"));
         } catch (err) {
             console.error(err);
         }
@@ -117,6 +119,7 @@ const User = () => {
 
     // Derived filtered users
     const filteredUsers = users.filter((u) => {
+        if (u.role?.name?.trim().toLowerCase() === "client") return false;
         const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
         const matchSearch =
             !search ||
@@ -229,10 +232,10 @@ const User = () => {
                     getDepartmentsByCompany(value),
                     api.get(ENDPOINTS.BRANCH.GET_BY_COMPANY(value)).catch(() => ({ data: { branches: [] } })),
                 ]);
-                setModalRoles(rolesRes.data || []);
+                setModalRoles((rolesRes.data || []).filter(r => r.name?.trim().toLowerCase() !== "client"));
                 setModalShifts(shiftsRes.data || []);
                 setModalStatuses(statusesRes.employmentStatuses || []);
-                setModalCompanyUsers((usersRes.users || []).filter(u => u.companyId?._id === value || u.companyId === value));
+                setModalCompanyUsers((usersRes.users || []).filter(u => (u.companyId?._id === value || u.companyId === value) && u.role?.name?.trim().toLowerCase() !== "client"));
                 setModalDepartments(deptsRes.departments || []);
                 setModalBranches(branchesRes.data?.branches || []);
                 return { ...formData, companyId: value, role: "", workShift: "", reportingTo: "", employmentStatus: "", department: "" };
@@ -484,10 +487,10 @@ const User = () => {
                                                                 getDepartmentsByCompany(cid),
                                                                 api.get(ENDPOINTS.BRANCH.GET_BY_COMPANY(cid)).catch(() => ({ data: { branches: [] } })),
                                                             ]).then(([r, s, es, us, d, b]) => {
-                                                                setModalRoles(r.data || []);
+                                                                setModalRoles((r.data || []).filter(role => role.name?.trim().toLowerCase() !== "client"));
                                                                 setModalShifts(s.data || []);
                                                                 setModalStatuses(es.employmentStatuses || []);
-                                                                setModalCompanyUsers((us.users || []).filter(x => x.companyId?._id === cid || x.companyId === cid));
+                                                                setModalCompanyUsers((us.users || []).filter(x => (x.companyId?._id === cid || x.companyId === cid) && x.role?.name?.trim().toLowerCase() !== "client"));
                                                                 setModalDepartments(d.departments || []);
                                                                 setModalBranches(b.data?.branches || []);
                                                             });
