@@ -5,7 +5,8 @@ import { getProfile, updateUserProfile, changePassword } from "../modules/auth/s
 import { getCompanyWorkShifts } from "../modules/workshift/services/workShiftService";
 import {
     Camera, Pencil, X, Check, User, Mail, Phone, Calendar,
-    Briefcase, Building2, ShieldCheck, Clock, Eye, EyeOff, Lock, MapPin, Banknote, ScanFace
+    Briefcase, Building2, ShieldCheck, Clock, Eye, EyeOff, Lock, MapPin, Banknote, ScanFace,
+    KeyRound, ArrowLeft, RefreshCw
 } from "lucide-react";
 import BankDetailsComponent from "../modules/employee/components/BankDetailsComponent";
 import * as faceapi from "face-api.js";
@@ -55,10 +56,11 @@ const Profile = () => {
     const isAdmin = ["admin", "super_admin"].includes(user?.role?.name);
 
     const TABS = [
-        { key: "personal",   label: "Personal" },
+        { key: "personal", label: "Personal" },
         { key: "employment", label: "Employment" },
-        { key: "bank",       label: "Bank & UPI" },
-        { key: "security",   label: "Security" },
+        { key: "bank", label: "Bank & UPI" },
+        { key: "security", label: "Security" },
+        ...(isAdmin ? [{ key: "payroll-pin", label: "Payroll PIN" }] : []),
     ];
 
     const [form, setForm] = useState(EMPTY);
@@ -78,29 +80,46 @@ const Profile = () => {
     const [pinForm, setPinForm] = useState({ currentPin: "", newPin: "", confirmNewPin: "" });
     const [pinLoading, setPinLoading] = useState(false);
 
+    const [forgotPinMode, setForgotPinMode] = useState(false);
+    const [forgotPinStep, setForgotPinStep] = useState(1);
+    const [forgotPinForm, setForgotPinForm] = useState({ otp: "", newPin: "", confirmNewPin: "" });
+    const [forgotLoading, setForgotLoading] = useState(false);
+    const [maskedEmail, setMaskedEmail] = useState("");
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const urlTab = params.get("tab");
+        const forgot = params.get("forgot");
+        if (urlTab) setTab(urlTab);
+        if (forgot === "true") {
+            setForgotPinMode(true);
+            setForgotPinStep(1);
+        }
+    }, []);
+
     const mapUser = (u) => ({
-        firstName:            u.firstName || "",
-        lastName:             u.lastName || "",
-        email:                u.email || "",
-        phone:                u.phone || "",
-        gender:               u.gender || "",
-        address:              u.address || "",
-        dateOfBirth:          u.dateOfBirth?.split("T")[0] || "",
-        employeeCode:         u.employeeCode || "",
-        joiningDate:          u.joiningDate?.split("T")[0] || "",
-        workShift:            u.workShift?._id || u.workShift || "",
-        workShiftName:        u.workShift?.name || "",
-        employmentStatus:     u.employmentStatus?._id || u.employmentStatus || "",
+        firstName: u.firstName || "",
+        lastName: u.lastName || "",
+        email: u.email || "",
+        phone: u.phone || "",
+        gender: u.gender || "",
+        address: u.address || "",
+        dateOfBirth: u.dateOfBirth?.split("T")[0] || "",
+        employeeCode: u.employeeCode || "",
+        joiningDate: u.joiningDate?.split("T")[0] || "",
+        workShift: u.workShift?._id || u.workShift || "",
+        workShiftName: u.workShift?.name || "",
+        employmentStatus: u.employmentStatus?._id || u.employmentStatus || "",
         employmentStatusName: u.employmentStatus?.name || "",
-        role:                 u.role?.name || "",
-        companyId:            u.companyId?.name || "",
-        department:           u.department?.name || (typeof u.department === "string" ? u.department : ""),
-        designation:          u.designation?.name || (typeof u.designation === "string" ? u.designation : ""),
-        reportingTo:          u.reportingTo?._id || u.reportingTo || "",
-        reportingToName:      u.reportingTo ? `${u.reportingTo.firstName || ""} ${u.reportingTo.lastName || ""}`.trim() : "",
-        profilePic:           null,
-        password:             "",
-        confirmPassword:      "",
+        role: u.role?.name || "",
+        companyId: u.companyId?.name || "",
+        department: u.department?.name || (typeof u.department === "string" ? u.department : ""),
+        designation: u.designation?.name || (typeof u.designation === "string" ? u.designation : ""),
+        reportingTo: u.reportingTo?._id || u.reportingTo || "",
+        reportingToName: u.reportingTo ? `${u.reportingTo.firstName || ""} ${u.reportingTo.lastName || ""}`.trim() : "",
+        profilePic: null,
+        password: "",
+        confirmPassword: "",
     });
 
     useEffect(() => {
@@ -169,9 +188,9 @@ const Profile = () => {
         try {
             setPinLoading(true);
             const { ENDPOINTS } = await import("../services/endpoints");
-            const res = await api.put(ENDPOINTS.COMPANY.CHANGE_PIN, { 
-                currentPin: pinForm.currentPin, 
-                newPin: pinForm.newPin 
+            const res = await api.put(ENDPOINTS.COMPANY.CHANGE_PIN, {
+                currentPin: pinForm.currentPin,
+                newPin: pinForm.newPin
             });
             if (res.data.success) {
                 toast.success(res.data.message || "Payroll PIN changed successfully");
@@ -183,6 +202,62 @@ const Profile = () => {
             toast.error(err?.response?.data?.message || "Failed to change PIN");
         } finally {
             setPinLoading(false);
+        }
+    };
+
+    const handleSendResetOtp = async () => {
+        try {
+            setForgotLoading(true);
+            const { ENDPOINTS } = await import("../services/endpoints");
+            const res = await api.post(ENDPOINTS.AUTH.FORGOT_PAYROLL_PIN);
+            if (res.data.success) {
+                toast.success(res.data.message || "OTP sent to your registered email");
+                setMaskedEmail(res.data.email || user?.email || "");
+                setForgotPinStep(2);
+            } else {
+                toast.error(res.data.message || "Failed to send OTP");
+            }
+        } catch (err) {
+            toast.error(err?.response?.data?.message || "Failed to send OTP");
+        } finally {
+            setForgotLoading(false);
+        }
+    };
+
+    const handleResetPinWithOtp = async (e) => {
+        e.preventDefault();
+        if (!forgotPinForm.otp || !forgotPinForm.newPin || !forgotPinForm.confirmNewPin) {
+            return toast.error("All OTP and PIN fields are required");
+        }
+        if (forgotPinForm.newPin.length !== 6) {
+            return toast.error("New PIN must be exactly 6 digits");
+        }
+        if (forgotPinForm.newPin !== forgotPinForm.confirmNewPin) {
+            return toast.error("New PINs do not match");
+        }
+        try {
+            setForgotLoading(true);
+            const { ENDPOINTS } = await import("../services/endpoints");
+            const res = await api.post(ENDPOINTS.AUTH.RESET_PAYROLL_PIN, {
+                otp: forgotPinForm.otp,
+                newPin: forgotPinForm.newPin
+            });
+            if (res.data.success) {
+                if (res.data.payrollToken) {
+                    api.defaults.headers.common['x-payroll-token'] = res.data.payrollToken;
+                    sessionStorage.setItem('payroll_token', res.data.payrollToken);
+                }
+                toast.success(res.data.message || "Payroll PIN reset successfully!");
+                setForgotPinMode(false);
+                setForgotPinStep(1);
+                setForgotPinForm({ otp: "", newPin: "", confirmNewPin: "" });
+            } else {
+                toast.error(res.data.message || "Failed to reset PIN");
+            }
+        } catch (err) {
+            toast.error(err?.response?.data?.message || "Failed to reset PIN");
+        } finally {
+            setForgotLoading(false);
         }
     };
 
@@ -298,10 +373,10 @@ const Profile = () => {
                 {/* Stats row */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                     {[
-                        { label: "Employee Code", value: form.employeeCode || "—",          icon: Briefcase,   color: "text-blue-600 bg-blue-50" },
-                        { label: "Department",    value: form.department || "—",             icon: Building2,   color: "text-purple-600 bg-purple-50" },
-                        { label: "Work Shift",    value: shiftDisplay,                       icon: Clock,       color: "text-green-600 bg-green-50" },
-                        { label: "Emp. Status",   value: form.employmentStatusName || "—",   icon: ShieldCheck, color: "text-orange-600 bg-orange-50" },
+                        { label: "Employee Code", value: form.employeeCode || "—", icon: Briefcase, color: "text-blue-600 bg-blue-50" },
+                        { label: "Department", value: form.department || "—", icon: Building2, color: "text-purple-600 bg-purple-50" },
+                        { label: "Work Shift", value: shiftDisplay, icon: Clock, color: "text-green-600 bg-green-50" },
+                        { label: "Emp. Status", value: form.employmentStatusName || "—", icon: ShieldCheck, color: "text-orange-600 bg-orange-50" },
                     ].map(s => (
                         <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
                             <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}>
@@ -361,12 +436,12 @@ const Profile = () => {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-                                <InfoRow icon={User}     label="First Name"    value={form.firstName} />
-                                <InfoRow icon={User}     label="Last Name"     value={form.lastName} />
-                                <InfoRow icon={Mail}     label="Email"         value={form.email} />
-                                <InfoRow icon={Phone}    label="Phone"         value={form.phone} />
-                                <InfoRow icon={MapPin}   label="Address"       value={form.address} />
-                                <InfoRow icon={User}     label="Gender"        value={form.gender} />
+                                <InfoRow icon={User} label="First Name" value={form.firstName} />
+                                <InfoRow icon={User} label="Last Name" value={form.lastName} />
+                                <InfoRow icon={Mail} label="Email" value={form.email} />
+                                <InfoRow icon={Phone} label="Phone" value={form.phone} />
+                                <InfoRow icon={MapPin} label="Address" value={form.address} />
+                                <InfoRow icon={User} label="Gender" value={form.gender} />
                                 <InfoRow icon={Calendar} label="Date of Birth" value={form.dateOfBirth} />
                             </div>
                         )
@@ -380,7 +455,7 @@ const Profile = () => {
                                     <input name="employeeCode" value={form.employeeCode || "DCT-"} onChange={(e) => {
                                         let val = e.target.value.toUpperCase();
                                         if (!val.startsWith("DCT-")) val = "DCT-";
-                                        setForm({...form, employeeCode: val});
+                                        setForm({ ...form, employeeCode: val });
                                     }} placeholder="DCT-001" />
                                 </Field>
                                 <Field label="Joining Date" icon={Calendar}>
@@ -402,15 +477,15 @@ const Profile = () => {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-                                <InfoRow icon={Briefcase}   label="Employee Code"      value={form.employeeCode} />
-                                <InfoRow icon={ShieldCheck} label="Role"               value={form.role} />
-                                <InfoRow icon={Building2}   label="Company"            value={form.companyId} />
-                                <InfoRow icon={Calendar}    label="Joining Date"       value={form.joiningDate} />
-                                <InfoRow icon={Clock}       label="Work Shift"         value={shiftTiming ? `${shiftDisplay} (${shiftTiming.startTime} – ${shiftTiming.endTime})` : shiftDisplay} />
-                                <InfoRow icon={ShieldCheck} label="Employment Status"  value={form.employmentStatusName} />
-                                <InfoRow icon={Building2}   label="Department"         value={form.department} />
-                                <InfoRow icon={User}        label="Designation"        value={form.designation} />
-                                <InfoRow icon={User}        label="Reporting To"       value={form.reportingToName} />
+                                <InfoRow icon={Briefcase} label="Employee Code" value={form.employeeCode} />
+                                <InfoRow icon={ShieldCheck} label="Role" value={form.role} />
+                                <InfoRow icon={Building2} label="Company" value={form.companyId} />
+                                <InfoRow icon={Calendar} label="Joining Date" value={form.joiningDate} />
+                                <InfoRow icon={Clock} label="Work Shift" value={shiftTiming ? `${shiftDisplay} (${shiftTiming.startTime} – ${shiftTiming.endTime})` : shiftDisplay} />
+                                <InfoRow icon={ShieldCheck} label="Employment Status" value={form.employmentStatusName} />
+                                <InfoRow icon={Building2} label="Department" value={form.department} />
+                                <InfoRow icon={User} label="Designation" value={form.designation} />
+                                <InfoRow icon={User} label="Reporting To" value={form.reportingToName} />
                             </div>
                         )
                     )}
@@ -470,10 +545,9 @@ const Profile = () => {
                                                 value={pwForm.confirmPassword}
                                                 onChange={e => setPwForm(p => ({ ...p, confirmPassword: e.target.value }))}
                                                 placeholder="Re-enter new password"
-                                                className={`${inputCls} pl-9 pr-10 ${
-                                                    pwForm.confirmPassword && pwForm.newPassword !== pwForm.confirmPassword
-                                                        ? "border-red-300 focus:ring-red-400" : ""
-                                                }`}
+                                                className={`${inputCls} pl-9 pr-10 ${pwForm.confirmPassword && pwForm.newPassword !== pwForm.confirmPassword
+                                                    ? "border-red-300 focus:ring-red-400" : ""
+                                                    }`}
                                             />
                                             <button type="button" onClick={() => setShowConfirmNew(v => !v)}
                                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -496,13 +570,35 @@ const Profile = () => {
                                 <Lock size={14} className="shrink-0 mt-0.5" />
                                 <span>After changing your password you'll stay logged in. For security, log out and back in on other devices.</span>
                             </div>
+                        </div>
+                    )}
 
-                            {user?.role?.name === "admin" && (
-                                <div className="mt-8 pt-6 border-t border-gray-100">
-                                    <h3 className="text-sm font-semibold text-gray-700 mb-4">Change Payroll PIN</h3>
+                    {/* ── Payroll PIN Tab ── */}
+                    {tab === "payroll-pin" && isAdmin && (
+                        <div className="max-w-md space-y-6">
+                            {!forgotPinMode ? (
+                                <div>
+                                    <h3 className="text-base font-bold text-gray-900 mb-1">
+                                        {user?.role?.name === "super_admin" ? "Super Admin Payroll Security PIN" : "Change Payroll PIN"}
+                                    </h3>
+                                    <p className="text-xs text-gray-500 mb-5">
+                                        {user?.role?.name === "super_admin"
+                                            ? "Update your master encryption PIN used to unlock sensitive payroll data across all companies. Default PIN: 123456"
+                                            : "Update your 6-digit PIN used to access your company's payroll data."}
+                                    </p>
                                     <form onSubmit={handleChangePayrollPin} className="space-y-4">
                                         <div>
-                                            <label className={labelCls}>Current PIN</label>
+                                            <div className="flex items-center justify-between mb-1.5">
+                                                <label className={labelCls + " mb-0"}>Current PIN</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setForgotPinMode(true); setForgotPinStep(1); }}
+                                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
+                                                >
+                                                    <KeyRound size={12} />
+                                                    Forgot PIN?
+                                                </button>
+                                            </div>
                                             <div className="relative">
                                                 <ShieldCheck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                                                 <input
@@ -510,8 +606,8 @@ const Profile = () => {
                                                     maxLength={6}
                                                     value={pinForm.currentPin}
                                                     onChange={e => setPinForm(p => ({ ...p, currentPin: e.target.value.replace(/\D/g, "") }))}
-                                                    placeholder="Enter current 6-digit PIN"
-                                                    className={`${inputCls} pl-9`}
+                                                    placeholder={user?.role?.name === "super_admin" ? "Enter current PIN (Default: 123456)" : "Enter current 6-digit PIN"}
+                                                    className={`${inputCls} pl-9 tracking-widest`}
                                                 />
                                             </div>
                                         </div>
@@ -525,7 +621,7 @@ const Profile = () => {
                                                     value={pinForm.newPin}
                                                     onChange={e => setPinForm(p => ({ ...p, newPin: e.target.value.replace(/\D/g, "") }))}
                                                     placeholder="Enter new 6-digit PIN"
-                                                    className={`${inputCls} pl-9`}
+                                                    className={`${inputCls} pl-9 tracking-widest`}
                                                 />
                                             </div>
                                         </div>
@@ -539,10 +635,9 @@ const Profile = () => {
                                                     value={pinForm.confirmNewPin}
                                                     onChange={e => setPinForm(p => ({ ...p, confirmNewPin: e.target.value.replace(/\D/g, "") }))}
                                                     placeholder="Re-enter new 6-digit PIN"
-                                                    className={`${inputCls} pl-9 ${
-                                                        pinForm.confirmNewPin && pinForm.newPin !== pinForm.confirmNewPin
-                                                            ? "border-red-300 focus:ring-red-400" : ""
-                                                    }`}
+                                                    className={`${inputCls} pl-9 tracking-widest ${pinForm.confirmNewPin && pinForm.newPin !== pinForm.confirmNewPin
+                                                        ? "border-red-300 focus:ring-red-400" : ""
+                                                        }`}
                                                 />
                                             </div>
                                             {pinForm.confirmNewPin && pinForm.newPin !== pinForm.confirmNewPin && (
@@ -550,14 +645,125 @@ const Profile = () => {
                                             )}
                                         </div>
                                         <button type="submit" disabled={pinLoading}
-                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50">
+                                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50">
                                             {pinLoading ? "Updating..." : "Update Payroll PIN"}
                                         </button>
                                     </form>
                                 </div>
+                            ) : (
+                                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                                    <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                                <KeyRound size={16} />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-sm font-bold text-gray-900">Reset PIN via Email OTP</h4>
+                                                <p className="text-xs text-gray-500">Recover your Payroll PIN without knowing your current PIN</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setForgotPinMode(false)}
+                                            className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 hover:underline"
+                                        >
+                                            <ArrowLeft size={13} /> Back
+                                        </button>
+                                    </div>
+
+                                    {forgotPinStep === 1 ? (
+                                        <div className="space-y-4 py-2">
+                                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700">
+                                                We will send a 6-digit verification code to your registered email: <strong>{user?.email || "registered email"}</strong>.
+                                            </div>
+                                            <button
+                                                type="button"
+                                                disabled={forgotLoading}
+                                                onClick={handleSendResetOtp}
+                                                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
+                                            >
+                                                {forgotLoading ? "Sending OTP..." : "Send Verification OTP to Email"}
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <form onSubmit={handleResetPinWithOtp} className="space-y-4">
+                                            <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700">
+                                                ✓ OTP sent to <strong>{maskedEmail || user?.email}</strong>. It is valid for 10 minutes.
+                                            </div>
+                                            <div>
+                                                <label className={labelCls}>6-Digit OTP from Email</label>
+                                                <input
+                                                    type="text"
+                                                    maxLength={6}
+                                                    value={forgotPinForm.otp}
+                                                    onChange={e => setForgotPinForm(p => ({ ...p, otp: e.target.value.replace(/\D/g, "") }))}
+                                                    placeholder="Enter 6-digit OTP"
+                                                    className={`${inputCls} text-center tracking-[0.5em] font-mono text-base font-bold`}
+                                                    autoFocus
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className={labelCls}>New 6-Digit PIN</label>
+                                                <div className="relative">
+                                                    <ShieldCheck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                    <input
+                                                        type="password"
+                                                        maxLength={6}
+                                                        value={forgotPinForm.newPin}
+                                                        onChange={e => setForgotPinForm(p => ({ ...p, newPin: e.target.value.replace(/\D/g, "") }))}
+                                                        placeholder="Enter new 6-digit PIN"
+                                                        className={`${inputCls} pl-9 tracking-widest`}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className={labelCls}>Confirm New 6-Digit PIN</label>
+                                                <div className="relative">
+                                                    <ShieldCheck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                    <input
+                                                        type="password"
+                                                        maxLength={6}
+                                                        value={forgotPinForm.confirmNewPin}
+                                                        onChange={e => setForgotPinForm(p => ({ ...p, confirmNewPin: e.target.value.replace(/\D/g, "") }))}
+                                                        placeholder="Re-enter new 6-digit PIN"
+                                                        className={`${inputCls} pl-9 tracking-widest ${forgotPinForm.confirmNewPin && forgotPinForm.newPin !== forgotPinForm.confirmNewPin
+                                                            ? "border-red-300 focus:ring-red-400" : ""
+                                                            }`}
+                                                    />
+                                                </div>
+                                                {forgotPinForm.confirmNewPin && forgotPinForm.newPin !== forgotPinForm.confirmNewPin && (
+                                                    <p className="text-xs text-red-500 mt-1">PINs do not match</p>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-2 pt-1">
+                                                <button
+                                                    type="button"
+                                                    disabled={forgotLoading}
+                                                    onClick={handleSendResetOtp}
+                                                    className="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1"
+                                                >
+                                                    <RefreshCw size={12} className={forgotLoading ? "animate-spin" : ""} /> Resend
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={forgotLoading}
+                                                    className="w-2/3 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
+                                                >
+                                                    {forgotLoading ? "Resetting..." : "Verify & Save PIN"}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    )}
+                                </div>
                             )}
+
+                            <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700">
+                                <ShieldCheck size={14} className="shrink-0 mt-0.5" />
+                                <span>This PIN protects all employee salary structures, bank accounts, and payroll records with AES-256 encryption. Keep it safe and confidential.</span>
+                            </div>
                         </div>
                     )}
+
                     {/* ── Face ID ── */}
                     {tab === "face" && (
                         <FaceRegistration rawUser={rawUser} />

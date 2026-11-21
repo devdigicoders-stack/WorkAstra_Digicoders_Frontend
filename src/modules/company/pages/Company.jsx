@@ -43,6 +43,7 @@ const Company = () => {
         { name: "companyName", label: "Company Name", type: "text" },
         { name: "companyAddress", label: "Address", type: "text", fullWidth: true },
         { name: "companyDomain", label: "Domain", type: "text" },
+        { name: "securityPin", label: "Payroll Security PIN (6 Digits)", type: "password", placeholder: "Default: 706876" },
         { name: "adminFirstName", label: "Admin First Name", type: "text" },
         { name: "adminLastName", label: "Admin Last Name", type: "text" },
         { name: "adminEmail", label: "Admin Email", type: "email" },
@@ -55,6 +56,7 @@ const Company = () => {
         const admin = c.admins?.[0] || {};
         return {
             companyName: c.name || "", companyAddress: c.address || "", companyDomain: c.domain || "",
+            securityPin: "",
             adminFirstName: admin.firstName || "", adminLastName: admin.lastName || "",
             adminEmail: admin.email || "", adminPhone: admin.phone || "", adminPassword: "",
         };
@@ -64,6 +66,7 @@ const Company = () => {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.adminEmail)) return toast.error("Please enter a valid email address.");
         if (!/^\d{10}$/.test(data.adminPhone)) return toast.error("Phone number must be exactly 10 digits.");
         if (!data.adminPassword || data.adminPassword.length < 6) return toast.error("Admin Password must be at least 6 characters long.");
+        if (data.securityPin && !/^\d{6}$/.test(data.securityPin)) return toast.error("Payroll Security PIN must be exactly 6 digits.");
 
         const toastId = toast.loading("Creating company...");
         try { setLoading(true); await createCompanyWithAdmin(data); await loadCompanies(); setOpen(false); toast.update(toastId, { render: "Company created successfully!", type: "success", isLoading: false, autoClose: 3000 }); }
@@ -75,6 +78,7 @@ const Company = () => {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.adminEmail)) return toast.error("Please enter a valid email address.");
         if (!/^\d{10}$/.test(data.adminPhone)) return toast.error("Phone number must be exactly 10 digits.");
         if (data.adminPassword && data.adminPassword.length < 6) return toast.error("Admin Password must be at least 6 characters long.");
+        if (data.securityPin && !/^\d{6}$/.test(data.securityPin)) return toast.error("Payroll Security PIN must be exactly 6 digits.");
 
         const toastId = toast.loading("Updating company...");
         try { setLoading(true); await updateCompanyWithAdmin(selected._id, data); await loadCompanies(); setOpen(false); toast.update(toastId, { render: "Company updated successfully!", type: "success", isLoading: false, autoClose: 3000 }); }

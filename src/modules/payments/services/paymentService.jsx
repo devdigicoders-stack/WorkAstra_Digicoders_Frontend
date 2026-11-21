@@ -38,3 +38,8 @@ export const getProjectFinances = async () => {
     const response = await api.get(`/api/payments/project-finances`);
     return response.data;
 };
+
+export const getClientFinances = async (clientId) => {
+    const response = await api.get(`/api/payments/client-finances/${clientId}`);
+    return response.data;
+};

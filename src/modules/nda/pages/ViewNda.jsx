@@ -8,6 +8,16 @@ import ClientMyNda from "./ClientMyNda";
 
 const ViewNda = () => {
     const { user } = useStore();
+    const isClient = (user?.role?.name || user?.role || "").toString().toLowerCase() === "client";
+
+    if (isClient) {
+        return <ClientMyNda />;
+    }
+
+    return <EmployeeViewNda user={user} />;
+};
+
+const EmployeeViewNda = ({ user }) => {
     const [ndas, setNdas] = useState([]);
     const [mySignatures, setMySignatures] = useState([]);
     const [signaturesMap, setSignaturesMap] = useState({});
@@ -43,49 +53,6 @@ const ViewNda = () => {
 
     const companyIdStr = typeof user?.companyId === "object" ? user?.companyId?._id : user?.companyId;
 
-    useEffect(() => {
-        fetchData();
-    }, [companyIdStr]);
-
-    // Initialize Employee form when user data is loaded
-    useEffect(() => {
-        if (user) {
-            setEmployeeForm({
-                fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-                fatherName: "",
-                employeeId: user.employeeCode || `EMP-${user._id?.toString().slice(-4)}`,
-                designation: user.designation?.name || user.designation?.title || "Software Engineer",
-                phone: user.phone || "",
-                email: user.email || "",
-                address: user.address || ""
-            });
-        }
-    }, [user]);
-
-    // If role is Client, show their specific My NDA view (placed after all hooks)
-    if (user?.role?.name?.toLowerCase() === "client") {
-        return <ClientMyNda />;
-    }
-
-    const getDocumentUrl = (url) => {
-        if (!url) return "";
-        let baseUrl = import.meta.env.VITE_BASE_URL?.replace(/\/$/, '') || "";
-        
-        let finalUrl = url;
-        if (url.startsWith("http://localhost:8008")) {
-            finalUrl = url.replace("http://localhost:8008", baseUrl);
-        } else if (url.startsWith("/")) {
-            finalUrl = `${baseUrl}${url}`;
-        }
-        
-        // Enforce HTTPS if current page is on HTTPS to prevent Mixed Content blocking
-        if (window.location.protocol === 'https:' && finalUrl.startsWith('http://') && !finalUrl.includes('localhost')) {
-            finalUrl = finalUrl.replace('http://', 'https://');
-        }
-        
-        return finalUrl;
-    };
-
     const fetchData = async () => {
         try {
             setLoading(true);
@@ -118,6 +85,44 @@ const ViewNda = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, [companyIdStr]);
+
+    // Initialize Employee form when user data is loaded
+    useEffect(() => {
+        if (user) {
+            setEmployeeForm({
+                fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+                fatherName: "",
+                employeeId: user.employeeCode || `EMP-${user._id?.toString().slice(-4)}`,
+                designation: user.designation?.name || user.designation?.title || "Software Engineer",
+                phone: user.phone || "",
+                email: user.email || "",
+                address: user.address || ""
+            });
+        }
+    }, [user]);
+
+    const getDocumentUrl = (url) => {
+        if (!url) return "";
+        let baseUrl = import.meta.env.VITE_BASE_URL?.replace(/\/$/, '') || "";
+        
+        let finalUrl = url;
+        if (url.startsWith("http://localhost:8008")) {
+            finalUrl = url.replace("http://localhost:8008", baseUrl);
+        } else if (url.startsWith("/")) {
+            finalUrl = `${baseUrl}${url}`;
+        }
+        
+        // Enforce HTTPS if current page is on HTTPS to prevent Mixed Content blocking
+        if (window.location.protocol === 'https:' && finalUrl.startsWith('http://') && !finalUrl.includes('localhost')) {
+            finalUrl = finalUrl.replace('http://', 'https://');
+        }
+        
+        return finalUrl;
     };
 
     const openSigningModal = () => {

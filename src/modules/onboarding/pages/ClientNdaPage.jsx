@@ -2,15 +2,17 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SignatureCanvas from "react-signature-canvas";
 import { toast } from "react-toastify";
+import { CheckCircle2, Download } from "lucide-react";
 import { useStore } from "../../../context/StoreContext";
 import api from "../../../services/axios";
-import { getClientNdaTemplate } from "../../../services/ndaService";
+import { getClientNdaTemplate, getMySignatures } from "../../../services/ndaService";
 import { getFileUrl } from "../../../utils/imageUtils";
 
 const ClientNdaPage = ({ inPanel = false }) => {
     const { user, setUser } = useStore();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
+    const [signedData, setSignedData] = useState(null);
     const [templateUrl, setTemplateUrl] = useState("");
     const [showSignaturePad, setShowSignaturePad] = useState(false);
     const [showOtpModal, setShowOtpModal] = useState(false);
@@ -19,11 +21,29 @@ const ClientNdaPage = ({ inPanel = false }) => {
     const sigCanvas = useRef({});
 
     useEffect(() => {
-        fetchTemplate();
+        initPage();
     }, []);
 
-    const fetchTemplate = async () => {
+    const initPage = async () => {
         try {
+            setLoading(true);
+
+            // 1. Check if client has already signed their NDA
+            try {
+                const sigRes = await getMySignatures();
+                if (sigRes?.success && sigRes?.signatures?.length > 0) {
+                    const foundSig = sigRes.signatures.find(s => s.signedDocumentUrl) || sigRes.signatures[0];
+                    if (foundSig && foundSig.signedDocumentUrl) {
+                        setSignedData(foundSig);
+                        setLoading(false);
+                        return;
+                    }
+                }
+            } catch (sigErr) {
+                console.error("Error checking existing signature:", sigErr);
+            }
+
+            // 2. If not signed, fetch the active client NDA template
             const res = await getClientNdaTemplate();
             if (res.success && res.nda?.document?.url) {
                 setTemplateUrl(getFileUrl(res.nda.document.url));
@@ -42,7 +62,6 @@ const ClientNdaPage = ({ inPanel = false }) => {
             }
         } catch (error) {
             console.error("Failed to fetch NDA template:", error);
-            // On error also redirect to dashboard
             navigate("/", { replace: true });
             return;
         } finally {
@@ -103,7 +122,14 @@ const ClientNdaPage = ({ inPanel = false }) => {
                 toast.success("NDA Signed Successfully!");
                 setUser({ ...user, clientNdaStatus: "signed" });
                 setShowOtpModal(false);
-                navigate("/");
+                if (response.data.signedDocumentUrl) {
+                    setSignedData({
+                        signedDocumentUrl: response.data.signedDocumentUrl,
+                        createdAt: new Date()
+                    });
+                } else {
+                    navigate("/");
+                }
             }
         } catch (error) {
             console.error("FULL ERROR DETAILS:", error);
@@ -119,10 +145,77 @@ const ClientNdaPage = ({ inPanel = false }) => {
         sigCanvas.current.clear();
     };
 
-    if (loading && !templateUrl) {
+    if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+            </div>
+        );
+    }
+
+    if (signedData) {
+        const signedUrl = getFileUrl(signedData.signedDocumentUrl);
+        return (
+            <div className={`${inPanel ? 'h-full bg-white flex flex-col' : 'min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4'}`}>
+                <div className={`w-full ${inPanel ? 'flex-1' : 'max-w-4xl bg-white rounded-lg shadow-lg'} overflow-hidden flex flex-col`}>
+                    <div className="bg-emerald-600 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div>
+                            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+                                <CheckCircle2 size={24} className="text-emerald-100" /> Non-Disclosure Agreement (NDA)
+                            </h1>
+                            <p className="text-emerald-100 text-xs sm:text-sm mt-1">
+                                ✓ Document Signed & Stamped on {new Date(signedData.createdAt).toLocaleDateString("en-IN", { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
+                        </div>
+                        <a
+                            href={signedUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download
+                            className="px-4 py-2 bg-white text-emerald-700 hover:bg-emerald-50 rounded-lg text-xs sm:text-sm font-semibold transition flex items-center gap-1.5 shadow-sm shrink-0"
+                        >
+                            <Download size={16} /> Download Signed NDA
+                        </a>
+                    </div>
+
+                    <div className="p-6 flex-1 flex flex-col bg-gray-100">
+                        {/* PDF Viewer for Signed PDF */}
+                        <div className="w-full h-[65vh] bg-white border border-gray-300 rounded-md shadow-inner overflow-hidden mb-6">
+                            <iframe 
+                                src={`${signedUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                className="w-full h-full"
+                                title="Client Signed NDA Document"
+                            ></iframe>
+                        </div>
+
+                        {/* Actions for Signed view */}
+                        <div className="bg-white p-5 rounded-md shadow-sm border border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <span>Your signature is permanently stamped on this document.</span>
+                            </div>
+                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                <a
+                                    href={signedUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    download
+                                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition flex items-center justify-center gap-2 w-full sm:w-auto shadow"
+                                >
+                                    <Download size={16} /> Download Copy
+                                </a>
+                                {!inPanel && (
+                                    <button
+                                        onClick={() => navigate("/")}
+                                        className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold transition w-full sm:w-auto"
+                                    >
+                                        Go to Dashboard
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }

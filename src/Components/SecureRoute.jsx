@@ -9,17 +9,21 @@ const SecureRoute = ({ children }) => {
 
     const isSuperAdmin = user?.role?.name === "super_admin";
     const permissions = user?.role?.permissions || [];
-    const canManagePayroll = isSuperAdmin || permissions.includes("MANAGE_PAYROLL");
+    const isPrivilegedUser = isSuperAdmin || 
+        permissions.includes("MANAGE_PAYROLL") || 
+        permissions.includes("MANAGE_PAYMENTS") || 
+        permissions.includes("VIEW_ALL_PROJECTS") || 
+        permissions.includes("CREATE_PROJECT");
 
     useEffect(() => {
-        // If not unlocked and user can manage payroll, trigger the modal immediately
-        if (!isUnlocked && canManagePayroll) {
+        // If not unlocked and user has management access, trigger the modal immediately
+        if (!isUnlocked && isPrivilegedUser) {
             requestUnlock();
         }
-    }, [isUnlocked, requestUnlock, canManagePayroll]);
+    }, [isUnlocked, requestUnlock, isPrivilegedUser]);
 
     // If unlocked or if the user is just a normal employee, show the actual component
-    if (isUnlocked || !canManagePayroll) {
+    if (isUnlocked || !isPrivilegedUser) {
         return children;
     }
 

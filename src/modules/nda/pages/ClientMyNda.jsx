@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FileText, Download } from "lucide-react";
 import { toast } from "react-toastify";
 import { getMySignatures } from "../../../services/ndaService";
+import { getFileUrl } from "../../../utils/imageUtils";
 import ClientNdaPage from "../../onboarding/pages/ClientNdaPage";
 
 const ClientMyNda = () => {
@@ -39,12 +40,7 @@ const ClientMyNda = () => {
         return <ClientNdaPage inPanel={true} />;
     }
 
-    const docUrl = signature.signedDocumentUrl;
-
-    let finalDocUrl = docUrl;
-    if (window.location.protocol === 'https:' && finalDocUrl.startsWith('http://') && !finalDocUrl.includes('localhost')) {
-        finalDocUrl = finalDocUrl.replace('http://', 'https://');
-    }
+    const finalDocUrl = getFileUrl(signature.signedDocumentUrl);
 
     return (
         <div className="flex flex-col h-[calc(100vh-60px)] bg-white w-full">

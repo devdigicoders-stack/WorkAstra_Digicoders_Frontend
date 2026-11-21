@@ -9,7 +9,10 @@ import {
 import api from "../../../services/axios";
 import { ENDPOINTS } from "../../../services/endpoints";
 
-const fmt = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+const fmt = (n) => {
+    if (n === "••••••" || (typeof n === "string" && n.includes("•"))) return "••••••";
+    return `₹${Number(n || 0).toLocaleString("en-IN")}`;
+};
 
 const EMPTY_COMPONENT = { name: "", type: "earning", calcType: "fixed", value: "" };
 

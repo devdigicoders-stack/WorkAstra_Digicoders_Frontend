@@ -13,6 +13,9 @@ export const getAllQuotes = (params = {}) =>
 export const getQuotesByLead = (leadId, companyId) =>
     api.get(Q.GET_BY_LEAD(leadId), { params: { companyId } }).then(r => r.data.quotes ?? r.data);
 
+export const getClientQuotes = (clientId) =>
+    api.get(`/api/quotes/client/${clientId}`).then(r => r.data);
+
 export const getQuoteById = (quoteId) =>
     api.get(Q.GET_BY_ID(quoteId)).then(r => r.data.quote ?? r.data);
 

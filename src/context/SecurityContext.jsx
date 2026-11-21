@@ -13,6 +13,15 @@ export const SecurityProvider = ({ children }) => {
     const [lastActivity, setLastActivity] = useState(Date.now());
     const LOCK_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
+    // Check if payroll token is already present in session
+    useEffect(() => {
+        const token = sessionStorage.getItem('payroll_token');
+        if (token) {
+            api.defaults.headers.common['x-payroll-token'] = token;
+            setIsUnlocked(true);
+        }
+    }, []);
+
     // Update activity on mouse/keyboard events if unlocked
     useEffect(() => {
         if (!isUnlocked) return;
@@ -27,6 +36,8 @@ export const SecurityProvider = ({ children }) => {
         const interval = setInterval(() => {
             if (Date.now() - lastActivity > LOCK_TIMEOUT) {
                 setIsUnlocked(false);
+                delete api.defaults.headers.common['x-payroll-token'];
+                sessionStorage.removeItem('payroll_token');
             }
         }, 10000); // Check every 10 seconds
 
@@ -51,6 +62,10 @@ export const SecurityProvider = ({ children }) => {
         try {
             const res = await api.post(ENDPOINTS.AUTH.VERIFY_PIN, { pin });
             if (res.data.success) {
+                if (res.data.payrollToken) {
+                    api.defaults.headers.common['x-payroll-token'] = res.data.payrollToken;
+                    sessionStorage.setItem('payroll_token', res.data.payrollToken);
+                }
                 setIsUnlocked(true);
                 setIsModalOpen(false);
                 setLastActivity(Date.now());

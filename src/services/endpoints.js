@@ -10,6 +10,8 @@ export const ENDPOINTS = {
     VERIFY_TOKEN: `/api/user/me`,
     LOGOUT: `/api/user/logout`,
     VERIFY_PIN: `/api/user/verify-pin`,
+    FORGOT_PAYROLL_PIN: `/api/user/forgot-payroll-pin`,
+    RESET_PAYROLL_PIN: `/api/user/reset-payroll-pin`,
   },
 
   USER: {

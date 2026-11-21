@@ -20,10 +20,10 @@ const STATUS_CLS = {
     paid:     "bg-green-50 text-green-700 border-green-200",
 };
 
-const fmt = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+const fmt = (n) => (n === "••••••" || (typeof n === "string" && n.includes("•"))) ? "••••••" : `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
 // ── Payslip Detail Modal ──────────────────────────────────────────────────────
-const PayslipModal = ({ run, onClose, company }) => {
+export const PayslipModal = ({ run, onClose, company }) => {
     const [showPrint, setShowPrint] = useState(false);
     if (!run) return null;
     const earnings   = run.components?.filter(c => c.type === "earning")  || [];

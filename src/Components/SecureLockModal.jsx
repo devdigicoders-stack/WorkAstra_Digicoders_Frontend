@@ -79,6 +79,16 @@ const SecureLockModal = () => {
                             {loading ? "Verifying..." : "Unlock"}
                         </button>
                     </form>
+
+                    <div className="mt-4 pt-3 border-t border-gray-100 w-full text-center">
+                        <a
+                            href="/profile?tab=payroll-pin&forgot=true"
+                            onClick={() => setIsModalOpen(false)}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline inline-flex items-center gap-1"
+                        >
+                            Forgot PIN? Reset via Email OTP
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
