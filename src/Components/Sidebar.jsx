@@ -130,7 +130,7 @@ const NAV = [
             { name: "Attendance Reports", icon: CalendarDays, path: "/reports/attendance", permissions: ["VIEW_ALL_ATTENDANCES", "VIEW_TEAM_ATTENDANCE"] },
             { name: "Leave Reports", icon: Palmtree, path: "/reports/leave", permissions: ["VIEW_ALL_LEAVES"] },
             { name: "Payroll Reports", icon: IndianRupee, path: "/reports/payroll", permissions: ["MANAGE_PAYROLL"] },
-            { name: "Employee Reports", icon: Users, path: "/reports/employees", permissions: ["VIEW_ALL_USERS"] },
+            // { name: "Employee Reports", icon: Users, path: "/reports/employees", permissions: ["VIEW_ALL_USERS"] },
             { name: "Sales Reports", icon: TrendingUp, path: "/reports/sales", permissions: ["VIEW_ALL_LEADS", "MANAGE_LEADS"] },
             { name: "Performance Reports", icon: BarChart2, path: "/reports/performance", permissions: [] },
             // { name: "Department Reports", icon: FolderKanban, path: "/dept-reports", permissions: ["VIEW_ALL_DEPARTMENTS"] },

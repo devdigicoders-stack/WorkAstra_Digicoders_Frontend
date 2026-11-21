@@ -27,6 +27,7 @@ import { getUserStructures, getPayrollRuns } from "../../payroll/services/payrol
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import Swal from "sweetalert2";
 import OfferLetter from "../../onboarding/pages/OfferLetter";
+import PaymentReceiptModal from "../../payments/components/PaymentReceiptModal";
 
 const EmployeeProfile = () => {
     const { id } = useParams();
@@ -74,6 +75,7 @@ const EmployeeProfile = () => {
     const [loadingFinances, setLoadingFinances] = useState(false);
     const [selectedFinanceProject, setSelectedFinanceProject] = useState(null);
     const [previewPaymentReceipt, setPreviewPaymentReceipt] = useState(null);
+    const [officialSlipModal, setOfficialSlipModal] = useState(null);
 
     // Client Proposals State
     const [clientQuotes, setClientQuotes] = useState([]);
@@ -1068,12 +1070,23 @@ const EmployeeProfile = () => {
                                                                                         {pay.status?.toUpperCase() || "PENDING"}
                                                                                     </span>
 
+                                                                                    {pay.status === "approved" && (
+                                                                                        <button 
+                                                                                            onClick={() => setOfficialSlipModal(pay)}
+                                                                                            className="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition flex items-center gap-1 shadow-sm"
+                                                                                            title="View & Download Official DigiCoders Payment Slip"
+                                                                                        >
+                                                                                            <Receipt size={12} /> Slip
+                                                                                        </button>
+                                                                                    )}
+
                                                                                     {pay.screenshot?.url && (
                                                                                         <button 
                                                                                             onClick={() => setPreviewPaymentReceipt(pay)}
-                                                                                            className="px-2.5 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition flex items-center gap-1"
+                                                                                            className="px-2.5 py-1 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-1"
+                                                                                            title="View Uploaded Proof Screenshot"
                                                                                         >
-                                                                                            <Eye size={12} /> View Receipt
+                                                                                            <Eye size={12} /> Proof
                                                                                         </button>
                                                                                     )}
                                                                                 </div>
@@ -1154,16 +1167,28 @@ const EmployeeProfile = () => {
                                                                 {p.remark || "—"}
                                                             </td>
                                                             <td className="px-6 py-4 text-right whitespace-nowrap">
-                                                                {p.screenshot?.url ? (
-                                                                    <button 
-                                                                        onClick={() => setPreviewPaymentReceipt(p)}
-                                                                        className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition inline-flex items-center gap-1"
-                                                                    >
-                                                                        <Eye size={12} /> View Proof
-                                                                    </button>
-                                                                ) : (
-                                                                    <span className="text-xs text-gray-400 italic">No receipt</span>
-                                                                )}
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    {p.status === "approved" && (
+                                                                        <button 
+                                                                            onClick={() => setOfficialSlipModal(p)}
+                                                                            className="px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-lg transition inline-flex items-center gap-1 shadow-sm"
+                                                                            title="Download Official DigiCoders Payment Slip"
+                                                                        >
+                                                                            <Receipt size={13} /> Official Slip
+                                                                        </button>
+                                                                    )}
+                                                                    {p.screenshot?.url ? (
+                                                                        <button 
+                                                                            onClick={() => setPreviewPaymentReceipt(p)}
+                                                                            className="px-2.5 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition inline-flex items-center gap-1"
+                                                                            title="View Uploaded Payment Proof"
+                                                                        >
+                                                                            <Eye size={12} /> Proof
+                                                                        </button>
+                                                                    ) : (
+                                                                        p.status !== "approved" && <span className="text-xs text-gray-400 italic">No proof</span>
+                                                                    )}
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -2111,6 +2136,15 @@ const EmployeeProfile = () => {
                             </div>
                         </div>
                     </div>
+                )}
+
+                {/* Modal 3: Official DigiCoders Payment Receipt / Slip */}
+                {officialSlipModal && (
+                    <PaymentReceiptModal
+                        payment={officialSlipModal}
+                        company={currentUser?.companyId}
+                        onClose={() => setOfficialSlipModal(null)}
+                    />
                 )}
             </div>
         </div>

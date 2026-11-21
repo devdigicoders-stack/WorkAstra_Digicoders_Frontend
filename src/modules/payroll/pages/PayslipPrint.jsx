@@ -90,9 +90,9 @@ const PayslipPrint = ({ run, company, onClose }) => {
     const emp        = run.userId || {};
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
             {/* Toolbar */}
-            <div className="absolute top-4 right-4 flex gap-2 z-10">
+            <div className="fixed top-4 right-4 flex gap-2 z-[110]">
                 <button onClick={handlePrint}
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow">
                     <Printer size={15} /> Print / Download PDF

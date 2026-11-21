@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import { useStore } from "../../../context/StoreContext";
 import { getPayrollRuns } from "../../payroll/services/payrollService";
-import { Banknote, Users, Download, CreditCard, PieChart as PieChartIcon, Eye, TrendingUp, Building2 } from "lucide-react";
+import { Banknote, Users, Download, CreditCard, PieChart as PieChartIcon, Eye, TrendingUp, Building2, Calendar, FileText } from "lucide-react";
 import PayslipPrint from "../../payroll/pages/PayslipPrint";
+import EmployeePayrollHistoryModal from "../components/EmployeePayrollHistoryModal";
 
 const exportToCSV = (rows, filename) => {
     const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -33,6 +34,9 @@ const PayrollReport = () => {
     
     // Payslip Modal
     const [selectedPayslip, setSelectedPayslip] = useState(null);
+    
+    // Employee Payroll History Modal
+    const [selectedEmployeeHistory, setSelectedEmployeeHistory] = useState(null);
 
     const loadData = useCallback(async () => {
         try {
@@ -123,7 +127,14 @@ const PayrollReport = () => {
 
     return (
         <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
-            {selectedPayslip && <PayslipPrint run={selectedPayslip} onClose={() => setSelectedPayslip(null)} />}
+            {selectedEmployeeHistory && (
+                <EmployeePayrollHistoryModal
+                    employee={selectedEmployeeHistory}
+                    company={user?.companyId}
+                    onClose={() => setSelectedEmployeeHistory(null)}
+                />
+            )}
+            {selectedPayslip && <PayslipPrint run={selectedPayslip} company={user?.companyId} onClose={() => setSelectedPayslip(null)} />}
             
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Payroll Analytics</h1>
@@ -275,7 +286,7 @@ const PayrollReport = () => {
                                             <th className="px-5 py-3">Deductions</th>
                                             <th className="px-5 py-3">Net Salary</th>
                                             <th className="px-5 py-3">Status</th>
-                                            <th className="px-5 py-3 text-center">Payslip</th>
+                                            <th className="px-5 py-3 text-center">Actions & History</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
@@ -287,12 +298,18 @@ const PayrollReport = () => {
                                             filteredRuns.map((r, idx) => (
                                                 <tr key={idx} className="hover:bg-gray-50/50 transition">
                                                     <td className="px-5 py-3">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0">
+                                                        <div 
+                                                            onClick={() => setSelectedEmployeeHistory(r.userId || r)}
+                                                            className="flex items-center gap-3 cursor-pointer group"
+                                                            title="Click to view full payroll history"
+                                                        >
+                                                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition shadow-sm">
                                                                 {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
                                                             </div>
                                                             <div>
-                                                                <p className="font-semibold text-gray-800">{r.userId?.firstName} {r.userId?.lastName}</p>
+                                                                <p className="font-semibold text-gray-800 group-hover:text-indigo-600 transition flex items-center gap-1.5">
+                                                                    {r.userId?.firstName} {r.userId?.lastName}
+                                                                </p>
                                                                 <p className="text-[11px] text-gray-400">{r.userId?.employeeCode} • {r.userId?.department?.name}</p>
                                                             </div>
                                                         </div>
@@ -314,13 +331,22 @@ const PayrollReport = () => {
                                                         </span>
                                                     </td>
                                                     <td className="px-5 py-3 text-center">
-                                                        <button 
-                                                            onClick={() => setSelectedPayslip(r)}
-                                                            className="p-1.5 bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 rounded-lg transition"
-                                                            title="View Payslip"
-                                                        >
-                                                            <Eye size={16} />
-                                                        </button>
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <button 
+                                                                onClick={() => setSelectedEmployeeHistory(r.userId || r)}
+                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white border border-indigo-200/80 rounded-lg text-xs font-semibold transition shadow-sm"
+                                                                title="View Month-wise Payroll History"
+                                                            >
+                                                                <Eye size={14} /> View History
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setSelectedPayslip(r)}
+                                                                className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg transition"
+                                                                title="Print / Download This Month's Payslip"
+                                                            >
+                                                                <FileText size={15} />
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))

@@ -2,15 +2,19 @@ import React, { useEffect, useState } from "react";
 import { getImageUrl } from "../../../utils/imageUtils";
 import { CheckCircle, XCircle, CreditCard, ExternalLink, Image as ImageIcon, QrCode, Save, FolderKanban, Receipt } from "lucide-react";
 import { getUpiDetails, updateUpiDetails, getAllPayments, updatePaymentStatus } from "../services/paymentService";
+import { useStore } from "../../../context/StoreContext";
+import { downloadPaymentReceiptPdf } from "../services/paymentReceiptPdfGenerator";
 import { toast } from "react-toastify";
 import QRCode from "react-qr-code";
 
 const ManagePayments = () => {
+    const { user } = useStore();
     const [payments, setPayments] = useState([]);
     const [upiDetails, setUpiDetails] = useState({ upiId: "", payeeName: "" });
     const [loading, setLoading] = useState(true);
     const [isSavingUpi, setIsSavingUpi] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [downloadingSlipId, setDownloadingSlipId] = useState(null);
 
     const fetchData = async () => {
         try {
@@ -65,6 +69,20 @@ const ManagePayments = () => {
             }
         } catch (error) {
             toast.error(error.response?.data?.message || "An error occurred");
+        }
+    };
+
+    const handleDownloadSlip = async (payment) => {
+        try {
+            setDownloadingSlipId(payment._id);
+            toast.info("Generating official Payment Slip PDF...");
+            await downloadPaymentReceiptPdf(payment, user?.companyId);
+            toast.success("Payment Slip downloaded successfully!");
+        } catch (err) {
+            console.error("PDF error:", err);
+            toast.error("Failed to generate PDF slip");
+        } finally {
+            setDownloadingSlipId(null);
         }
     };
 
@@ -242,7 +260,29 @@ const ManagePayments = () => {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <span className="text-xs text-slate-400">Reviewed</span>
+                                                <div className="flex items-center gap-2">
+                                                    {payment.status === 'approved' && (
+                                                        <button 
+                                                            onClick={() => handleDownloadSlip(payment)}
+                                                            disabled={downloadingSlipId === payment._id}
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200/80 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                                                            title="Direct Download Official DigiCoders Payment Slip (.pdf)"
+                                                        >
+                                                            {downloadingSlipId === payment._id ? (
+                                                                <>
+                                                                    <div className="w-3 h-3 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                                                                    <span>Generating...</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Receipt className="w-3.5 h-3.5" />
+                                                                    <span>Slip (PDF)</span>
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    )}
+                                                    <span className="text-xs text-slate-400">Reviewed</span>
+                                                </div>
                                             )}
                                         </td>
                                     </tr>

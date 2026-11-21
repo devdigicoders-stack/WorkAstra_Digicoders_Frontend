@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { Upload, FileImage, CreditCard, Send, CheckCircle, Clock, XCircle, FileText, AlertCircle, FolderKanban } from "lucide-react";
+import { Upload, FileImage, CreditCard, Send, CheckCircle, Clock, XCircle, FileText, AlertCircle, FolderKanban, Receipt } from "lucide-react";
 import { getUpiDetails, submitPayment, getMyPayments } from "../services/paymentService";
 import { getProjects } from "../../projects/services/projectService";
+import { useStore } from "../../../context/StoreContext";
+import { downloadPaymentReceiptPdf } from "../services/paymentReceiptPdfGenerator";
 import { toast } from "react-toastify";
 import QRCode from "react-qr-code";
 
 const SubmitPayment = () => {
+    const { user } = useStore();
     const [upiDetails, setUpiDetails] = useState({ upiId: "", payeeName: "" });
     const [payments, setPayments] = useState([]);
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [downloadingId, setDownloadingId] = useState(null);
 
     const [formData, setFormData] = useState({
         amount: "",
@@ -53,6 +57,20 @@ const SubmitPayment = () => {
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
             setFormData({ ...formData, screenshot: e.target.files[0] });
+        }
+    };
+
+    const handleDownloadSlip = async (payment) => {
+        try {
+            setDownloadingId(payment._id);
+            toast.info("Generating official Payment Slip PDF...");
+            await downloadPaymentReceiptPdf(payment, user?.companyId);
+            toast.success("Payment Slip downloaded successfully!");
+        } catch (err) {
+            console.error("PDF error:", err);
+            toast.error("Failed to generate PDF slip");
+        } finally {
+            setDownloadingId(null);
         }
     };
 
@@ -278,6 +296,29 @@ const SubmitPayment = () => {
                                         <p className="text-xs text-slate-500 truncate">Txn ID: {payment.transactionId}</p>
                                         {payment.remark && <p className="text-xs text-slate-600 mt-1 italic">"{payment.remark}"</p>}
                                         <p className="text-[10px] text-slate-400 mt-2">{new Date(payment.createdAt).toLocaleString()}</p>
+
+                                        {payment.status === 'approved' && (
+                                            <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between">
+                                                <button
+                                                    onClick={() => handleDownloadSlip(payment)}
+                                                    disabled={downloadingId === payment._id}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 rounded-lg text-xs font-semibold shadow-sm transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                                                    title="Direct Download Official DigiCoders Payment Slip (.pdf)"
+                                                >
+                                                    {downloadingId === payment._id ? (
+                                                        <>
+                                                            <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                                                            Generating PDF...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Receipt className="w-3.5 h-3.5 text-emerald-600" /> Download Slip (PDF)
+                                                        </>
+                                                    )}
+                                                </button>
+                                                <span className="text-[10px] font-medium text-emerald-600">✓ Verified</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
