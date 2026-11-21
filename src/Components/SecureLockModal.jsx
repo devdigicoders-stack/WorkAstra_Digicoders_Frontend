@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSecurity } from '../context/SecurityContext';
+import { useNavigate } from 'react-router-dom';
 import { X, Lock } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const SecureLockModal = () => {
+    const navigate = useNavigate();
     const { verifyPin, isModalOpen, setIsModalOpen } = useSecurity();
     const [pin, setPinValue] = useState("");
     const [loading, setLoading] = useState(false);
@@ -39,7 +41,7 @@ const SecureLockModal = () => {
 
     const handleClose = () => {
         setIsModalOpen(false);
-        window.location.href = '/'; // Go back to home if they cancel unlocking
+        navigate('/');
     };
 
     if (!isModalOpen) return null;
@@ -81,13 +83,16 @@ const SecureLockModal = () => {
                     </form>
 
                     <div className="mt-4 pt-3 border-t border-gray-100 w-full text-center">
-                        <a
-                            href="/profile?tab=payroll-pin&forgot=true"
-                            onClick={() => setIsModalOpen(false)}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline inline-flex items-center gap-1"
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsModalOpen(false);
+                                navigate('/profile?tab=payroll-pin&forgot=true');
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline inline-flex items-center gap-1 cursor-pointer bg-transparent border-none p-0"
                         >
                             Forgot PIN? Reset via Email OTP
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>

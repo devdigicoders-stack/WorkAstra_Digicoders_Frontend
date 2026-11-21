@@ -1,7 +1,6 @@
-import { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import api from '../services/axios';
 import { ENDPOINTS } from '../services/endpoints';
-import SecureLockModal from '../Components/SecureLockModal';
 
 const SecurityContext = createContext();
 
@@ -50,13 +49,13 @@ export const SecurityProvider = ({ children }) => {
         };
     }, [isUnlocked, lastActivity]);
 
-    const requestUnlock = () => {
+    const requestUnlock = useCallback(() => {
         if (!isUnlocked) {
             setIsModalOpen(true);
             return false;
         }
         return true;
-    };
+    }, [isUnlocked]);
 
     const verifyPin = async (pin) => {
         try {
@@ -84,7 +83,6 @@ export const SecurityProvider = ({ children }) => {
     return (
         <SecurityContext.Provider value={{ isUnlocked, requestUnlock, verifyPin, isModalOpen, setIsModalOpen }}>
             {children}
-            {isModalOpen && <SecureLockModal />}
         </SecurityContext.Provider>
     );
 };

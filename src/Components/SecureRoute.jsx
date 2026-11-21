@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useSecurity } from '../context/SecurityContext';
 import { useStore } from '../context/StoreContext';
 import { Lock } from 'lucide-react';
@@ -6,6 +6,7 @@ import { Lock } from 'lucide-react';
 const SecureRoute = ({ children }) => {
     const { isUnlocked, requestUnlock } = useSecurity();
     const { user } = useStore();
+    const hasRequestedRef = useRef(false);
 
     const isSuperAdmin = user?.role?.name === "super_admin";
     const permissions = user?.role?.permissions || [];
@@ -16,11 +17,12 @@ const SecureRoute = ({ children }) => {
         permissions.includes("CREATE_PROJECT");
 
     useEffect(() => {
-        // If not unlocked and user has management access, trigger the modal immediately
-        if (!isUnlocked && isPrivilegedUser) {
+        // If not unlocked and user has management access, trigger the modal once on mount
+        if (!isUnlocked && isPrivilegedUser && !hasRequestedRef.current) {
+            hasRequestedRef.current = true;
             requestUnlock();
         }
-    }, [isUnlocked, requestUnlock, isPrivilegedUser]);
+    }, [isUnlocked, isPrivilegedUser, requestUnlock]);
 
     // If unlocked or if the user is just a normal employee, show the actual component
     if (isUnlocked || !isPrivilegedUser) {

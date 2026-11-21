@@ -5,6 +5,7 @@ import Navbar from "../Components/Navbar";
 import { useStore } from "../context/StoreContext";
 import { requestForToken, onMessageListener } from "../firebase";
 import WishesModal from "../Components/WishesModal";
+import SecureLockModal from "../Components/SecureLockModal";
 import { saveFcmTokenToBackend } from "../services/fcmService";
 import { toast } from "react-toastify";
 
@@ -53,6 +54,7 @@ function WebLayout() {
                 </div>
             </main>
             <WishesModal user={user} />
+            <SecureLockModal />
         </div>
     );
 }
