@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Clock, X } from "lucide-react";
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Clock, X, Search, Building2 } from "lucide-react";
 import { useStore } from "../../../context/StoreContext";
 import { getCompanyWorkShifts, createWorkShift, updateWorkShift, deleteWorkShift, toggleWorkShiftStatus } from "../services/workShiftService";
 import { fetchAllCompaniesList } from "../../company/services/companyService";
@@ -136,6 +136,8 @@ const WorkShift = () => {
     const [open, setOpen] = useState(false);
     const [selected, setSelected] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [companyFilter, setCompanyFilter] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
 
     const load = async () => {
         try {
@@ -146,7 +148,7 @@ const WorkShift = () => {
 
     useEffect(() => {
         load();
-        if (isSuperAdmin) fetchAllCompaniesList().then(d => setCompanies(d.companies || [])).catch(() => {});
+        fetchAllCompaniesList().then(d => setCompanies(d.companies || [])).catch(() => {});
     }, []);
 
     const handleSubmit = async (form) => {
@@ -179,7 +181,26 @@ const WorkShift = () => {
         return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
     };
 
-    const colSpan = isSuperAdmin ? 8 : 7;
+    // Available company options (from API or derived from shifts)
+    const companyOptions = companies.length > 0
+        ? companies
+        : Array.from(new Set(shifts.map(s => s.companyId?._id || s.companyId).filter(Boolean))).map(id => {
+            const found = shifts.find(s => (s.companyId?._id || s.companyId) === id);
+            return { _id: id, name: found?.companyId?.name || id };
+        });
+
+    const filteredShifts = shifts.filter((s) => {
+        const compId = s.companyId?._id || s.companyId;
+        const matchesCompany = !companyFilter || compId === companyFilter;
+        const q = searchQuery.toLowerCase().trim();
+        const matchesSearch = !q ||
+            s.name?.toLowerCase().includes(q) ||
+            s.companyId?.name?.toLowerCase().includes(q);
+        return matchesCompany && matchesSearch;
+    });
+
+    const showCompanyCol = isSuperAdmin || companyOptions.length > 1;
+    const colSpan = showCompanyCol ? 8 : 7;
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
@@ -196,12 +217,69 @@ const WorkShift = () => {
                 </button>
             </div>
 
+            {/* Company & Search Filters Bar */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 mb-5 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-1">
+                    {/* Live Search Input */}
+                    <div className="relative flex-1 max-w-md">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search shifts..."
+                            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Company Filter Dropdown */}
+                    <div className="relative min-w-[220px]">
+                        <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <select
+                            value={companyFilter}
+                            onChange={(e) => setCompanyFilter(e.target.value)}
+                            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition appearance-none cursor-pointer"
+                        >
+                            <option value="">All Companies ({companyOptions.length})</option>
+                            {companyOptions.map((c) => (
+                                <option key={c._id} value={c._id}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                    </div>
+
+                    {/* Reset Button */}
+                    {(companyFilter || searchQuery) && (
+                        <button
+                            onClick={() => { setCompanyFilter(""); setSearchQuery(""); }}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1.5 rounded hover:bg-blue-50 transition flex items-center gap-1 self-start sm:self-auto"
+                        >
+                            <X size={13} /> Reset Filters
+                        </button>
+                    )}
+                </div>
+
+                <div className="text-xs font-medium text-gray-500 shrink-0">
+                    Showing <span className="text-gray-900 font-semibold">{filteredShifts.length}</span> of {shifts.length} shifts
+                </div>
+            </div>
+
             <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                             <th className="px-4 py-3 text-left">Shift</th>
-                            {isSuperAdmin && <th className="px-4 py-3 text-left">Company</th>}
+                            {showCompanyCol && <th className="px-4 py-3 text-left">Company</th>}
                             <th className="px-4 py-3 text-left">Timing</th>
                             <th className="px-4 py-3 text-left">Week Off</th>
                             <th className="px-4 py-3 text-left">Thresholds</th>
@@ -211,9 +289,13 @@ const WorkShift = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {shifts.length === 0 ? (
-                            <tr><td colSpan={colSpan} className="px-4 py-10 text-center text-gray-400">No shifts found. Create one to get started.</td></tr>
-                        ) : shifts.map(s => (
+                        {filteredShifts.length === 0 ? (
+                            <tr>
+                                <td colSpan={colSpan} className="px-4 py-12 text-center text-gray-400">
+                                    {searchQuery || companyFilter ? "No shifts match your filters." : "No shifts found. Create one to get started."}
+                                </td>
+                            </tr>
+                        ) : filteredShifts.map(s => (
                             <tr key={s._id} className="hover:bg-gray-50 transition">
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
@@ -223,7 +305,7 @@ const WorkShift = () => {
                                         <p className="font-medium text-gray-800">{s.name}</p>
                                     </div>
                                 </td>
-                                {isSuperAdmin && <td className="px-4 py-3 text-gray-600">{s.companyId?.name || "—"}</td>}
+                                {showCompanyCol && <td className="px-4 py-3 text-gray-600">{s.companyId?.name || "—"}</td>}
                                 <td className="px-4 py-3">
                                     <p className="text-gray-800 font-medium">{fmt12(s.startTime)} – {fmt12(s.endTime)}</p>
                                 </td>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Briefcase, X, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Briefcase, X, Check, Search, Building2 } from "lucide-react";
 import { useStore } from "../../../context/StoreContext";
 import { getCompanyEmploymentStatuses, createEmploymentStatus, updateEmploymentStatus, deleteEmploymentStatus, toggleEmploymentStatus } from "../services/employmentStatusService";
 import { fetchAllCompaniesList } from "../../company/services/companyService";
@@ -70,6 +70,8 @@ const EmploymentStatusPage = () => {
     const [open, setOpen] = useState(false);
     const [selected, setSelected] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [companyFilter, setCompanyFilter] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
 
     const load = async () => {
         try {
@@ -80,7 +82,7 @@ const EmploymentStatusPage = () => {
 
     useEffect(() => {
         load();
-        if (isSuperAdmin) fetchAllCompaniesList().then(d => setCompanies(d.companies || [])).catch(() => {});
+        fetchAllCompaniesList().then(d => setCompanies(d.companies || [])).catch(() => {});
     }, []);
 
     const handleSubmit = async (form) => {
@@ -106,6 +108,25 @@ const EmploymentStatusPage = () => {
         catch { toast.error("Failed to toggle"); }
     };
 
+    // Available companies (from API or derived from statuses)
+    const companyOptions = companies.length > 0
+        ? companies
+        : Array.from(new Set(statuses.map(s => s.companyId?._id).filter(Boolean))).map(id => {
+            const found = statuses.find(s => s.companyId?._id === id);
+            return { _id: id, name: found?.companyId?.name || id };
+        });
+
+    const filteredStatuses = statuses.filter((s) => {
+        const compId = s.companyId?._id || s.companyId;
+        const matchesCompany = !companyFilter || compId === companyFilter;
+        const q = searchQuery.toLowerCase().trim();
+        const matchesSearch = !q ||
+            s.name?.toLowerCase().includes(q) ||
+            s.description?.toLowerCase().includes(q) ||
+            s.companyId?.name?.toLowerCase().includes(q);
+        return matchesCompany && matchesSearch;
+    });
+
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
@@ -119,12 +140,69 @@ const EmploymentStatusPage = () => {
                 </button>
             </div>
 
+            {/* Company & Search Filters Bar */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 mb-5 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-1">
+                    {/* Live Search Input */}
+                    <div className="relative flex-1 max-w-md">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search employment statuses..."
+                            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Company Filter Dropdown */}
+                    <div className="relative min-w-[220px]">
+                        <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <select
+                            value={companyFilter}
+                            onChange={(e) => setCompanyFilter(e.target.value)}
+                            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition appearance-none cursor-pointer"
+                        >
+                            <option value="">All Companies ({companyOptions.length})</option>
+                            {companyOptions.map((c) => (
+                                <option key={c._id} value={c._id}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                    </div>
+
+                    {/* Reset Button */}
+                    {(companyFilter || searchQuery) && (
+                        <button
+                            onClick={() => { setCompanyFilter(""); setSearchQuery(""); }}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1.5 rounded hover:bg-blue-50 transition flex items-center gap-1 self-start sm:self-auto"
+                        >
+                            <X size={13} /> Reset Filters
+                        </button>
+                    )}
+                </div>
+
+                <div className="text-xs font-medium text-gray-500 shrink-0">
+                    Showing <span className="text-gray-900 font-semibold">{filteredStatuses.length}</span> of {statuses.length} statuses
+                </div>
+            </div>
+
             <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                             <th className="px-4 py-3 text-left">Name</th>
-                            {isSuperAdmin && <th className="px-4 py-3 text-left">Company</th>}
+                            <th className="px-4 py-3 text-left">Company</th>
                             <th className="px-4 py-3 text-left">Description</th>
                             <th className="px-4 py-3 text-left">Created By</th>
                             <th className="px-4 py-3 text-left">Status</th>
@@ -132,9 +210,13 @@ const EmploymentStatusPage = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {statuses.length === 0 ? (
-                            <tr><td colSpan={isSuperAdmin ? 6 : 5} className="px-4 py-10 text-center text-gray-400">No employment statuses found.</td></tr>
-                        ) : statuses.map(s => (
+                        {filteredStatuses.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
+                                    {searchQuery || companyFilter ? "No employment statuses match your filters." : "No employment statuses found."}
+                                </td>
+                            </tr>
+                        ) : filteredStatuses.map(s => (
                             <tr key={s._id} className="hover:bg-gray-50 transition">
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
@@ -144,7 +226,7 @@ const EmploymentStatusPage = () => {
                                         <p className="font-medium text-gray-800">{s.name}</p>
                                     </div>
                                 </td>
-                                {isSuperAdmin && <td className="px-4 py-3 text-gray-600">{s.companyId?.name || "—"}</td>}
+                                <td className="px-4 py-3 text-gray-600">{s.companyId?.name || "—"}</td>
                                 <td className="px-4 py-3 text-gray-500">{s.description || "—"}</td>
                                 <td className="px-4 py-3 text-xs">
                                     <div>

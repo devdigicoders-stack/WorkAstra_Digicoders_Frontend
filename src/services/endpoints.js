@@ -115,6 +115,7 @@ export const ENDPOINTS = {
     CREATE: `/api/holidays`,
     BULK: `/api/holidays/bulk`,
     CSV_UPLOAD: `/api/holidays/csv-upload`,
+    AUTO_SYNC_INDIA: `/api/holidays/auto-sync-india`,
     UPDATE: (id) => `/api/holidays/${id}`,
     DELETE: (id) => `/api/holidays/${id}`,
   },

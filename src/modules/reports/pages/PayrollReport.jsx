@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import { useStore } from "../../../context/StoreContext";
 import { getPayrollRuns } from "../../payroll/services/payrollService";
-import { Banknote, Users, Download, CreditCard, PieChart as PieChartIcon, Eye, TrendingUp, Building2, Calendar, FileText } from "lucide-react";
+import { fetchAllCompaniesList } from "../../company/services/companyService";
+import { Banknote, Users, Download, CreditCard, PieChart as PieChartIcon, Eye, TrendingUp, Building2, Calendar, FileText, X } from "lucide-react";
 import PayslipPrint from "../../payroll/pages/PayslipPrint";
 import EmployeePayrollHistoryModal from "../components/EmployeePayrollHistoryModal";
 
@@ -28,7 +29,9 @@ const PayrollReport = () => {
     const [allRuns, setAllRuns] = useState([]); // For MoM trend
     const [loading, setLoading] = useState(false);
     
-    // Filters
+    // Companies & Filters
+    const [companies, setCompanies] = useState([]);
+    const [companyFilter, setCompanyFilter] = useState("");
     const [deptFilter, setDeptFilter] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
     
@@ -38,12 +41,23 @@ const PayrollReport = () => {
     // Employee Payroll History Modal
     const [selectedEmployeeHistory, setSelectedEmployeeHistory] = useState(null);
 
+    useEffect(() => {
+        fetchAllCompaniesList()
+            .then(res => setCompanies(res?.companies || []))
+            .catch(err => console.error("Failed to load companies:", err));
+    }, []);
+
     const loadData = useCallback(async () => {
         try {
             setLoading(true);
+            const params = { month };
+            if (companyFilter) params.companyId = companyFilter;
+            const allParams = {};
+            if (companyFilter) allParams.companyId = companyFilter;
+
             const [monthData, allData] = await Promise.all([
-                getPayrollRuns({ month }),
-                getPayrollRuns({}) // Fetch all runs for trend chart
+                getPayrollRuns(params),
+                getPayrollRuns(allParams) // Fetch all runs for trend chart
             ]);
             setRuns(monthData.runs || []);
             setAllRuns(allData.runs || []);
@@ -52,7 +66,7 @@ const PayrollReport = () => {
         } finally {
             setLoading(false);
         }
-    }, [month]);
+    }, [month, companyFilter]);
 
     useEffect(() => {
         if (isAdmin) loadData();
@@ -65,6 +79,8 @@ const PayrollReport = () => {
     // Apply Table Filters
     const filteredRuns = runs.filter(r => {
         let match = true;
+        const compId = r.companyId?._id || r.companyId || r.userId?.companyId?._id || r.userId?.companyId;
+        if (companyFilter && String(compId) !== String(companyFilter)) match = false;
         if (deptFilter && r.userId?.department?.name !== deptFilter) match = false;
         if (statusFilter && r.status !== statusFilter) match = false;
         return match;
@@ -110,10 +126,11 @@ const PayrollReport = () => {
     const totalDeductions = runs.reduce((acc, curr) => acc + (curr.totalDeductions || 0), 0);
     
     const handleExportReport = () => {
-        const headers = ["Employee Name", "Code", "Department", "Working Days", "LOP Days", "Gross Salary", "Deductions", "Net Salary", "Status"];
+        const headers = ["Employee Name", "Code", "Company", "Department", "Working Days", "LOP Days", "Gross Salary", "Deductions", "Net Salary", "Status"];
         const rows = filteredRuns.map(r => [
             `${r.userId?.firstName || ""} ${r.userId?.lastName || ""}`,
             r.userId?.employeeCode || "",
+            r.companyId?.name || r.userId?.companyId?.name || "",
             r.userId?.department?.name || "",
             r.totalWorkingDays || 0,
             r.lopDays || 0,
@@ -145,11 +162,27 @@ const PayrollReport = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <h2 className="text-lg font-bold text-gray-900">Monthly Payroll Report</h2>
-                        <p className="text-sm text-gray-500 mt-1">Select a month to view details</p>
+                        <p className="text-sm text-gray-500 mt-1">Select month and company to view details</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                        {companies.length > 0 && (
+                            <div className="relative min-w-[200px]">
+                                <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                <select
+                                    value={companyFilter}
+                                    onChange={e => setCompanyFilter(e.target.value)}
+                                    className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-sm"
+                                    title="Filter by Company"
+                                >
+                                    <option value="">All Companies ({companies.length})</option>
+                                    {companies.map(c => (
+                                        <option key={c._id} value={c._id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-                            className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                            className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm" />
                         <button onClick={handleExportReport} className="flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg text-sm font-medium transition shadow-sm">
                             <Download size={15} /> Export CSV
                         </button>
@@ -261,18 +294,47 @@ const PayrollReport = () => {
                         {/* Filter & Table */}
                         <div className="border border-gray-100 rounded-2xl bg-white shadow-sm">
                             <div className="p-4 border-b border-gray-100 flex flex-wrap gap-4 items-center justify-between bg-gray-50/50 rounded-t-2xl">
-                                <h3 className="font-bold text-gray-800">Employee Breakdown</h3>
-                                <div className="flex flex-wrap gap-3">
-                                    <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-400">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-bold text-gray-800">Employee Breakdown</h3>
+                                    {companyFilter && (
+                                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                            {companies.find(c => c._id === companyFilter)?.name || "Filtered"}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    {companies.length > 0 && (
+                                        <div className="relative min-w-[170px]">
+                                            <Building2 size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                            <select
+                                                value={companyFilter}
+                                                onChange={e => setCompanyFilter(e.target.value)}
+                                                className="w-full pl-8 pr-7 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:border-blue-400 bg-white font-medium text-gray-700 cursor-pointer"
+                                                title="Filter by Company"
+                                            >
+                                                <option value="">All Companies</option>
+                                                {companies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                            </select>
+                                        </div>
+                                    )}
+                                    <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-400 bg-white font-medium text-gray-700">
                                         <option value="">All Departments</option>
                                         {departments.map(d => <option key={d} value={d}>{d}</option>)}
                                     </select>
-                                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-400">
+                                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-400 bg-white font-medium text-gray-700">
                                         <option value="">All Statuses</option>
                                         <option value="draft">Draft</option>
                                         <option value="approved">Approved</option>
                                         <option value="paid">Paid</option>
                                     </select>
+                                    {(companyFilter || deptFilter || statusFilter) && (
+                                        <button
+                                            onClick={() => { setCompanyFilter(""); setDeptFilter(""); setStatusFilter(""); }}
+                                            className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50 transition flex items-center gap-1"
+                                        >
+                                            <X size={12} /> Reset
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
@@ -310,7 +372,10 @@ const PayrollReport = () => {
                                                                 <p className="font-semibold text-gray-800 group-hover:text-indigo-600 transition flex items-center gap-1.5">
                                                                     {r.userId?.firstName} {r.userId?.lastName}
                                                                 </p>
-                                                                <p className="text-[11px] text-gray-400">{r.userId?.employeeCode} • {r.userId?.department?.name}</p>
+                                                                <p className="text-[11px] text-gray-400">
+                                                                    {r.userId?.employeeCode} • {r.userId?.department?.name || "No Dept"}
+                                                                    {(r.companyId?.name || r.userId?.companyId?.name) ? ` • ${r.companyId?.name || r.userId?.companyId?.name}` : ""}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                     </td>

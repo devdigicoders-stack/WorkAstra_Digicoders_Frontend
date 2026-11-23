@@ -1,13 +1,143 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getImageUrl } from "../../../utils/imageUtils";
 import { useNavigate } from 'react-router-dom';
 import { resignationService } from '../../../services/resignationService';
 import { toast } from 'react-toastify';
-import { LogOut, Search, Filter, CheckCircle, Clock, CheckSquare, Plus, Edit, Trash2, RotateCcw, Eye, CalendarClock, FileText, User, ShieldCheck, Check, X } from 'lucide-react';
+import { LogOut, Search, Filter, CheckCircle, Clock, CheckSquare, Plus, Edit, Trash2, RotateCcw, Eye, CalendarClock, FileText, User, ShieldCheck, Check, X, ChevronDown } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import api from '../../../services/axios';
 import { ENDPOINTS } from '../../../services/endpoints';
+
+// ── Searchable Employee Dropdown for Exit Modal ──────────────────────────────
+const SearchableEmployeeExitSelect = ({ employees, selectedUserId, onSelect }) => {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const ref = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const selectedEmp = employees.find(e => e._id === selectedUserId);
+
+    const filtered = employees.filter(e => {
+        const name = `${e.firstName || ""} ${e.lastName || ""}`.toLowerCase();
+        const code = (e.employeeCode || "").toLowerCase();
+        const email = (e.email || "").toLowerCase();
+        const dept = (e.department?.name || "").toLowerCase();
+        const q = search.toLowerCase().trim();
+        return name.includes(q) || code.includes(q) || email.includes(q) || dept.includes(q);
+    });
+
+    return (
+        <div className="relative" ref={ref}>
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className={`w-full flex items-center justify-between border rounded-xl px-4 py-2.5 text-sm bg-gray-50 transition text-left ${
+                    open ? "border-red-500 ring-2 ring-red-100 bg-white" : "border-gray-200 hover:border-gray-300"
+                }`}
+            >
+                {selectedEmp ? (
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded-full bg-red-100 text-red-700 font-bold flex items-center justify-center text-xs shrink-0">
+                            {selectedEmp.firstName?.[0]?.toUpperCase()}{selectedEmp.lastName?.[0]?.toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                            <span className="font-semibold text-gray-800 truncate block">
+                                {selectedEmp.firstName} {selectedEmp.lastName}
+                            </span>
+                            <span className="text-xs text-gray-400 block truncate">
+                                {selectedEmp.employeeCode || "No Code"} {selectedEmp.department?.name ? `• ${selectedEmp.department.name}` : ""}
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    <span className="text-gray-400">Search & select employee...</span>
+                )}
+                <ChevronDown size={18} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+
+            {open && (
+                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                    <div className="p-2.5 border-b border-gray-100 bg-gray-50/80">
+                        <div className="relative">
+                            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                                autoFocus
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search by name, employee code..."
+                                className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                            />
+                            {search && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearch("")}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    <X size={13} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="max-h-60 overflow-y-auto divide-y divide-gray-50">
+                        {filtered.length === 0 ? (
+                            <div className="p-4 text-center text-xs text-gray-400">
+                                No eligible employees found
+                            </div>
+                        ) : (
+                            filtered.map(emp => {
+                                const isSelected = emp._id === selectedUserId;
+                                return (
+                                    <div
+                                        key={emp._id}
+                                        onClick={() => {
+                                            onSelect(emp._id);
+                                            setOpen(false);
+                                            setSearch("");
+                                        }}
+                                        className={`px-3.5 py-2.5 flex items-center justify-between gap-2.5 cursor-pointer transition ${
+                                            isSelected ? "bg-red-50" : "hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                                                isSelected ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"
+                                            }`}>
+                                                {emp.firstName?.[0]?.toUpperCase()}{emp.lastName?.[0]?.toUpperCase()}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-semibold text-gray-800 truncate">
+                                                    {emp.firstName} {emp.lastName}
+                                                </p>
+                                                <p className="text-[11px] text-gray-400 truncate">
+                                                    {emp.employeeCode ? `${emp.employeeCode}` : ""} {emp.role?.name ? `(${emp.role.name})` : ""}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {isSelected && (
+                                            <Check size={16} className="text-red-600 shrink-0" />
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const ManageResignations = () => {
     const [resignations, setResignations] = useState([]);
@@ -184,6 +314,26 @@ const ManageResignations = () => {
             setActionLoading(false);
         }
     };
+
+    const exitEligibleEmployees = employees.filter((emp) => {
+        if (emp.isActive === false) return false;
+
+        // Role checks - exclude admin, super_admin, company, company_admin, client
+        const roleName = (emp?.role?.name || (typeof emp?.role === "string" ? emp.role : "") || "").trim().toLowerCase();
+        const excludedRoles = ["super_admin", "admin", "company", "company_admin", "company admin", "client"];
+        if (excludedRoles.includes(roleName)) return false;
+        if (roleName.includes("admin") || roleName.includes("company") || roleName.includes("client")) return false;
+
+        // Additional safeguard for admin account names or codes
+        const fullName = `${emp.firstName || ""} ${emp.lastName || ""}`.trim().toLowerCase();
+        if (fullName.includes("admin") || fullName.includes("workastra admin") || fullName.includes("digicoders admin")) {
+            return false;
+        }
+        const empCode = (emp.employeeCode || "").toLowerCase();
+        if (empCode.includes("admin")) return false;
+
+        return true;
+    });
 
     const filteredData = resignations.filter(r => {
         const matchesSearch = (r.employeeId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -389,20 +539,22 @@ const ManageResignations = () => {
                         
                         <form onSubmit={submitAdminExit} className="p-6 space-y-5">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1">Select Employee <span className="text-red-500">*</span></label>
-                                <select
-                                    value={selectedEmployeeId}
-                                    onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none"
-                                    required
-                                >
-                                    <option value="">-- Choose Employee --</option>
-                                    {employees.filter(e => e.isActive).map(emp => (
-                                        <option key={emp._id} value={emp._id}>
-                                            {emp.firstName} {emp.lastName} ({emp.employeeCode})
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="block text-sm font-semibold text-gray-700">
+                                        Select Employee <span className="text-red-500">*</span>
+                                    </label>
+                                    <span className="text-xs text-gray-400 font-medium">
+                                        {exitEligibleEmployees.length} eligible
+                                    </span>
+                                </div>
+                                <SearchableEmployeeExitSelect
+                                    employees={exitEligibleEmployees}
+                                    selectedUserId={selectedEmployeeId}
+                                    onSelect={(id) => setSelectedEmployeeId(id)}
+                                />
+                                {!selectedEmployeeId && (
+                                    <p className="text-[11px] text-gray-400 mt-1">Search by name or code to choose employee</p>
+                                )}
                             </div>
 
                             <div>

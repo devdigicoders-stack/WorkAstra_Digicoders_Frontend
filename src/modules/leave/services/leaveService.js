@@ -10,6 +10,7 @@ export const csvUploadHolidays = (file) => {
     form.append("file", file);
     return api.post(ENDPOINTS.HOLIDAY.CSV_UPLOAD, form).then(r => r.data);
 };
+export const autoSyncIndianHolidays = (data) => api.post(ENDPOINTS.HOLIDAY.AUTO_SYNC_INDIA, data).then(r => r.data);
 export const updateHoliday = (id, data) => api.put(ENDPOINTS.HOLIDAY.UPDATE(id), data).then(r => r.data);
 export const deleteHoliday = (id) => api.delete(ENDPOINTS.HOLIDAY.DELETE(id)).then(r => r.data);
 

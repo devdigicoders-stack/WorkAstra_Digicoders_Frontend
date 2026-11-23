@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { getImageUrl } from "../../../utils/imageUtils";
 import { useStore } from "../../../context/StoreContext";
 import {
@@ -1515,8 +1515,71 @@ const Attendance = () => {
         } catch { }
     }, [isAdmin, showTeamTab, month]);
 
-    useEffect(() => { loadToday(); loadSummary(); loadMyRecords(); loadHolidays(); loadMyLeaves(); }, [loadToday, loadSummary, loadMyRecords, loadHolidays, loadMyLeaves]);
-    useEffect(() => { if (tab === "team" || tab === "report") loadCompanyRecords(); }, [tab, loadCompanyRecords]);
+    useEffect(() => {
+        loadToday();
+        loadSummary();
+        loadMyRecords();
+        loadHolidays();
+        loadMyLeaves();
+        if (showTeamTab) loadCompanyRecords();
+    }, [loadToday, loadSummary, loadMyRecords, loadHolidays, loadMyLeaves, showTeamTab, loadCompanyRecords]);
+
+    useEffect(() => {
+        if (tab === "team" || tab === "report") loadCompanyRecords();
+    }, [tab, loadCompanyRecords]);
+
+    // Active summary switches dynamically between Personal and Team stats
+    const activeSummary = useMemo(() => {
+        if (tab === "regularization") return null;
+        if (tab === "my" || !showTeamTab) {
+            return summary;
+        }
+
+        const isNotClient = (userObj) => {
+            if (!userObj) return false;
+            const roleName = userObj.role?.name || userObj.role;
+            return String(roleName || "").toLowerCase() !== "client";
+        };
+
+        // If on team tab and a specific employee is selected
+        if (tab === "team" && filterEmployee) {
+            const empRecs = empMonthRecords !== null
+                ? empMonthRecords.filter(r => isNotClient(r.userId))
+                : companyRecords.filter(r => (r.userId?._id === filterEmployee || r.userId === filterEmployee) && isNotClient(r.userId));
+
+            return {
+                present: empRecs.filter(r => r.status === "present").length,
+                regularized: empRecs.filter(r => r.status === "regularized" || r.isRegularized).length,
+                late: empRecs.filter(r => r.status === "late").length,
+                halfDay: empRecs.filter(r => r.status === "half-day").length,
+                earlyLeave: empRecs.filter(r => r.status === "early-leave").length,
+                absent: empRecs.filter(r => r.status === "absent").length,
+                totalHours: parseFloat(empRecs.reduce((sum, r) => sum + (r.workHours || 0), 0).toFixed(2)),
+                isTeam: false,
+                isEmployee: true,
+            };
+        }
+
+        // Entire team records (filtered by date range if set, excluding clients)
+        const teamRecs = companyRecords.filter(r => {
+            if (!isNotClient(r.userId)) return false;
+            if (filterFrom && r.date < filterFrom) return false;
+            if (filterTo && r.date > filterTo) return false;
+            return true;
+        });
+
+        return {
+            present: teamRecs.filter(r => r.status === "present").length,
+            regularized: teamRecs.filter(r => r.status === "regularized" || r.isRegularized).length,
+            late: teamRecs.filter(r => r.status === "late").length,
+            halfDay: teamRecs.filter(r => r.status === "half-day").length,
+            earlyLeave: teamRecs.filter(r => r.status === "early-leave").length,
+            absent: teamRecs.filter(r => r.status === "absent").length,
+            totalHours: parseFloat(teamRecs.reduce((sum, r) => sum + (r.workHours || 0), 0).toFixed(2)),
+            isTeam: true,
+            isEmployee: false,
+        };
+    }, [tab, showTeamTab, summary, companyRecords, filterEmployee, empMonthRecords, filterFrom, filterTo]);
 
     const doCheckIn = async (faceDescriptor = null) => {
         const validFace = Array.isArray(faceDescriptor) ? faceDescriptor : null;
@@ -1700,15 +1763,35 @@ const Attendance = () => {
             </div>
 
             {/* Summary Cards */}
-            {summary && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
-                    <StatCard icon={CheckCircle} label="Present" value={summary.present} color="bg-green-50 text-green-600" />
-                    <StatCard icon={CheckCircle} label="Regularized" value={summary.regularized || 0} color="bg-blue-50 text-blue-600" />
-                    <StatCard icon={AlertCircle} label="Late" value={summary.late} color="bg-yellow-50 text-yellow-600" />
-                    <StatCard icon={Clock} label="Half Day" value={summary.halfDay} color="bg-orange-50 text-orange-600" />
-                    <StatCard icon={LogOut} label="Early Leave" value={summary.earlyLeave} color="bg-purple-50 text-purple-600" />
-                    <StatCard icon={Calendar} label="Absent" value={summary.absent} color="bg-red-50 text-red-500" />
-                    <StatCard icon={TrendingUp} label="Total Hours" value={fmtHours(summary.totalHours)} color="bg-indigo-50 text-indigo-600" />
+            {tab !== "regularization" && activeSummary && (
+                <div className="mb-6">
+                    <div className="flex items-center justify-between mb-2 px-0.5">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+                            {tab === "my"
+                                ? "My Attendance Summary"
+                                : tab === "team"
+                                    ? filterEmployee
+                                        ? "Employee Attendance Summary"
+                                        : "Team Attendance Summary"
+                                    : tab === "report"
+                                        ? "Report Summary"
+                                        : "Attendance Summary"}
+                        </span>
+                        {tab === "team" && (
+                            <span className="text-[11px] text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full font-medium">
+                                {filterEmployee ? "Selected Employee" : "Team Total"}
+                            </span>
+                        )}
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                        <StatCard icon={CheckCircle} label="Present" value={activeSummary.present} color="bg-green-50 text-green-600" />
+                        <StatCard icon={CheckCircle} label="Regularized" value={activeSummary.regularized || 0} color="bg-blue-50 text-blue-600" />
+                        <StatCard icon={AlertCircle} label="Late" value={activeSummary.late} color="bg-yellow-50 text-yellow-600" />
+                        <StatCard icon={Clock} label="Half Day" value={activeSummary.halfDay} color="bg-orange-50 text-orange-600" />
+                        <StatCard icon={LogOut} label="Early Leave" value={activeSummary.earlyLeave} color="bg-purple-50 text-purple-600" />
+                        <StatCard icon={Calendar} label="Absent" value={activeSummary.absent} color="bg-red-50 text-red-500" />
+                        <StatCard icon={TrendingUp} label="Total Hours" value={fmtHours(activeSummary.totalHours)} color="bg-indigo-50 text-indigo-600" />
+                    </div>
                 </div>
             )}
 

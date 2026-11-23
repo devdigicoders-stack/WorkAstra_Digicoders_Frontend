@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Pencil, Trash2, X, CalendarDays, Upload, FileText, LayoutList, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, X, CalendarDays, Upload, FileText, LayoutList, Calendar, Download, Sparkles, FileDown } from "lucide-react";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import { useStore } from "../../../context/StoreContext";
 import {
-    getHolidays, createHoliday, updateHoliday, deleteHoliday, bulkCreateHolidays, csvUploadHolidays,
+    getHolidays, createHoliday, updateHoliday, deleteHoliday, bulkCreateHolidays, csvUploadHolidays, autoSyncIndianHolidays,
 } from "../../leave/services/leaveService";
 
 const TYPE_COLORS = {
@@ -77,6 +77,31 @@ const HolidayDrawer = ({ isOpen, onClose, initial, onSubmit, loading }) => {
     );
 };
 
+// ── Sample CSV Template for Bulk Upload ───────────────────────────────────────
+export const downloadHolidaySampleFormat = () => {
+    const csvContent =
+`name,date,type,description
+Republic Day,26-01-2025,national,National Holiday
+Maha Shivratri,26-02-2025,optional,Optional Holiday
+Holi,14-03-2025,national,Festival of Colours
+Eid-ul-Fitr,31-03-2025,national,Islamic Festival
+Independence Day,15-08-2025,national,National Festival
+Mahatma Gandhi Jayanti,02-10-2025,national,National Holiday
+Diwali,20-10-2025,national,Festival of Lights
+Christmas,25-12-2025,national,Christmas Celebration`;
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "holiday_bulk_upload_sample.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Sample format file downloaded (holiday_bulk_upload_sample.csv)");
+};
+
 // ── Bulk Import Modal ──────────────────────────────────────────────────────────
 const BulkModal = ({ isOpen, onClose, onSubmit, onCsvSubmit, loading }) => {
     const [tab, setTab] = useState("csv");
@@ -89,12 +114,6 @@ const BulkModal = ({ isOpen, onClose, onSubmit, onCsvSubmit, loading }) => {
     const setRow = (i, k, v) => setRows(r => r.map((row, idx) => idx === i ? { ...row, [k]: v } : row));
 
     if (!isOpen) return null;
-
-    const downloadTemplate = () => {
-        const csv = "name,date,type,description\nRepublic Day,26-01-2025,national,National holiday\nHoli,14-03-2025,national,Festival of colours";
-        const blob = new Blob([csv], { type: "text/csv" });
-        const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "holidays_template.csv"; a.click();
-    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
@@ -117,18 +136,67 @@ const BulkModal = ({ isOpen, onClose, onSubmit, onCsvSubmit, loading }) => {
                 <div className="flex-1 overflow-y-auto px-6 py-4">
                     {tab === "csv" ? (
                         <div className="space-y-4">
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
-                                CSV must have columns: <strong>name</strong>, <strong>date</strong> (dd-mm-yyyy), <strong>type</strong> (national/optional/restricted), <strong>description</strong> (optional)
+                            {/* Format Guide Card */}
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-900 space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="font-bold text-blue-800 text-sm">Bulk Upload Guidelines</span>
+                                    <button
+                                        type="button"
+                                        onClick={downloadHolidaySampleFormat}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow-sm transition"
+                                        title="Download Sample Format File"
+                                    >
+                                        <FileDown size={14} /> Download Sample CSV
+                                    </button>
+                                </div>
+                                <p className="text-gray-600 leading-relaxed">
+                                    Aapki CSV file me niche diye gaye columns hone chahiye. Date format <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-semibold text-blue-700">dd-mm-yyyy</code> ya <code className="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-semibold text-blue-700">yyyy-mm-dd</code> dono chalega.
+                                </p>
+                                {/* Sample Table Preview */}
+                                <div className="overflow-x-auto border border-blue-200 rounded-lg bg-white mt-2">
+                                    <table className="w-full text-left text-[11px]">
+                                        <thead className="bg-blue-100/60 text-blue-900 font-semibold border-b border-blue-200">
+                                            <tr>
+                                                <th className="px-2.5 py-1.5">name *</th>
+                                                <th className="px-2.5 py-1.5">date *</th>
+                                                <th className="px-2.5 py-1.5">type</th>
+                                                <th className="px-2.5 py-1.5">description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 text-gray-700">
+                                            <tr>
+                                                <td className="px-2.5 py-1 font-medium">Republic Day</td>
+                                                <td className="px-2.5 py-1 text-gray-500">26-01-2025</td>
+                                                <td className="px-2.5 py-1 text-blue-600 font-medium">national</td>
+                                                <td className="px-2.5 py-1 text-gray-400">National Holiday</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="px-2.5 py-1 font-medium">Maha Shivratri</td>
+                                                <td className="px-2.5 py-1 text-gray-500">26-02-2025</td>
+                                                <td className="px-2.5 py-1 text-green-600 font-medium">optional</td>
+                                                <td className="px-2.5 py-1 text-gray-400">Optional Holiday</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="px-2.5 py-1 font-medium">Holi</td>
+                                                <td className="px-2.5 py-1 text-gray-500">14-03-2025</td>
+                                                <td className="px-2.5 py-1 text-blue-600 font-medium">national</td>
+                                                <td className="px-2.5 py-1 text-gray-400">Festival of Colours</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="text-[11px] text-gray-500 pt-1">
+                                    <strong>Allowed types:</strong> national, optional, restricted (default is national).
+                                </div>
                             </div>
-                            <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium">
-                                <FileText size={13} /> Download Template
-                            </button>
+
+                            {/* File Upload Area */}
                             <div
                                 onClick={() => fileRef.current?.click()}
-                                className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
-                                <Upload size={28} className="mx-auto text-gray-400 mb-2" />
-                                <p className="text-sm text-gray-600 font-medium">{csvFile ? csvFile.name : "Click to select CSV file"}</p>
-                                <p className="text-xs text-gray-400 mt-1">Only .csv files accepted</p>
+                                className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition">
+                                <Upload size={28} className="mx-auto text-blue-500 mb-2" />
+                                <p className="text-sm text-gray-700 font-semibold">{csvFile ? csvFile.name : "Click to select CSV file"}</p>
+                                <p className="text-xs text-gray-400 mt-1">Only .csv files accepted (with headers)</p>
                                 <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden"
                                     onChange={e => setCsvFile(e.target.files[0] || null)} />
                             </div>
@@ -251,6 +319,7 @@ const Holiday = () => {
     const [selected, setSelected]     = useState(null);
     const [filterType, setFilterType] = useState("all");
     const [viewMode, setViewMode]     = useState("calendar");
+    const [syncing, setSyncing]       = useState(false);
 
     const load = async () => {
         try {
@@ -328,6 +397,69 @@ const Holiday = () => {
         finally { setLoading(false); }
     };
 
+    // Auto-sync Indian government and cultural holidays for the selected year
+    const handleAutoSync = async () => {
+        const confirm = await Swal.fire({
+            title: `Auto-Sync Indian Holidays (${year})?`,
+            text: `Kya aap ${year} ke saare Indian Government aur Cultural festivals automatically mark karna chahte hain?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Yes, Auto Sync!",
+            cancelButtonText: "Cancel",
+            confirmButtonColor: "#2563eb",
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        try {
+            setSyncing(true);
+            const res = await autoSyncIndianHolidays({ year });
+            if (res.success) {
+                Swal.fire({
+                    title: "Holidays Synced! 🎉",
+                    text: res.message,
+                    icon: "success",
+                    confirmButtonColor: "#2563eb",
+                });
+                load();
+            } else {
+                toast.error(res.message || "Failed to sync holidays");
+            }
+        } catch (err) {
+            toast.error(err?.response?.data?.message || err?.message || "Failed to auto-sync holidays");
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    // Download current year's holidays as CSV
+    const handleDownloadCsv = () => {
+        if (!holidays.length) return toast.info(`No holidays to download for year ${year}`);
+        const headers = ["Holiday Name", "Date", "Day", "Type", "Description"];
+        const rows = filtered.map(h => {
+            const d = new Date(h.date + "T00:00:00");
+            const dayName = d.toLocaleDateString("en-IN", { weekday: "long" });
+            return [
+                `"${(h.name || "").replace(/"/g, '""')}"`,
+                h.date,
+                dayName,
+                h.type || "national",
+                `"${(h.description || "").replace(/"/g, '""')}"`
+            ];
+        });
+        const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `holidays_${year}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success(`Holidays for ${year} downloaded successfully!`);
+    };
+
     const filtered = filterType === "all" ? holidays : holidays.filter(h => h.type === filterType);
 
     return (
@@ -339,20 +471,62 @@ const Holiday = () => {
                     <p className="text-sm text-gray-500 mt-0.5">{canManage ? "Manage company holidays for the year" : "View upcoming company holidays"}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                    {/* View Toggle */}
                     <div className="flex items-center bg-gray-200/60 p-1 rounded-lg">
                         <button onClick={() => setViewMode("list")} className={`p-1.5 rounded-md transition flex items-center justify-center ${viewMode === "list" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-800"}`} title="List View"><LayoutList size={15} /></button>
                         <button onClick={() => setViewMode("calendar")} className={`p-1.5 rounded-md transition flex items-center justify-center ${viewMode === "calendar" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-800"}`} title="Calendar View"><Calendar size={15} /></button>
                     </div>
-                    <input type="number" value={year} onChange={e => setYear(Number(e.target.value))}
-                        className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+                    {/* Year Dropdown Filter */}
+                    <select
+                        value={year}
+                        onChange={(e) => setYear(Number(e.target.value))}
+                        className="px-3 py-2 border border-gray-200 bg-white rounded-lg text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer"
+                        title="Filter by Year"
+                    >
+                        {[2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030].map((y) => (
+                            <option key={y} value={y}>
+                                Year {y}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Download Button */}
+                    <button
+                        onClick={handleDownloadCsv}
+                        className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition shadow-sm"
+                        title="Download holidays as CSV"
+                    >
+                        <Download size={14} /> Download
+                    </button>
+
                     {canManage && (
                         <>
+                            {/* Auto Sync Indian Holidays Button */}
+                            <button
+                                onClick={handleAutoSync}
+                                disabled={syncing}
+                                className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-orange-500 via-amber-500 to-green-600 hover:opacity-95 text-white rounded-lg text-sm font-medium transition shadow-sm disabled:opacity-50"
+                                title="Automatically sync Indian Government & Cultural Holidays"
+                            >
+                                <Sparkles size={14} /> {syncing ? "Syncing..." : "Auto Sync Indian Holidays"}
+                            </button>
+
+                            {/* Sample Format File Download for Bulk Upload */}
+                            <button
+                                onClick={downloadHolidaySampleFormat}
+                                className="flex items-center gap-1.5 px-3 py-2 border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium transition shadow-sm"
+                                title="Download sample CSV format file for Bulk Upload"
+                            >
+                                <FileDown size={14} /> Sample Format
+                            </button>
+
                             <button onClick={() => { setBulkOpen(true); }}
-                                className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition">
+                                className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition shadow-sm">
                                 <Upload size={14} /> Bulk Import
                             </button>
                             <button onClick={() => { setSelected(null); setDrawerOpen(true); }}
-                                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+                                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition shadow-sm">
                                 <Plus size={15} /> Add Holiday
                             </button>
                         </>
