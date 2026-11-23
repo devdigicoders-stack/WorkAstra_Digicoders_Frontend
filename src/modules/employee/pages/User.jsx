@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { getImageUrl } from "../../../utils/imageUtils";
 import { useNavigate } from "react-router-dom";
 import EmployeeDrawer from "../components/EmployeeDrawer"
-import { Plus, Pencil, Users, Building2, ShieldCheck, Search, X, ToggleLeft, ToggleRight, KeyRound, Eye, EyeOff, Trash2, Smartphone, Laptop, Shield } from "lucide-react";
-import { fetchUsers, createUser, updateUser, toggleUserStatus, deleteUser } from "../services/UserService";
+import { Plus, Pencil, Users, Building2, ShieldCheck, Search, X, ToggleLeft, ToggleRight, KeyRound, Eye, EyeOff, Trash2, Smartphone, Laptop, Shield, LogOut } from "lucide-react";
+import { fetchUsers, createUser, updateUser, toggleUserStatus, deleteUser, terminateDeviceSession } from "../services/UserService";
 import { fetchRoles, getAllRolesForAdmin, getRolesByCompany } from "../../roles/service/RoleService";
 import { useStore } from "../../../context/StoreContext";
 import { fetchAllCompaniesList } from "../../company/services/companyService";
@@ -66,6 +66,7 @@ const User = () => {
 
     // Logged-in devices modal state
     const [deviceModalUser, setDeviceModalUser] = useState(null);
+    const [terminatingSessionId, setTerminatingSessionId] = useState(null);
 
     // Filter states
     const [search, setSearch] = useState("");
@@ -278,6 +279,44 @@ const User = () => {
         } catch (err) {
             console.error(err);
             toast.error(err.response?.data?.message || "Error deleting user");
+        }
+    };
+
+    const handleTerminateSession = async (targetUserId, sessionId, deviceName) => {
+        const isAll = sessionId === "ALL";
+        const result = await Swal.fire({
+            title: isAll ? "Log out all devices?" : "Log out this device?",
+            text: isAll 
+                ? "Are you sure you want to log out all active sessions for this user?" 
+                : `Are you sure you want to log out "${deviceName || "this device"}"? The user will need to log in again on that device.`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: isAll ? "Yes, Log out all" : "Yes, Log out",
+            cancelButtonText: "Cancel"
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            setTerminatingSessionId(sessionId);
+            const res = await terminateDeviceSession({ userId: targetUserId, sessionId });
+            if (res.success) {
+                toast.success(res.message || "Device session logged out successfully");
+                const updatedLoggedDevices = res.loggedDevices || [];
+                // Update active modal user state
+                setDeviceModalUser(prev => prev ? { ...prev, loggedDevices: updatedLoggedDevices } : null);
+                // Update table user list state
+                setUsers(prev => prev.map(u => u._id === targetUserId ? { ...u, loggedDevices: updatedLoggedDevices } : u));
+            } else {
+                toast.error(res.message || "Failed to log out device session");
+            }
+        } catch (err) {
+            console.error("Terminate session error:", err);
+            toast.error(err.response?.data?.message || "Failed to terminate device session");
+        } finally {
+            setTerminatingSessionId(null);
         }
     };
 
@@ -660,7 +699,7 @@ const User = () => {
                         </div>
 
                         {/* Body */}
-                        <div className="p-6 max-h-[60vh] overflow-y-auto space-y-3">
+                        <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto space-y-3">
                             {(!deviceModalUser.loggedDevices || deviceModalUser.loggedDevices.length === 0) ? (
                                 <div className="text-center py-8 text-gray-400">
                                     <Shield size={36} className="mx-auto mb-2 text-gray-300" />
@@ -670,38 +709,64 @@ const User = () => {
                                     </p>
                                 </div>
                             ) : (
-                                deviceModalUser.loggedDevices.map((dev, idx) => (
-                                    <div key={dev.sessionId || idx} className="p-3.5 rounded-xl border border-gray-100 hover:border-blue-200 bg-gray-50/60 hover:bg-blue-50/20 transition flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${dev.deviceType === "Mobile" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"}`}>
-                                                {dev.deviceType === "Mobile" ? <Smartphone size={20} /> : <Laptop size={20} />}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="text-sm font-semibold text-gray-800">{dev.deviceDetails || dev.deviceType}</span>
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
-                                                    </span>
+                                deviceModalUser.loggedDevices.map((dev, idx) => {
+                                    const sId = dev.sessionId || dev._id;
+                                    const isTerminating = terminatingSessionId === sId;
+                                    return (
+                                        <div key={sId || idx} className="p-3.5 rounded-xl border border-gray-100 hover:border-blue-200 bg-gray-50/60 hover:bg-blue-50/20 transition flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${dev.deviceType === "Mobile" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"}`}>
+                                                    {dev.deviceType === "Mobile" ? <Smartphone size={20} /> : <Laptop size={20} />}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1 flex-wrap">
-                                                    <span>IP: <code className="text-gray-700 bg-white px-1.5 py-0.5 rounded border border-gray-200">{dev.ip || "127.0.0.1"}</code></span>
-                                                    <span>•</span>
-                                                    <span>Logged in: {new Date(dev.loginAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="text-sm font-semibold text-gray-800">{dev.deviceDetails || dev.deviceType}</span>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1 flex-wrap">
+                                                        <span>IP: <code className="text-gray-700 bg-white px-1.5 py-0.5 rounded border border-gray-200">{dev.ip || "127.0.0.1"}</code></span>
+                                                        <span>•</span>
+                                                        <span>Logged in: {new Date(dev.loginAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleTerminateSession(deviceModalUser._id, sId, dev.deviceDetails || dev.deviceType)}
+                                                disabled={isTerminating}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 hover:text-white bg-red-50 hover:bg-red-600 border border-red-200 hover:border-red-600 transition active:scale-95 shrink-0 shadow-2xs cursor-pointer disabled:opacity-50"
+                                                title="Log out this device"
+                                            >
+                                                <LogOut size={13} />
+                                                <span>{isTerminating ? "Logging out..." : "Logout"}</span>
+                                            </button>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
 
                         {/* Footer */}
                         <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                            <span>Logged-in devices overview</span>
+                            {deviceModalUser.loggedDevices && deviceModalUser.loggedDevices.length > 1 ? (
+                                <button
+                                    type="button"
+                                    onClick={() => handleTerminateSession(deviceModalUser._id, "ALL")}
+                                    disabled={terminatingSessionId === "ALL"}
+                                    className="text-xs font-semibold text-red-600 hover:text-red-700 hover:underline flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                >
+                                    <LogOut size={13} />
+                                    <span>{terminatingSessionId === "ALL" ? "Logging out all..." : "Log out all devices"}</span>
+                                </button>
+                            ) : (
+                                <span>Logged-in devices overview</span>
+                            )}
                             <button
                                 type="button"
                                 onClick={() => setDeviceModalUser(null)}
-                                className="px-4 py-1.5 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition font-medium"
+                                className="px-4 py-1.5 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition font-medium cursor-pointer"
                             >
                                 Close
                             </button>
