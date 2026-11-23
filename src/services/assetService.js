@@ -1,8 +1,9 @@
 import api from "./axios";
 
 export const assetService = {
-  getAssets: async () => {
-    const response = await api.get("/api/assets");
+  getAssets: async (companyId = "") => {
+    const query = companyId && companyId !== "all" ? `?companyId=${companyId}` : "";
+    const response = await api.get(`/api/assets${query}`);
     return response.data;
   },
 

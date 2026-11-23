@@ -1,7 +1,161 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Eye, EyeOff } from "lucide-react";
+import { X, Eye, EyeOff, Search, ChevronDown, Check } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
 import DatePicker from "react-datepicker";
+
+const SearchableSelect = ({
+  name,
+  value,
+  options = [],
+  onChange,
+  disabled = false,
+  placeholder = "Search and select...",
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const containerRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  const selectedOption = options.find((opt) => String(opt.value) === String(value));
+
+  const filteredOptions = options.filter((opt) => {
+    if (!searchTerm.trim()) return true;
+    return opt.label?.toLowerCase().includes(searchTerm.toLowerCase().trim());
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    } else {
+      setSearchTerm("");
+    }
+  }, [isOpen]);
+
+  const handleSelect = (optValue) => {
+    onChange({ target: { name, value: optValue } });
+    setIsOpen(false);
+    setSearchTerm("");
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    onChange({ target: { name, value: "" } });
+  };
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <div
+        tabIndex={disabled ? -1 : 0}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onKeyDown={(e) => {
+          if (!disabled && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }
+          if (e.key === "Escape" && isOpen) {
+            e.stopPropagation();
+            setIsOpen(false);
+          }
+        }}
+        className={`w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer transition-all duration-200 shadow-sm outline-none ${
+          disabled
+            ? "opacity-60 cursor-not-allowed"
+            : "hover:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        } ${isOpen ? "ring-2 ring-blue-500 border-blue-500 bg-white" : ""}`}
+      >
+        <span className={`truncate mr-2 ${selectedOption ? "text-gray-900 font-medium" : "text-gray-400"}`}>
+          {selectedOption ? selectedOption.label : "Select"}
+        </span>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {selectedOption && !disabled && (
+            <span
+              onClick={handleClear}
+              className="p-1 hover:bg-gray-200 rounded-full text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              title="Clear selection"
+            >
+              <X className="w-3.5 h-3.5" />
+            </span>
+          )}
+          <ChevronDown
+            className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+              isOpen ? "rotate-180 text-blue-500" : ""
+            }`}
+          />
+        </div>
+      </div>
+
+      {isOpen && !disabled && (
+        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden">
+          <div className="p-2.5 border-b border-gray-100 bg-gray-50/80 flex items-center gap-2">
+            <Search className="w-4 h-4 text-gray-400 shrink-0 ml-1" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={placeholder || "Type to search..."}
+              className="w-full bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }
+              }}
+            />
+            {searchTerm && (
+              <span
+                onClick={() => setSearchTerm("")}
+                className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </span>
+            )}
+          </div>
+
+          <div className="max-h-60 overflow-y-auto p-1 divide-y divide-gray-50">
+            {filteredOptions.length === 0 ? (
+              <div className="p-4 text-center text-sm text-gray-400">
+                No matching results found
+              </div>
+            ) : (
+              filteredOptions.map((opt) => {
+                const isSelected = String(opt.value) === String(value);
+                return (
+                  <div
+                    key={opt.value}
+                    onClick={() => handleSelect(opt.value)}
+                    className={`flex items-center justify-between px-3.5 py-2.5 text-sm rounded-lg cursor-pointer transition-colors ${
+                      isSelected
+                        ? "bg-blue-50 text-blue-700 font-semibold"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="truncate pr-2">{opt.label}</span>
+                    {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0" />}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSubmit, loading = false, mode = "create", onFieldChange }) => {
   const [formData, setFormData] = useState({});
@@ -123,8 +277,17 @@ const CrudModal = ({ isOpen, onClose, title, fields = [], initialData = {}, onSu
                 {field.label}
               </label>
 
-              {/* SELECT */}
-              {field.type === "select" ? (
+              {/* SELECT / SEARCHABLE SELECT */}
+              {(field.type === "searchable-select" || (field.type === "select" && field.searchable)) ? (
+                <SearchableSelect
+                  name={field.name}
+                  value={formData[field.name] || ""}
+                  options={field.options || []}
+                  onChange={handleChange}
+                  disabled={mode === "view"}
+                  placeholder={field.placeholder || "Search or select..."}
+                />
+              ) : field.type === "select" ? (
                 <select
                   name={field.name}
                   value={formData[field.name] || ""}

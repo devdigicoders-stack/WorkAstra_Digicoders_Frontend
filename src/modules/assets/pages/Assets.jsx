@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { assetService } from '../../../services/assetService';
 import { assetTypeService } from '../../../services/assetTypeService';
+import { fetchAllCompaniesList } from '../../company/services/companyService';
+import { useStore } from '../../../context/StoreContext';
 import { ENDPOINTS } from '../../../services/endpoints';
 import api from '../../../services/axios';
-import { Plus, Edit, Trash2, UserPlus, UserMinus } from 'lucide-react';
+import { Plus, Edit, Trash2, UserPlus, UserMinus, Building2, Search, Monitor } from 'lucide-react';
 import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import CrudModal from '../../../Components/CrudModal';
 
 const Assets = () => {
+    const { user } = useStore();
+    const isSuperAdmin = (user?.role?.name || user?.role || "").toString().toLowerCase() === "super_admin";
+
     const [assets, setAssets] = useState([]);
+    const [companies, setCompanies] = useState([]);
+    const [companyFilter, setCompanyFilter] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
     const [users, setUsers] = useState([]);
     const [assetTypes, setAssetTypes] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -20,15 +28,24 @@ const Assets = () => {
     
     const [currentAsset, setCurrentAsset] = useState(null);
 
+    // Load companies for Super Admin
+    useEffect(() => {
+        if (isSuperAdmin) {
+            fetchAllCompaniesList()
+                .then(res => setCompanies(res?.companies || []))
+                .catch(err => console.error("Failed to load companies:", err));
+        }
+    }, [isSuperAdmin]);
+
     useEffect(() => {
         fetchAssets();
         fetchUsers();
         fetchAssetTypes();
-    }, []);
+    }, [user, companyFilter]);
 
     const fetchAssetTypes = async () => {
         try {
-            const res = await assetTypeService.getAssetTypes();
+            const res = await assetTypeService.getAssetTypes(isSuperAdmin ? companyFilter : "");
             if (res.success) setAssetTypes(res.assetTypes || []);
         } catch (error) {
             console.error('Failed to fetch asset types', error);
@@ -38,9 +55,10 @@ const Assets = () => {
     const fetchAssets = async () => {
         setLoading(true);
         try {
-            const data = await assetService.getAssets();
+            const compParam = isSuperAdmin ? (companyFilter || "all") : (user?.companyId?._id || user?.companyId || "");
+            const data = await assetService.getAssets(compParam);
             if (data.success) {
-                setAssets(data.assets);
+                setAssets(data.assets || []);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to fetch assets');
@@ -54,7 +72,7 @@ const Assets = () => {
             // Re-using axios directly for getting all users
             const res = await api.get(ENDPOINTS.USER.GET_ALL);
             if (res.data.success) {
-                setUsers(res.data.users);
+                setUsers(res.data.users || []);
             }
         } catch (error) {
             console.error('Failed to fetch users', error);
@@ -72,7 +90,11 @@ const Assets = () => {
                 const res = await assetService.updateAsset(currentAsset._id, formData);
                 if (res.success) toast.success('Asset updated successfully');
             } else {
-                const res = await assetService.createAsset(formData);
+                const payload = {
+                    ...formData,
+                    companyId: isSuperAdmin ? (formData.companyId || companyFilter || null) : (user?.companyId?._id || user?.companyId)
+                };
+                const res = await assetService.createAsset(payload);
                 if (res.success) toast.success('Asset created successfully');
             }
             setIsAssetModalOpen(false);
@@ -148,61 +170,147 @@ const Assets = () => {
         }
     };
 
+    const filteredAssets = assets.filter(asset => {
+        const matchesSearch = !searchQuery || 
+            asset.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            asset.serialNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            asset.type?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCompany = !isSuperAdmin || !companyFilter || companyFilter === "all" || (
+            (typeof asset.companyId === 'object' ? asset.companyId?._id : asset.companyId) === companyFilter
+        );
+        return matchesSearch && matchesCompany;
+    });
+
+    const assignableUsers = users.filter(u => {
+        if (!currentAsset) return true;
+        const assetCompId = typeof currentAsset.companyId === 'object' ? currentAsset.companyId?._id : currentAsset.companyId;
+        if (!assetCompId) return true;
+        const userCompId = typeof u.companyId === 'object' ? u.companyId?._id : u.companyId;
+        return !userCompId || userCompId === assetCompId;
+    });
+
     return (
-        <div className="p-6 h-full flex flex-col space-y-6">
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Company Assets</h1>
-                    <p className="text-sm text-gray-500">Manage all hardware and software assets</p>
+        <div className="p-4 md:p-6 lg:p-8 h-full flex flex-col space-y-6 bg-gray-50 min-h-screen">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex items-center gap-3.5">
+                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                        <Monitor size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Company Assets</h1>
+                        <p className="text-sm text-gray-500 mt-0.5">Manage all hardware and software assets across your organization</p>
+                    </div>
                 </div>
                 <button 
                     onClick={() => handleOpenAssetModal()}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-sm shadow-blue-500/20 active:scale-95 shrink-0 self-start sm:self-auto"
                 >
                     <Plus size={18} /> Add New Asset
                 </button>
             </div>
 
+            {/* Filter & Search Bar */}
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="relative w-full sm:w-80">
+                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search by asset name, type, serial..."
+                        className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50/50 focus:bg-white transition"
+                    />
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    {/* Company Filter for Super Admin */}
+                    {isSuperAdmin && companies.length > 0 && (
+                        <div className="relative min-w-[220px] w-full sm:w-auto">
+                            <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <select
+                                value={companyFilter}
+                                onChange={(e) => setCompanyFilter(e.target.value)}
+                                className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-sm"
+                                title="Filter by Company"
+                            >
+                                <option value="">All Companies ({companies.length})</option>
+                                {companies.map((c) => (
+                                    <option key={c._id} value={c._id}>
+                                        {c.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="text-xs text-gray-500 font-medium whitespace-nowrap bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
+                        Total: <span className="font-bold text-gray-800">{filteredAssets.length}</span> {filteredAssets.length === 1 ? "Asset" : "Assets"}
+                    </div>
+                </div>
+            </div>
+
+            {/* Table */}
             <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
-                                <th className="px-6 py-4 text-sm font-semibold text-gray-600">Name</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-gray-600">Type</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-gray-600">Serial No.</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-gray-600">Status</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-gray-600">Assigned To</th>
-                                <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-right">Actions</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                                {isSuperAdmin && (
+                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
+                                )}
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Serial No.</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned To</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">Loading assets...</td>
+                                    <td colSpan={isSuperAdmin ? 7 : 6} className="px-6 py-12 text-center text-gray-500">
+                                        Loading assets...
+                                    </td>
                                 </tr>
-                            ) : assets.length === 0 ? (
+                            ) : filteredAssets.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">No assets found. Create one to get started!</td>
+                                    <td colSpan={isSuperAdmin ? 7 : 6} className="px-6 py-12 text-center text-gray-400">
+                                        <Monitor size={40} className="mx-auto text-gray-200 mb-2" />
+                                        No assets found{companyFilter ? " for this company" : ""}.
+                                    </td>
                                 </tr>
                             ) : (
-                                assets.map((asset) => (
+                                filteredAssets.map((asset) => (
                                     <tr key={asset._id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
-                                            <p className="font-medium text-gray-800">{asset.name}</p>
-                                            <p className="text-xs text-gray-500 truncate max-w-[200px]">{asset.description}</p>
+                                            <p className="font-semibold text-gray-800">{asset.name}</p>
+                                            <p className="text-xs text-gray-500 truncate max-w-[200px]">{asset.description || '-'}</p>
                                         </td>
+                                        {isSuperAdmin && (
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                                    asset.companyId?.name
+                                                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                }`}>
+                                                    {asset.companyId?.name || "Global / Unassigned"}
+                                                </span>
+                                            </td>
+                                        )}
                                         <td className="px-6 py-4">
-                                            <span className="inline-flex px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
+                                            <span className="inline-flex px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
                                                 {asset.type}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{asset.serialNumber || '-'}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600 font-mono text-xs">{asset.serialNumber || '-'}</td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                                            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
                                                 asset.status === 'Available' ? 'bg-green-100 text-green-700' :
                                                 asset.status === 'Assigned' ? 'bg-blue-100 text-blue-700' :
-                                                'bg-yellow-100 text-yellow-700'
+                                                asset.status === 'In Repair' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-rose-100 text-rose-700'
                                             }`}>
                                                 {asset.status}
                                             </span>
@@ -210,34 +318,55 @@ const Assets = () => {
                                         <td className="px-6 py-4">
                                             {asset.assignedTo ? (
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
-                                                        {asset.assignedTo.firstName[0]}
+                                                    <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0">
+                                                        {asset.assignedTo.firstName?.[0] || 'U'}
                                                     </div>
-                                                    <span className="text-sm font-medium text-gray-700">
-                                                        {asset.assignedTo.firstName} {asset.assignedTo.lastName}
-                                                    </span>
+                                                    <div>
+                                                        <span className="text-sm font-medium text-gray-800 block leading-tight">
+                                                            {asset.assignedTo.firstName} {asset.assignedTo.lastName}
+                                                        </span>
+                                                        <span className="text-xs text-gray-400">{asset.assignedTo.email}</span>
+                                                    </div>
                                                 </div>
                                             ) : (
-                                                <span className="text-sm text-gray-400">Not Assigned</span>
+                                                <span className="text-xs text-gray-400 italic">Not Assigned</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 flex items-center justify-end gap-3">
-                                            {asset.status === 'Available' ? (
-                                                <button onClick={() => handleOpenAssignModal(asset)} className="text-blue-500 hover:text-blue-700 p-1" title="Assign to Employee">
-                                                    <UserPlus size={18} />
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                {asset.status === 'Available' ? (
+                                                    <button 
+                                                        onClick={() => handleOpenAssignModal(asset)} 
+                                                        className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition" 
+                                                        title="Assign to Employee"
+                                                    >
+                                                        <UserPlus size={16} />
+                                                    </button>
+                                                ) : asset.status === 'Assigned' ? (
+                                                    <button 
+                                                        onClick={() => handleUnassignAsset(asset._id)} 
+                                                        className="text-orange-500 hover:bg-orange-50 p-2 rounded-lg transition" 
+                                                        title="Unassign Asset"
+                                                    >
+                                                        <UserMinus size={16} />
+                                                    </button>
+                                                ) : null}
+                                                
+                                                <button 
+                                                    onClick={() => handleOpenAssetModal(asset)} 
+                                                    className="text-gray-500 hover:bg-gray-100 p-2 rounded-lg transition" 
+                                                    title="Edit"
+                                                >
+                                                    <Edit size={16} />
                                                 </button>
-                                            ) : asset.status === 'Assigned' ? (
-                                                <button onClick={() => handleUnassignAsset(asset._id)} className="text-orange-500 hover:text-orange-700 p-1" title="Unassign">
-                                                    <UserMinus size={18} />
+                                                <button 
+                                                    onClick={() => handleDeleteAsset(asset._id)} 
+                                                    className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" 
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={16} />
                                                 </button>
-                                            ) : null}
-                                            
-                                            <button onClick={() => handleOpenAssetModal(asset)} className="text-gray-400 hover:text-gray-600 p-1" title="Edit">
-                                                <Edit size={18} />
-                                            </button>
-                                            <button onClick={() => handleDeleteAsset(asset._id)} className="text-red-400 hover:text-red-600 p-1" title="Delete">
-                                                <Trash2 size={18} />
-                                            </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -247,6 +376,7 @@ const Assets = () => {
                 </div>
             </div>
 
+            {/* Add / Edit Asset Modal */}
             <CrudModal
                 isOpen={isAssetModalOpen}
                 onClose={() => setIsAssetModalOpen(false)}
@@ -255,16 +385,29 @@ const Assets = () => {
                 loading={loading}
                 initialData={currentAsset ? {
                     name: currentAsset.name,
+                    companyId: currentAsset.companyId?._id || currentAsset.companyId || '',
                     type: currentAsset.type,
                     serialNumber: currentAsset.serialNumber,
                     description: currentAsset.description
-                } : {}}
+                } : {
+                    companyId: companyFilter || ''
+                }}
                 fields={[
-                    { name: "name", label: "Asset Name", type: "text" },
+                    { name: "name", label: "Asset Name", type: "text", required: true },
+                    ...(isSuperAdmin ? [{
+                        name: "companyId",
+                        label: "Company",
+                        type: "select",
+                        searchable: true,
+                        placeholder: "Search company...",
+                        options: companies.map(c => ({ value: c._id, label: c.name }))
+                    }] : []),
                     { 
                         name: "type", 
                         label: "Asset Type", 
                         type: "select", 
+                        searchable: true,
+                        placeholder: "Search asset type...",
                         options: assetTypes.map(t => ({ value: t.name, label: t.name }))
                     },
                     { name: "serialNumber", label: "Serial Number / IMEI", type: "text" },
@@ -272,10 +415,11 @@ const Assets = () => {
                 ]}
             />
 
+            {/* Assign Asset Modal */}
             <CrudModal
                 isOpen={isAssignModalOpen}
                 onClose={() => setIsAssignModalOpen(false)}
-                title={`Assign ${currentAsset?.name}`}
+                title={`Assign ${currentAsset?.name || 'Asset'}`}
                 onSubmit={handleAssignAsset}
                 loading={loading}
                 initialData={{ userId: currentAsset?.assignedTo?._id || '' }}
@@ -284,8 +428,10 @@ const Assets = () => {
                         name: "userId", 
                         label: "Select Employee", 
                         type: "select", 
+                        searchable: true,
+                        placeholder: "Type employee name or email to search...",
                         fullWidth: true,
-                        options: users.map(u => ({ value: u._id, label: `${u.firstName} ${u.lastName} (${u.email})` })) 
+                        options: assignableUsers.map(u => ({ value: u._id, label: `${u.firstName} ${u.lastName} (${u.email})` })) 
                     }
                 ]}
             />

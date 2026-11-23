@@ -13,11 +13,11 @@ export const createOrUpdateNda = async (formData) => {
 
 export const getAllNdas = async (companyId = "", manage = false) => {
     try {
-        let query = companyId ? `?companyId=${companyId}` : "?";
-        if (manage) {
-            query += query === "?" ? "manage=true" : "&manage=true";
-        }
-        const res = await api.get(`/api/nda${query}`);
+        const params = new URLSearchParams();
+        if (companyId) params.append("companyId", companyId);
+        if (manage) params.append("manage", "true");
+        const queryString = params.toString() ? `?${params.toString()}` : "";
+        const res = await api.get(`/api/nda${queryString}`);
         return res.data;
     } catch (error) {
         throw error.response?.data || error.message;

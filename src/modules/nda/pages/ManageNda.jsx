@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { getImageUrl } from "../../../utils/imageUtils";
 import { useStore } from "../../../context/StoreContext";
-import { FileText, Save, Plus, File, Edit3, ShieldCheck, X, UploadCloud, Download, Trash2, Users } from "lucide-react";
+import { FileText, Save, Plus, File, Edit3, ShieldCheck, X, UploadCloud, Download, Trash2, Users, Building2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { getAllNdas, createOrUpdateNda, getNdaSignatures, deleteNda, getClientNdaSignatures } from "../../../services/ndaService";
+import { fetchAllCompaniesList } from "../../company/services/companyService";
 
 const ManageNda = () => {
     const { user } = useStore();
+    const isSuperAdmin = (user?.role?.name || user?.role || "").toString().toLowerCase() === "super_admin";
+
     const [ndas, setNdas] = useState([]);
+    const [companies, setCompanies] = useState([]);
+    const [companyFilter, setCompanyFilter] = useState("");
+    const [targetCompanyId, setTargetCompanyId] = useState("");
     const [clientSignatures, setClientSignatures] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("employee"); // "employee" or "client"
@@ -42,16 +48,26 @@ const ManageNda = () => {
         return finalUrl;
     };
 
+    // Load companies list for Super Admin
+    useEffect(() => {
+        if (isSuperAdmin) {
+            fetchAllCompaniesList()
+                .then(res => setCompanies(res?.companies || []))
+                .catch(err => console.error("Failed to load companies:", err));
+        }
+    }, [isSuperAdmin]);
+
     useEffect(() => {
         fetchNdas();
         fetchClientSignatures();
-    }, [user?.companyId]);
+    }, [user?.companyId, companyFilter]);
 
     const fetchNdas = async () => {
         try {
             setLoading(true);
-            const res = await getAllNdas(user?.companyId?._id || "", true);
-            if (res.success) setNdas(res.ndas);
+            const compParam = isSuperAdmin ? (companyFilter || "all") : (user?.companyId?._id || "");
+            const res = await getAllNdas(compParam, true);
+            if (res.success) setNdas(res.ndas || []);
         } catch (error) {
             toast.error(error.message || "Failed to fetch NDAs");
         } finally {
@@ -62,7 +78,7 @@ const ManageNda = () => {
     const fetchClientSignatures = async () => {
         try {
             const res = await getClientNdaSignatures();
-            if (res.success) setClientSignatures(res.signatures);
+            if (res.success) setClientSignatures(res.signatures || []);
         } catch (error) {
             console.error("Failed to fetch client signatures:", error);
         }
@@ -77,7 +93,12 @@ const ManageNda = () => {
             formData.append("title", title);
             formData.append("targetAudience", targetAudience);
             if (file) formData.append("file", file);
-            if (user?.companyId?._id) formData.append("companyId", user.companyId._id);
+            
+            if (isSuperAdmin) {
+                formData.append("companyId", targetCompanyId && targetCompanyId !== "global" ? targetCompanyId : "global");
+            } else if (user?.companyId?._id) {
+                formData.append("companyId", user.companyId._id);
+            }
 
             const res = await createOrUpdateNda(formData);
             if (res.success) {
@@ -85,6 +106,7 @@ const ManageNda = () => {
                 fetchNdas();
                 setTitle("");
                 setTargetAudience("Employee");
+                setTargetCompanyId(companyFilter || "");
                 setFile(null);
                 const fileInput = document.getElementById('nda-file');
                 if (fileInput) fileInput.value = '';
@@ -100,6 +122,7 @@ const ManageNda = () => {
         toast.info("Cannot edit document file directly. Create a new NDA or update title & audience.");
         setTitle(n.title);
         setTargetAudience(n.targetAudience || "Employee");
+        setTargetCompanyId(n.companyId?._id || n.companyId || "");
         setActiveTab("employee");
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -183,7 +206,7 @@ const ManageNda = () => {
                         </div>
 
                         <div className="p-6 md:p-8 space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className={`grid grid-cols-1 ${isSuperAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
                                 <div className="space-y-2">
                                     <label className="block text-sm font-bold text-gray-700">NDA Title <span className="text-red-500">*</span></label>
                                     <input
@@ -207,6 +230,25 @@ const ManageNda = () => {
                                         <option value="Client">Client</option>
                                     </select>
                                 </div>
+                                {isSuperAdmin && (
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                                            <Building2 size={15} className="text-blue-600" /> Applicable Company
+                                        </label>
+                                        <select
+                                            value={targetCompanyId}
+                                            onChange={(e) => setTargetCompanyId(e.target.value)}
+                                            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50/50 focus:bg-white cursor-pointer"
+                                        >
+                                            <option value="">Global (All Companies)</option>
+                                            {companies.map((c) => (
+                                                <option key={c._id} value={c._id}>
+                                                    {c.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
                             </div>
                             
                             <div className="space-y-3">
@@ -251,9 +293,30 @@ const ManageNda = () => {
 
             {/* List Section */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 md:p-6 border-b border-gray-100 flex items-center gap-3">
-                    <File size={18} className="text-blue-600" />
-                    <h2 className="text-base font-semibold text-gray-800">Existing NDAs</h2>
+                <div className="p-4 md:p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <File size={18} className="text-blue-600" />
+                        <h2 className="text-base font-semibold text-gray-800">Existing NDAs</h2>
+                    </div>
+
+                    {isSuperAdmin && companies.length > 0 && (
+                        <div className="relative min-w-[220px]">
+                            <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <select
+                                value={companyFilter}
+                                onChange={(e) => setCompanyFilter(e.target.value)}
+                                className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-sm"
+                                title="Filter by Company"
+                            >
+                                <option value="">All Companies ({companies.length})</option>
+                                {companies.map((c) => (
+                                    <option key={c._id} value={c._id}>
+                                        {c.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
 
                 <div className="p-4 md:p-6">
@@ -266,7 +329,7 @@ const ManageNda = () => {
                     ) : ndas.length === 0 ? (
                         <div className="text-center py-12 px-4">
                             <FileText size={48} className="mx-auto text-gray-200 mb-4" />
-                            <p className="text-gray-500">No NDAs found.</p>
+                            <p className="text-gray-500">No NDAs found{isSuperAdmin && companyFilter ? " for this company" : ""}.</p>
                         </div>
                     ) : (
                         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
@@ -278,7 +341,7 @@ const ManageNda = () => {
                                                 <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                                                     <FileText size={16} />
                                                 </div>
-                                                <h3 className="font-semibold text-gray-800 truncate">{n.title}</h3>
+                                                <h3 className="font-semibold text-gray-800 truncate" title={n.title}>{n.title}</h3>
                                             </div>
                                             <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                                                 n.targetAudience === 'Intern' ? 'bg-purple-100 text-purple-700' :
@@ -288,9 +351,20 @@ const ManageNda = () => {
                                                 {n.targetAudience || 'Both'}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-gray-400 mt-2">
-                                            Last updated: {new Date(n.updatedAt).toLocaleDateString()}
-                                        </p>
+                                        <div className="flex items-center justify-between gap-2 mt-2">
+                                            <p className="text-xs text-gray-400">
+                                                Last updated: {new Date(n.updatedAt).toLocaleDateString()}
+                                            </p>
+                                            {isSuperAdmin && (
+                                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 truncate max-w-[120px] ${
+                                                    n.companyId?.name
+                                                        ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                }`} title={n.companyId?.name || "Global (All Companies)"}>
+                                                    {n.companyId?.name || "Global"}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <div className="mt-4 pt-4 border-t border-gray-50 flex gap-2">
                                         <button  
@@ -317,15 +391,36 @@ const ManageNda = () => {
                 <div className="flex flex-col gap-6">
                     {/* Client NDA Templates Section */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 md:p-6 border-b border-gray-100 flex items-center gap-3">
-                            <File size={18} className="text-blue-600" />
-                            <h2 className="text-base font-semibold text-gray-800">Existing Client NDAs</h2>
+                        <div className="p-4 md:p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <File size={18} className="text-blue-600" />
+                                <h2 className="text-base font-semibold text-gray-800">Existing Client NDAs</h2>
+                            </div>
+
+                            {isSuperAdmin && companies.length > 0 && (
+                                <div className="relative min-w-[220px]">
+                                    <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                    <select
+                                        value={companyFilter}
+                                        onChange={(e) => setCompanyFilter(e.target.value)}
+                                        className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-sm"
+                                        title="Filter by Company"
+                                    >
+                                        <option value="">All Companies ({companies.length})</option>
+                                        {companies.map((c) => (
+                                            <option key={c._id} value={c._id}>
+                                                {c.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                         </div>
                         <div className="p-4 md:p-6">
                             {ndas.filter(n => n.targetAudience === 'Client').length === 0 ? (
                                 <div className="text-center py-12 px-4">
                                     <FileText size={48} className="mx-auto text-gray-200 mb-4" />
-                                    <p className="text-gray-500">No Client NDAs found. Create one from the Employee/Intern tab by selecting "Client" audience.</p>
+                                    <p className="text-gray-500">No Client NDAs found{isSuperAdmin && companyFilter ? " for this company" : ""}. Create one from the Employee/Intern tab by selecting "Client" audience.</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
@@ -337,15 +432,26 @@ const ManageNda = () => {
                                                         <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                                                             <FileText size={16} />
                                                         </div>
-                                                        <h3 className="font-semibold text-gray-800 truncate">{n.title}</h3>
+                                                        <h3 className="font-semibold text-gray-800 truncate" title={n.title}>{n.title}</h3>
                                                     </div>
                                                     <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-700 shrink-0">
                                                         Client
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-gray-400 mt-2">
-                                                    Last updated: {new Date(n.updatedAt).toLocaleDateString()}
-                                                </p>
+                                                <div className="flex items-center justify-between gap-2 mt-2">
+                                                    <p className="text-xs text-gray-400">
+                                                        Last updated: {new Date(n.updatedAt).toLocaleDateString()}
+                                                    </p>
+                                                    {isSuperAdmin && (
+                                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 truncate max-w-[120px] ${
+                                                            n.companyId?.name
+                                                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        }`} title={n.companyId?.name || "Global (All Companies)"}>
+                                                            {n.companyId?.name || "Global"}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="mt-4 pt-4 border-t border-gray-50 flex gap-2">
                                                 <button 
@@ -393,9 +499,18 @@ const ManageNda = () => {
                                                         <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
                                                             {sig.userId?.firstName?.[0] || 'C'}
                                                         </div>
-                                                        <span className="font-medium text-gray-900">
-                                                            {sig.userId?.firstName} {sig.userId?.lastName}
-                                                        </span>
+                                                        <div>
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="font-medium text-gray-900">
+                                                                    {sig.userId?.firstName} {sig.userId?.lastName}
+                                                                </span>
+                                                                {isSuperAdmin && sig.userId?.companyId?.name && (
+                                                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                                        {sig.userId.companyId.name}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-gray-800 font-medium">{sig.ndaId?.title || 'N/A'}</td>
@@ -448,16 +563,23 @@ const ManageNda = () => {
                                     {currentSignatures.map(sig => (
                                         <div key={sig._id} className="flex flex-col sm:flex-row items-center justify-between p-4 border border-gray-100 rounded-xl hover:shadow-sm transition">
                                             <div className="flex items-center gap-3 w-full sm:w-auto">
-                                                {sig.userId.profilePic?.url ? (
+                                                {sig.userId?.profilePic?.url ? (
                                                     <img src={getImageUrl(sig.userId.profilePic.url)} alt="" className="w-10 h-10 rounded-full object-cover" />
                                                 ) : (
                                                     <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
-                                                        {sig.userId.firstName[0]}{sig.userId.lastName[0]}
+                                                        {sig.userId?.firstName?.[0] || 'U'}{sig.userId?.lastName?.[0] || ''}
                                                     </div>
                                                 )}
                                                 <div>
-                                                    <p className="font-semibold text-gray-800">{sig.userId.firstName} {sig.userId.lastName}</p>
-                                                    <p className="text-xs text-gray-500">{sig.userId.email} • Signed: {new Date(sig.signedAt || sig.createdAt).toLocaleString()}</p>
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <p className="font-semibold text-gray-800">{sig.userId?.firstName} {sig.userId?.lastName}</p>
+                                                        {isSuperAdmin && sig.userId?.companyId?.name && (
+                                                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                                {sig.userId.companyId.name}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-gray-500">{sig.userId?.email} • Signed: {new Date(sig.signedAt || sig.createdAt).toLocaleString()}</p>
                                                 </div>
                                             </div>
                                             <div className="mt-3 sm:mt-0 w-full sm:w-auto flex flex-col sm:flex-row gap-2">

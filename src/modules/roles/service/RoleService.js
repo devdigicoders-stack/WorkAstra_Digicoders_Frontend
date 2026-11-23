@@ -2,9 +2,10 @@ import api from "../../../services/axios";
 import { ENDPOINTS } from "../../../services/endpoints";
 
 
-export const fetchRoles = async () => {
+export const fetchRoles = async (companyId = "") => {
     try {
-        const response = await api.get(ENDPOINTS.ROLE.GET_ALL_COMPANY_ROLES);
+        const query = companyId && companyId !== "all" ? `?companyId=${companyId}` : "";
+        const response = await api.get(`${ENDPOINTS.ROLE.GET_ALL_COMPANY_ROLES}${query}`);
         return response.data;
     } catch (error) {
         throw error.response?.data || new Error("Failed to fetch roles");
@@ -74,9 +75,10 @@ export const getAllRoles = async () => {
     }
 };
 
-export const getAllRolesForAdmin = async () => {
+export const getAllRolesForAdmin = async (companyId = "") => {
     try {
-        const response = await api.get(ENDPOINTS.ROLE.GET_ALL);
+        const query = companyId && companyId !== "all" ? `?companyId=${companyId}` : "";
+        const response = await api.get(`${ENDPOINTS.ROLE.GET_ALL}${query}`);
         return response.data;
     } catch (error) {
         throw error.response?.data || new Error("Failed to fetch roles");

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, ShieldCheck, X, Search, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, ShieldCheck, X, Search, Check, Building2 } from "lucide-react";
 import { fetchRoles, getAllRolesForAdmin, createRole, updateRole, deleteRole, fetchPermissionGroups } from "../service/RoleService";
 import { fetchAllCompaniesList } from "../../company/services/companyService";
 import { useStore } from "../../../context/StoreContext";
@@ -36,7 +36,7 @@ const formatLabel = (perm) =>
     perm.toLowerCase().replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 // ── Role Drawer ───────────────────────────────────────────────────────────────
-const RoleDrawer = ({ isOpen, onClose, initial, companies, isSuperAdmin, permissionGroups, onSubmit, loading }) => {
+const RoleDrawer = ({ isOpen, onClose, initial, companies, isSuperAdmin, permissionGroups, onSubmit, loading, defaultCompanyId }) => {
     const [name, setName] = useState("");
     const [companyId, setCompanyId] = useState("");
     const [selected, setSelected] = useState([]);
@@ -45,11 +45,11 @@ const RoleDrawer = ({ isOpen, onClose, initial, companies, isSuperAdmin, permiss
     useEffect(() => {
         if (isOpen) {
             setName(initial?.name || "");
-            setCompanyId(initial?.companyId?._id || initial?.companyId || "");
+            setCompanyId(initial?.companyId?._id || initial?.companyId || defaultCompanyId || "");
             setSelected(initial?.permissions || []);
             setSearch("");
         }
-    }, [isOpen, initial]);
+    }, [isOpen, initial, defaultCompanyId]);
 
     const toggle = (perm) => setSelected(p => p.includes(perm) ? p.filter(x => x !== perm) : [...p, perm]);
 
@@ -211,14 +211,16 @@ const Role = () => {
 
     const [roles, setRoles] = useState([]);
     const [companies, setCompanies] = useState([]);
+    const [companyFilter, setCompanyFilter] = useState("");
+    const [searchRole, setSearchRole] = useState("");
     const [permissionGroups, setPermissionGroups] = useState([]);
     const [open, setOpen] = useState(false);
     const [selected, setSelected] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const loadRoles = async () => {
+    const loadRoles = async (comp = companyFilter) => {
         try { 
-            const data = isSuperAdmin ? await getAllRolesForAdmin() : await fetchRoles(); 
+            const data = isSuperAdmin ? await getAllRolesForAdmin(comp) : await fetchRoles(comp); 
             setRoles(data.data || []); 
         }
         catch (err) { console.error(err); }
@@ -241,23 +243,31 @@ const Role = () => {
     };
 
     const loadCompanies = async () => {
-        try { const data = await fetchAllCompaniesList(); setCompanies(data.companies || []); }
+        try { 
+            const data = await fetchAllCompaniesList(); 
+            setCompanies(data.companies || []); 
+        }
         catch (err) { console.error(err); }
     };
 
     useEffect(() => {
-        loadRoles();
         loadPermissions();
         if (isSuperAdmin) loadCompanies();
         else if (user?.company) setCompanies([{ _id: user.company, name: "Your Company" }]);
     }, [user]);
+
+    useEffect(() => {
+        loadRoles(companyFilter);
+    }, [user, companyFilter]);
 
     const handleCreate = async (data) => {
         if (!hasPermission("Create_ROLE")) return;
         try {
             setLoading(true);
             if (!isSuperAdmin) data.companyId = user.company;
-            await createRole(data); loadRoles(); setOpen(false);
+            await createRole(data); 
+            await loadRoles(companyFilter); 
+            setOpen(false);
             toast.success("Role created successfully");
         } catch (err) { toast.error(err?.message || "Failed to create role"); }
         finally { setLoading(false); }
@@ -267,7 +277,9 @@ const Role = () => {
         if (!hasPermission("UPDATE_ROLE")) return;
         try {
             setLoading(true);
-            await updateRole(selected._id, data); loadRoles(); setOpen(false);
+            await updateRole(selected._id, data); 
+            await loadRoles(companyFilter); 
+            setOpen(false);
             toast.success("Role updated successfully");
         } catch (err) { toast.error(err?.message || "Failed to update role"); }
         finally { setLoading(false); }
@@ -275,30 +287,87 @@ const Role = () => {
 
     const handleDelete = async (id) => {
         if (!hasPermission("DELETE_ROLE")) return;
-        try { await deleteRole(id); loadRoles(); toast.success("Role deleted"); }
+        try { 
+            await deleteRole(id); 
+            await loadRoles(companyFilter); 
+            toast.success("Role deleted"); 
+        }
         catch (err) { toast.error("Failed to delete role"); }
     };
 
+    const filteredRoles = roles.filter(role => {
+        const matchesCompany = !companyFilter || companyFilter === "all" || (
+            (typeof role.companyId === "object" ? role.companyId?._id : role.companyId) === companyFilter
+        );
+        const matchesSearch = !searchRole || role.name?.toLowerCase().includes(searchRole.toLowerCase());
+        return matchesCompany && matchesSearch;
+    });
+
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Roles</h1>
-                    <p className="text-gray-500 text-sm mt-0.5">Manage roles and their permissions.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                        <ShieldCheck className="text-blue-600" /> Roles
+                    </h1>
+                    <p className="text-gray-500 text-sm mt-0.5">Manage roles and their permissions across your organization.</p>
                 </div>
                 {hasPermission("Create_ROLE") && (
                     <button onClick={() => { setSelected(null); setOpen(true); }}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-sm hover:shadow active:scale-95 shrink-0 self-start sm:self-auto">
                         <Plus size={16} /> Add Role
                     </button>
                 )}
             </div>
 
+            {/* Filter & Search Bar */}
+            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="relative w-full sm:w-80">
+                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <input
+                        type="text"
+                        value={searchRole}
+                        onChange={(e) => setSearchRole(e.target.value)}
+                        placeholder="Search role by name..."
+                        className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50/50 focus:bg-white transition"
+                    />
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    {/* Company Filter for Super Admin */}
+                    {isSuperAdmin && companies.length > 0 && (
+                        <div className="relative min-w-[220px] w-full sm:w-auto">
+                            <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <select
+                                value={companyFilter}
+                                onChange={(e) => setCompanyFilter(e.target.value)}
+                                className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-sm"
+                                title="Filter by Company"
+                            >
+                                <option value="">All Companies ({companies.length})</option>
+                                {companies.map((c) => (
+                                    <option key={c._id} value={c._id}>
+                                        {c.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="text-xs text-gray-500 font-medium whitespace-nowrap bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
+                        Total: <span className="font-bold text-gray-800">{filteredRoles.length}</span> {filteredRoles.length === 1 ? "Role" : "Roles"}
+                    </div>
+                </div>
+            </div>
+
+            {/* Table */}
             <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                             <th className="px-4 py-3 text-left">Role</th>
+                            {isSuperAdmin && <th className="px-4 py-3 text-left">Company</th>}
                             <th className="px-4 py-3 text-left">Permissions</th>
                             <th className="px-4 py-3 text-left">Created By</th>
                             <th className="px-4 py-3 text-left">Status</th>
@@ -306,9 +375,14 @@ const Role = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {roles.length === 0 ? (
-                            <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">No roles found.</td></tr>
-                        ) : roles.map((role) => (
+                        {filteredRoles.length === 0 ? (
+                            <tr>
+                                <td colSpan={isSuperAdmin ? 6 : 5} className="px-4 py-12 text-center text-gray-400">
+                                    <ShieldCheck size={40} className="mx-auto text-gray-200 mb-2" />
+                                    No roles found{companyFilter ? " for this company" : ""}.
+                                </td>
+                            </tr>
+                        ) : filteredRoles.map((role) => (
                             <tr key={role._id} className="hover:bg-gray-50 transition">
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
@@ -316,11 +390,22 @@ const Role = () => {
                                             <ShieldCheck size={16} />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-gray-800">{role.name}</p>
-                                            {role.companyId?.name && <p className="text-xs text-gray-400">{role.companyId.name}</p>}
+                                            <p className="font-semibold text-gray-800">{role.name}</p>
+                                            <p className="text-xs text-gray-400">{role.permissions?.length || 0} permissions assigned</p>
                                         </div>
                                     </div>
                                 </td>
+                                {isSuperAdmin && (
+                                    <td className="px-4 py-3">
+                                        <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full inline-block ${
+                                            role.companyId?.name
+                                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                        }`}>
+                                            {role.companyId?.name || "Global / System"}
+                                        </span>
+                                    </td>
+                                )}
                                 <td className="px-4 py-3">
                                     <div className="flex flex-wrap gap-1 max-w-xs">
                                         {role.permissions?.slice(0, 3).map((p) => (
@@ -354,13 +439,15 @@ const Role = () => {
                                     <div className="flex items-center justify-center gap-2">
                                         {hasPermission("UPDATE_ROLE") && (
                                             <button onClick={() => { setSelected(role); setOpen(true); }}
-                                                className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition">
+                                                className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition"
+                                                title="Edit Role">
                                                 <Pencil size={15} />
                                             </button>
                                         )}
                                         {hasPermission("DELETE_ROLE") && (
                                             <button onClick={() => handleDelete(role._id)}
-                                                className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition">
+                                                className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition"
+                                                title="Delete Role">
                                                 <Trash2 size={15} />
                                             </button>
                                         )}
@@ -378,6 +465,7 @@ const Role = () => {
                 initial={selected}
                 companies={companies}
                 isSuperAdmin={isSuperAdmin}
+                defaultCompanyId={companyFilter}
                 permissionGroups={permissionGroups}
                 onSubmit={selected ? handleUpdate : handleCreate}
                 loading={loading}

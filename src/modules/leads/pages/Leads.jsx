@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Plus, X, Pencil, Trash2, Eye, User, Send, MessageSquare, ChevronLeft, ChevronRight, Upload, Settings, FileText, Calendar, IndianRupee } from "lucide-react";
+import { Plus, X, Pencil, Trash2, Eye, User, Send, MessageSquare, ChevronLeft, ChevronRight, Upload, Settings, FileText, Calendar, IndianRupee, Building2 } from "lucide-react";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import { useStore } from "../../../context/StoreContext";
 import { fetchUsers } from "../../employee/services/UserService.jsx";
+import { fetchAllCompaniesList } from "../../company/services/companyService";
 import { getLeads, getLeadById, createLead, updateLead, deleteLead, addCommunication, getFieldConfig } from "../services/leadService";
 import LeadCommunication from "../components/LeadCommunication.jsx";
 import LeadHistory from "../components/LeadHistory.jsx";
@@ -61,6 +62,7 @@ const formDataFromLead = (lead, customFields) => {
         status: lead.status || "New Lead",
         dealPrice: lead.dealPrice || "",
         assignedTo: lead.assignedTo?._id || lead.assignedTo || "",
+        companyId: lead.companyId?._id || lead.companyId || "",
     };
     customFields.forEach((f) => {
         formData[f.key] = stored[f.key] ?? "";
@@ -96,6 +98,8 @@ const leadSnapshotFromForm = (form, base, users, customFields) => {
         contactPerson: form.contactPerson ?? base.contactPerson,
         email: form.email ?? base.email,
         status: form.status || base.status,
+        dealPrice: form.dealPrice ? Number(form.dealPrice) : base.dealPrice,
+        companyId: form.companyId || base.companyId,
         assignedTo: assignedUser
             ? { _id: assignedUser._id, firstName: assignedUser.firstName, lastName: assignedUser.lastName }
             : form.assignedTo || base.assignedTo,
@@ -130,15 +134,16 @@ const NewLeadCommForm = ({ comm, onChange }) => (
 );
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
-const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentUserId, onLeadUpdate, customFields }) => {
+const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentUserId, onLeadUpdate, customFields, isSuperAdmin, companies, defaultCompanyId }) => {
     const emptyForm = useCallback(() => {
         const base = {
             contactNumber: "", orgName: "", address: "", contactPerson: "",
             email: "", status: "New Lead", dealPrice: "", assignedTo: currentUserId || "",
+            companyId: defaultCompanyId || "",
         };
         customFields.forEach(f => { base[f.key] = ""; });
         return base;
-    }, [currentUserId, customFields]);
+    }, [currentUserId, customFields, defaultCompanyId]);
 
     const [form, setForm] = useState(emptyForm);
     const [viewMode, setViewMode] = useState(false);
@@ -190,10 +195,22 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
         }
     };
 
+    const modalUsers = useMemo(() => {
+        if (!isSuperAdmin || !form.companyId) return users;
+        return users.filter(u => {
+            const uComp = u.companyId?._id || u.companyId;
+            return uComp === form.companyId;
+        });
+    }, [users, isSuperAdmin, form.companyId]);
+
     const autoPopulate = async (d) => {
         try {
             setLookupLoading(true);
-            const res = await getLeads({ search: d, limit: 1 });
+            const params = { search: d, limit: 1 };
+            if (isSuperAdmin && form.companyId) {
+                params.companyId = form.companyId;
+            }
+            const res = await getLeads(params);
             const leads = res?.leads || [];
             const match = leads.find(l => digits(l.contactNumber || "") === d);
             if (match) {
@@ -226,6 +243,7 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
             status: form.status,
             dealPrice: form.dealPrice ? Number(form.dealPrice) : 0,
             assignedTo: form.assignedTo || null,
+            ...(isSuperAdmin && form.companyId ? { companyId: form.companyId } : {}),
             customFields: {},
         };
         customFields.forEach((f) => {
@@ -361,6 +379,10 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                                     {[
                                         { label: "Contact Number",    value: fmtUS(activeLead?.contactNumber || "") },
                                         { label: "Organisation Name", value: activeLead?.orgName },
+                                        ...((activeLead?.companyId?.name || (companies && companies.find(c => c._id === (activeLead?.companyId?._id || activeLead?.companyId))?.name)) ? [{
+                                            label: "Company",
+                                            value: activeLead?.companyId?.name || companies?.find(c => c._id === (activeLead?.companyId?._id || activeLead?.companyId))?.name
+                                        }] : []),
                                         { label: "Address",           value: activeLead?.address },
                                         { label: "Contact Person",    value: activeLead?.contactPerson },
                                         { label: "Email",             value: activeLead?.email },
@@ -437,11 +459,29 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                                             />
                                         </div>
                                     )}
+                                    {isSuperAdmin && (
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Company</label>
+                                            <select
+                                                value={form.companyId || ""}
+                                                onChange={e => {
+                                                    set("companyId", e.target.value);
+                                                    set("assignedTo", "");
+                                                }}
+                                                className={inp}
+                                            >
+                                                <option value="">— Select Company —</option>
+                                                {companies.map(c => (
+                                                    <option key={c._id} value={c._id}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 mb-1">Assigned To</label>
                                         <select value={form.assignedTo} onChange={e => set("assignedTo", e.target.value)} className={inp}>
                                             <option value="">— Unassigned —</option>
-                                            {users.map(u => (
+                                            {modalUsers.map(u => (
                                                 <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>
                                             ))}
                                         </select>
@@ -597,28 +637,52 @@ const Leads = () => {
     const [deleteConfirmId, setDeleteConfirmId] = useState(null);
     const [filterStatus, setFilterStatus] = useState("");
     const [filterAssignedTo, setFilterAssignedTo] = useState("");
+    const [companies, setCompanies] = useState([]);
+    const [selectedCompany, setSelectedCompany] = useState("");
     const searchDebounce          = useRef(null);
 
-    const load = useCallback(async (pg, q, status, assignedTo) => {
+    // Load Companies for Super Admin
+    useEffect(() => {
+        if (isSuperAdmin) {
+            fetchAllCompaniesList()
+                .then(res => setCompanies(res?.companies || []))
+                .catch(err => console.error("Failed to load companies:", err));
+        }
+    }, [isSuperAdmin]);
+
+    const load = useCallback(async (pg, q, status, assignedTo, compId) => {
         try {
             setLoading(true);
             const params = { page: pg, limit: PAGE_SIZE };
             if (q) params.search = q;
             if (status) params.status = status;
             if (assignedTo) params.assignedTo = assignedTo;
+            if (isSuperAdmin) {
+                params.companyId = compId || "all";
+            }
             const res = await getLeads(params);
             setLeads(res?.leads || []);
             setTotal(res?.total || 0);
         } catch { toast.error("Failed to load leads"); }
         finally { setLoading(false); }
-    }, []);
+    }, [isSuperAdmin]);
 
-    useEffect(() => { load(page, search, filterStatus, filterAssignedTo); }, [page, search, filterStatus, filterAssignedTo]); // eslint-disable-line
+    useEffect(() => {
+        load(page, search, filterStatus, filterAssignedTo, selectedCompany);
+    }, [page, search, filterStatus, filterAssignedTo, selectedCompany, load]);
 
     useEffect(() => {
         fetchUsers().then(r => setUsers(r.users || [])).catch(() => {});
         getFieldConfig().then(r => setCustomFields(r.fields || [])).catch(() => {});
     }, []);
+
+    const filteredUsers = useMemo(() => {
+        if (!isSuperAdmin || !selectedCompany || selectedCompany === "all") return users;
+        return users.filter(u => {
+            const uComp = u.companyId?._id || u.companyId;
+            return uComp === selectedCompany;
+        });
+    }, [users, isSuperAdmin, selectedCompany]);
 
     const handleSearchInput = (val) => {
         setSearchInput(val);
@@ -634,6 +698,13 @@ const Leads = () => {
     const handleFilterChange = (status, assignedTo) => {
         setFilterStatus(status);
         setFilterAssignedTo(assignedTo);
+        setPage(1);
+    };
+
+    const handleClearFilters = () => {
+        setFilterStatus("");
+        setFilterAssignedTo("");
+        setSelectedCompany("");
         setPage(1);
     };
 
@@ -676,7 +747,7 @@ const Leads = () => {
                 const lead = refreshed.lead;
                 if (lead) setSelected(lead);
                 toast.success("Lead updated");
-                load(page, search, filterStatus, filterAssignedTo);
+                load(page, search, filterStatus, filterAssignedTo, selectedCompany);
                 return { updated: true, lead };
             }
             const res = await createLead(form);
@@ -689,7 +760,7 @@ const Leads = () => {
             }
             toast.success("Lead created");
             close();
-            load(page, search, filterStatus, filterAssignedTo);
+            load(page, search, filterStatus, filterAssignedTo, selectedCompany);
             return { created: true };
         } catch (err) {
             toast.error(err?.response?.data?.message || "Failed to save lead");
@@ -706,7 +777,7 @@ const Leads = () => {
             setDeleteConfirmId(null);
             const newPage = leads.length === 1 && page > 1 ? page - 1 : page;
             setPage(newPage);
-            load(newPage, search, filterStatus, filterAssignedTo);
+            load(newPage, search, filterStatus, filterAssignedTo, selectedCompany);
         } catch { toast.error("Failed to delete lead"); }
     };
 
@@ -751,6 +822,30 @@ const Leads = () => {
                 {/* Filters */}
                 <div className="flex flex-wrap items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
                     <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Filters:</span>
+
+                    {/* Super Admin Company Filter */}
+                    {isSuperAdmin && (
+                        <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-200">
+                            <Building2 size={15} className="text-blue-600 shrink-0" />
+                            <select
+                                value={selectedCompany}
+                                onChange={e => {
+                                    setSelectedCompany(e.target.value);
+                                    setFilterAssignedTo("");
+                                    setPage(1);
+                                }}
+                                className="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer pr-2"
+                            >
+                                <option value="">🏢 All Companies</option>
+                                {companies.map(c => (
+                                    <option key={c._id} value={c._id}>
+                                        🏢 {c.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <select
                         value={filterStatus}
                         onChange={e => handleFilterChange(e.target.value, filterAssignedTo)}
@@ -759,6 +854,7 @@ const Leads = () => {
                         <option value="">All Statuses</option>
                         {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
+
                     {isAdmin && (
                         <select
                             value={filterAssignedTo}
@@ -766,12 +862,13 @@ const Leads = () => {
                             className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                         >
                             <option value="">All Assigned To</option>
-                            {users.map(u => <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>)}
+                            {filteredUsers.map(u => <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>)}
                         </select>
                     )}
-                    {(filterStatus || filterAssignedTo) && (
+
+                    {(filterStatus || filterAssignedTo || (isSuperAdmin && selectedCompany)) && (
                         <button
-                            onClick={() => handleFilterChange("", "")}
+                            onClick={handleClearFilters}
                             className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-medium transition"
                         >
                             Clear Filters
@@ -804,7 +901,15 @@ const Leads = () => {
                             {leads.map(lead => (
                                 <tr key={lead._id} className="hover:bg-gray-50 transition group">
                                     <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{fmtUS(lead.contactNumber || "")}</td>
-                                    <td className="px-4 py-3 text-gray-700">{lead.orgName}</td>
+                                    <td className="px-4 py-3 text-gray-700">
+                                        <div className="font-medium text-gray-900">{lead.orgName}</div>
+                                        {isSuperAdmin && lead.companyId?.name && (
+                                            <span className="inline-flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50 border border-blue-200/60 px-1.5 py-0.5 rounded font-normal mt-0.5">
+                                                <Building2 size={11} className="text-blue-500" />
+                                                {lead.companyId.name}
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-3 text-gray-600">{lead.contactPerson || "—"}</td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-medium border whitespace-nowrap ${STATUS_COLORS[lead.status] || ""}`}>
@@ -873,9 +978,12 @@ const Leads = () => {
                 currentUserId={user?._id}
                 onLeadUpdate={(lead) => {
                     if (lead) setSelected(lead);
-                    load(page, search, filterStatus, filterAssignedTo);
+                    load(page, search, filterStatus, filterAssignedTo, selectedCompany);
                 }}
                 customFields={customFields}
+                isSuperAdmin={isSuperAdmin}
+                companies={companies}
+                defaultCompanyId={selectedCompany && selectedCompany !== "all" ? selectedCompany : (user?.companyId?._id || user?.company || "")}
             />
 
             <LeadFieldManager
@@ -883,14 +991,14 @@ const Leads = () => {
                 onClose={() => setFieldManagerOpen(false)}
                 onSave={() => {
                     getFieldConfig().then(r => setCustomFields(r.fields || [])).catch(() => {});
-                    load(page, search, filterStatus, filterAssignedTo);
+                    load(page, search, filterStatus, filterAssignedTo, selectedCompany);
                 }}
             />
 
             <LeadImport
                 isOpen={importOpen}
                 onClose={() => setImportOpen(false)}
-                onDone={() => { setPage(1); load(1, search, filterStatus, filterAssignedTo); }}
+                onDone={() => { setPage(1); load(1, search, filterStatus, filterAssignedTo, selectedCompany); }}
                 customFields={customFields}
             />
         </div>

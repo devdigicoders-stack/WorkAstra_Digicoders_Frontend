@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useStore } from "../../../context/StoreContext";
-import { FileText, Edit3, X, CheckCircle, Search, UserCheck, Users, Download, ArrowRight, ArrowLeft, ShieldCheck, Eye, Eraser, RotateCcw } from "lucide-react";
+import { FileText, Edit3, X, CheckCircle, Search, UserCheck, Users, Download, ArrowRight, ArrowLeft, ShieldCheck, Eye, Eraser, RotateCcw, Building2 } from "lucide-react";
 import { toast } from "react-toastify";
 import SignatureCanvas from "react-signature-canvas";
 import { getAllNdas, signNda, getMySignatures } from "../../../services/ndaService";
+import { fetchAllCompaniesList } from "../../company/services/companyService";
 import ClientMyNda from "./ClientMyNda";
 
 const ViewNda = () => {
@@ -18,7 +19,10 @@ const ViewNda = () => {
 };
 
 const EmployeeViewNda = ({ user }) => {
+    const isSuperAdmin = (user?.role?.name || user?.role || "").toString().toLowerCase() === "super_admin";
     const [ndas, setNdas] = useState([]);
+    const [companies, setCompanies] = useState([]);
+    const [companyFilter, setCompanyFilter] = useState("");
     const [mySignatures, setMySignatures] = useState([]);
     const [signaturesMap, setSignaturesMap] = useState({});
     const [loading, setLoading] = useState(true);
@@ -53,24 +57,42 @@ const EmployeeViewNda = ({ user }) => {
 
     const companyIdStr = typeof user?.companyId === "object" ? user?.companyId?._id : user?.companyId;
 
+    // Load companies list for Super Admin
+    useEffect(() => {
+        if (isSuperAdmin) {
+            fetchAllCompaniesList()
+                .then(res => setCompanies(res?.companies || []))
+                .catch(err => console.error("Failed to load companies:", err));
+        }
+    }, [isSuperAdmin]);
+
     const fetchData = async () => {
         try {
             setLoading(true);
+            const compParam = isSuperAdmin ? (companyFilter || "all") : (companyIdStr || "");
             const [ndasRes, sigsRes] = await Promise.all([
-                getAllNdas(companyIdStr || ""),
+                getAllNdas(compParam),
                 getMySignatures()
             ]);
             
             if (ndasRes.success) {
-                setNdas(ndasRes.ndas);
-                if (ndasRes.ndas.length > 0 && !selectedNda) {
-                    setSelectedNda(ndasRes.ndas[0]);
+                const list = ndasRes.ndas || [];
+                setNdas(list);
+                if (list.length > 0) {
+                    setSelectedNda(prev => {
+                        if (prev && list.some(n => n._id === prev._id)) {
+                            return list.find(n => n._id === prev._id);
+                        }
+                        return list[0];
+                    });
+                } else {
+                    setSelectedNda(null);
                 }
             }
             if (sigsRes.success) {
                 const sigIds = [];
                 const map = {};
-                sigsRes.signatures.forEach(s => {
+                (sigsRes.signatures || []).forEach(s => {
                     const id = s.ndaId?._id || s.ndaId;
                     if (id) {
                         sigIds.push(id);
@@ -89,7 +111,7 @@ const EmployeeViewNda = ({ user }) => {
 
     useEffect(() => {
         fetchData();
-    }, [companyIdStr]);
+    }, [companyIdStr, companyFilter]);
 
     // Initialize Employee form when user data is loaded
     useEffect(() => {
@@ -194,34 +216,67 @@ const EmployeeViewNda = ({ user }) => {
     return (
         <div className="p-4 md:p-6 lg:p-8 w-full space-y-6 h-[calc(100vh-64px)] overflow-y-auto">
             {/* Header Banner */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
                         <FileText size={24} />
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Non-Disclosure Agreements</h1>
-                        <p className="text-sm text-gray-500 mt-0.5">DigiCoders Technologies Private Limited - Official NDA System</p>
+                        <p className="text-sm text-gray-500 mt-0.5">
+                            {isSuperAdmin && companyFilter
+                                ? `${companies.find(c => c._id === companyFilter)?.name || "Filtered Company"} - Official NDA System`
+                                : "Official NDA & Confidentiality System"}
+                        </p>
                     </div>
                 </div>
 
-                {selectedNda && isCurrentSigned && currentSignatureObj?.signedDocumentUrl && (
-                    <a
-                        href={getDocumentUrl(currentSignatureObj.signedDocumentUrl)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-sm font-semibold transition"
-                    >
-                        <Download size={16} /> Download Signed NDA (PDF)
-                    </a>
-                )}
+                <div className="flex items-center gap-3 flex-wrap">
+                    {/* Company Filter for Super Admin */}
+                    {isSuperAdmin && companies.length > 0 && (
+                        <div className="relative min-w-[220px]">
+                            <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <select
+                                value={companyFilter}
+                                onChange={(e) => setCompanyFilter(e.target.value)}
+                                className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-sm"
+                                title="Filter by Company"
+                            >
+                                <option value="">All Companies ({companies.length})</option>
+                                {companies.map((c) => (
+                                    <option key={c._id} value={c._id}>
+                                        {c.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {selectedNda && isCurrentSigned && currentSignatureObj?.signedDocumentUrl && (
+                        <a
+                            href={getDocumentUrl(currentSignatureObj.signedDocumentUrl)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-sm font-semibold transition"
+                        >
+                            <Download size={16} /> Download Signed NDA (PDF)
+                        </a>
+                    )}
+                </div>
             </div>
 
             {/* Main Content */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 md:p-6 border-b border-gray-100 flex items-center gap-3">
-                    <FileText size={18} className="text-blue-600" />
-                    <h2 className="text-base font-semibold text-gray-800">NDA Documents</h2>
+                <div className="p-4 md:p-6 border-b border-gray-100 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <FileText size={18} className="text-blue-600" />
+                        <h2 className="text-base font-semibold text-gray-800">NDA Documents</h2>
+                    </div>
+                    {isSuperAdmin && companyFilter && (
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                            {companies.find(c => c._id === companyFilter)?.name || "Filtered Company"}
+                        </span>
+                    )}
                 </div>
 
                 <div className="p-4 md:p-6">
@@ -234,7 +289,7 @@ const EmployeeViewNda = ({ user }) => {
                     ) : ndas.length === 0 ? (
                         <div className="text-center py-12 px-4 border border-dashed border-gray-200 rounded-2xl">
                             <FileText size={48} className="mx-auto text-gray-200 mb-4" />
-                            <p className="text-gray-500">No NDAs found for your company.</p>
+                            <p className="text-gray-500">No NDAs found{isSuperAdmin && companyFilter ? " for this company" : ""}.</p>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-6">
@@ -248,29 +303,38 @@ const EmployeeViewNda = ({ user }) => {
                                             onClick={() => setSelectedNda(n)}
                                             className={`border rounded-xl p-4 cursor-pointer transition-all ${
                                                 selectedNda?._id === n._id 
-                                                    ? "border-blue-500 bg-blue-50 shadow-md ring-1 ring-blue-500" 
+                                                    ? "border-blue-500 bg-blue-50/70 shadow-md ring-1 ring-blue-500" 
                                                     : "border-gray-200 hover:border-blue-300 hover:bg-gray-50 shadow-sm"
                                             }`}
                                         >
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className={`p-1.5 rounded-lg ${selectedNda?._id === n._id ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                                            <div className="flex items-start justify-between mb-2 gap-2">
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <div className={`p-1.5 rounded-lg shrink-0 ${selectedNda?._id === n._id ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
                                                         <FileText size={16} />
                                                     </div>
-                                                    <h3 className={`font-medium text-sm ${selectedNda?._id === n._id ? "text-blue-900" : "text-gray-800"}`}>
+                                                    <h3 className={`font-semibold text-sm truncate ${selectedNda?._id === n._id ? "text-blue-900" : "text-gray-800"}`} title={n.title}>
                                                         {n.title}
                                                     </h3>
                                                 </div>
                                                 {isSigned ? (
-                                                    <CheckCircle size={16} className="text-emerald-500" />
+                                                    <CheckCircle size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                                                 ) : (
-                                                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-200"></div>
+                                                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-200 shrink-0 mt-1"></div>
                                                 )}
                                             </div>
-                                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100/50">
+                                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100/70 gap-2">
                                                 <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-md ${isSigned ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-50 text-rose-600'}`}>
                                                     {isSigned ? "Signed & Stamped" : "Action Required"}
                                                 </span>
+                                                {isSuperAdmin && (
+                                                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full truncate max-w-[130px] ${
+                                                        n.companyId?.name
+                                                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    }`} title={n.companyId?.name || "Global (All Companies)"}>
+                                                        {n.companyId?.name || "Global"}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     );
@@ -283,9 +347,20 @@ const EmployeeViewNda = ({ user }) => {
                                     <>
                                         <div className="p-4 md:p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50">
                                             <div>
-                                                <h3 className="text-lg font-bold text-gray-900">{selectedNda.title}</h3>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <h3 className="text-lg font-bold text-gray-900">{selectedNda.title}</h3>
+                                                    {isSuperAdmin && (
+                                                        <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                                                            selectedNda.companyId?.name
+                                                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                        }`}>
+                                                            {selectedNda.companyId?.name || "Global (All Companies)"}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="text-xs text-gray-500 mt-0.5">
-                                                    {isCurrentSigned ? "Signed digital copy with DigiCoders seal & Gopal Sir's signature" : "Please review all terms carefully before digitally signing"}
+                                                    {isCurrentSigned ? "Signed digital copy with official seal & signature" : "Please review all terms carefully before digitally signing"}
                                                 </p>
                                             </div>
 
