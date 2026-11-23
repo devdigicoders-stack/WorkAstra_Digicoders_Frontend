@@ -66,12 +66,12 @@ const getLocation = () => new Promise((resolve, reject) => {
 
 const StatCard = ({ icon: Icon, label, value, sub, color, to }) => {
     const inner = (
-        <div className={`bg-white border border-gray-200 rounded-xl p-5 flex items-center gap-4 hover:shadow-md transition group ${to ? "cursor-pointer hover:border-blue-200" : ""}`}>
+        <div className={`bg-white border border-gray-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 sm:gap-4 hover:shadow-md transition group shadow-2xs ${to ? "cursor-pointer hover:border-blue-200 active:scale-98" : ""}`}>
             <div className={`p-3 rounded-xl shrink-0 ${color}`}><Icon size={22} /></div>
-            <div className="min-w-0">
-                <p className="text-xs text-gray-400 uppercase tracking-wide">{label}</p>
-                <p className="text-2xl font-bold text-gray-900">{value ?? "—"}</p>
-                {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+            <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium truncate">{label}</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{value ?? "—"}</p>
+                {sub && <p className="text-xs text-gray-400 mt-0.5 truncate">{sub}</p>}
             </div>
             {to && <ArrowRight size={16} className="ml-auto text-gray-300 group-hover:text-blue-500 transition shrink-0" />}
         </div>
@@ -441,7 +441,7 @@ const Home = () => {
 
             {/* Org Stats */}
             {!isClient && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
                     {canSee(["VIEW_USER", "VIEW_ALL_USERS"]) && (
                         <StatCard icon={Users} label="Employees" value={stats.users} sub="Total registered" color="bg-blue-50 text-blue-600" to="/users" />
                     )}
@@ -469,7 +469,7 @@ const Home = () => {
 
             {/* Sales Stats — admin only */}
             {isAdmin && salesStats.leads !== null && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
                     <StatCard icon={TrendingUp}   label="Total Leads"      value={salesStats.leads}       sub="All time"          color="bg-blue-50 text-blue-600"    to="/leads" />
                     <StatCard icon={FileText}     label="Total Quotes"     value={salesStats.quotesTotal} sub="All statuses"      color="bg-indigo-50 text-indigo-600" to="/quotes" />
                     <StatCard icon={CheckCircle}  label="Accepted Quotes"  value={salesStats.accepted}    sub="Won deals"         color="bg-emerald-50 text-emerald-600" to="/quotes" />
