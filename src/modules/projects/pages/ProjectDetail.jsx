@@ -335,72 +335,106 @@ const ProjectDetail = () => {
     const isClientView = project?.clientIds?.some(c => (c._id || c) === (user?._id || user?.userId));
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-4">
-                <button onClick={() => navigate("/projects")} className="p-2 rounded-lg hover:bg-gray-200 text-gray-500 transition">
-                    <ArrowLeft size={18} />
-                </button>
-                <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
-                        {project.price > 0 && (
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="px-2.5 py-0.5 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-full">
-                                    Deal: ₹{Number(project.price).toLocaleString("en-IN")}
-                                </span>
-                                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
-                                    (project.receivedAmount || 0) >= project.price
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                        : (project.receivedAmount || 0) > 0
-                                        ? "bg-amber-50 text-amber-700 border-amber-200"
-                                        : "bg-slate-50 text-slate-600 border-slate-200"
-                                }`}>
-                                    Received: ₹{Number(project.receivedAmount || 0).toLocaleString("en-IN")}
-                                </span>
-                                {Math.max(0, project.price - (project.receivedAmount || 0)) > 0 && (
-                                    <span className="px-2.5 py-0.5 text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded-full">
-                                        Due: ₹{Number(project.price - (project.receivedAmount || 0)).toLocaleString("en-IN")}
-                                    </span>
+            <div className="flex flex-col gap-3.5 mb-5">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                    {/* Left: Back button + Title + Financial Badges */}
+                    <div className="flex items-start gap-2.5 min-w-0">
+                        <button 
+                            onClick={() => navigate("/projects")} 
+                            className="p-2 rounded-xl hover:bg-gray-200/80 bg-white border border-gray-200 text-gray-600 transition shadow-2xs shrink-0 mt-0.5"
+                            title="Back to Projects"
+                        >
+                            <ArrowLeft size={18} />
+                        </button>
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">{project.name}</h1>
+                                {project.price > 0 && (
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="px-2.5 py-0.5 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-full">
+                                            Deal: ₹{Number(project.price).toLocaleString("en-IN")}
+                                        </span>
+                                        <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
+                                            (project.receivedAmount || 0) >= project.price
+                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                                : (project.receivedAmount || 0) > 0
+                                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                                : "bg-slate-50 text-slate-600 border-slate-200"
+                                        }`}>
+                                            Received: ₹{Number(project.receivedAmount || 0).toLocaleString("en-IN")}
+                                        </span>
+                                        {Math.max(0, project.price - (project.receivedAmount || 0)) > 0 && (
+                                            <span className="px-2.5 py-0.5 text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded-full">
+                                                Due: ₹{Number(project.price - (project.receivedAmount || 0)).toLocaleString("en-IN")}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            {project.description && (
+                                <p className="text-xs sm:text-sm text-gray-500 mt-1 line-clamp-2">{project.description}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right: Members & Action Buttons */}
+                    <div className="flex items-center justify-between sm:justify-end gap-2.5 flex-wrap pt-1 md:pt-0">
+                        {project.members && project.members.length > 0 && (
+                            <div className="flex items-center -space-x-2 mr-1 shrink-0">
+                                {project.members.slice(0, 5).map(m => (
+                                    <div 
+                                        key={m._id} 
+                                        title={`${m.firstName} ${m.lastName}`}
+                                        className="w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center border-2 border-white shadow-2xs"
+                                    >
+                                        {m.firstName?.[0]}{m.lastName?.[0]}
+                                    </div>
+                                ))}
+                                {project.members.length > 5 && (
+                                    <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 text-xs font-bold flex items-center justify-center border-2 border-white shadow-2xs">
+                                        +{project.members.length - 5}
+                                    </div>
                                 )}
                             </div>
                         )}
+
+                        <div className="flex items-center gap-2 flex-1 sm:flex-none justify-end">
+                            {canRaiseTicket && (
+                                <button 
+                                    onClick={() => navigate(`/my-tickets?projectId=${id}`)}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs sm:text-sm font-semibold transition shadow-xs cursor-pointer"
+                                >
+                                    <Ticket size={15} /> <span>Raise Ticket</span>
+                                </button>
+                            )}
+                            {canCreateTask && activeTab === "board" && (
+                                <button 
+                                    onClick={() => setDrawerOpen(true)}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition shadow-xs cursor-pointer"
+                                >
+                                    <Plus size={15} /> <span>Add Task</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
-                    {project.description && <p className="text-sm text-gray-500 mt-0.5">{project.description}</p>}
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="flex -space-x-2">
-                        {project.members?.slice(0, 5).map(m => (
-                            <div key={m._id} title={`${m.firstName} ${m.lastName}`}
-                                className="w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center border-2 border-white">
-                                {m.firstName?.[0]}{m.lastName?.[0]}
-                            </div>
-                        ))}
-                    </div>
-                    {canRaiseTicket && (
-                        <button onClick={() => navigate(`/my-tickets?projectId=${id}`)}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition">
-                            <Ticket size={15} /> Raise Ticket
-                        </button>
-                    )}
-                    {canCreateTask && activeTab === "board" && (
-                        <button onClick={() => setDrawerOpen(true)}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
-                            <Plus size={15} /> Add Task
-                        </button>
-                    )}
                 </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit mb-5">
-                <button onClick={() => setActiveTab("board")}
-                    className={`px-4 py-1.5 rounded-md text-xs font-medium transition ${activeTab === "board" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-5">
+                <button 
+                    onClick={() => setActiveTab("board")}
+                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${activeTab === "board" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                >
                     Board
                 </button>
-                <button onClick={() => setActiveTab("files")}
-                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition ${activeTab === "files" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-                    <FolderOpen size={12} /> Files & Links
+                <button 
+                    onClick={() => setActiveTab("files")}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition ${activeTab === "files" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                    <FolderOpen size={13} /> Files & Links
                 </button>
             </div>
 
@@ -416,16 +450,19 @@ const ProjectDetail = () => {
             )}
 
             {activeTab === "board" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="flex md:grid md:grid-cols-5 gap-3 sm:gap-4 overflow-x-auto pb-6 scrollbar-none snap-x">
                     {COLUMNS.map(col => (
-                        <div key={col.key} className="flex flex-col gap-3">
-                            <div className={`flex items-center justify-between px-3 py-2 rounded-lg ${col.color}`}>
-                                <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{col.label}</span>
-                                <span className="text-xs font-bold text-gray-500 bg-white rounded-full w-5 h-5 flex items-center justify-center">
+                        <div 
+                            key={col.key} 
+                            className="w-[85vw] max-w-[340px] md:w-auto shrink-0 md:shrink snap-center flex flex-col gap-3 bg-white/60 md:bg-transparent p-2.5 sm:p-0 rounded-2xl md:rounded-none border border-gray-200/60 md:border-0 shadow-2xs md:shadow-none"
+                        >
+                            <div className={`flex items-center justify-between px-3 py-2 rounded-xl ${col.color}`}>
+                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">{col.label}</span>
+                                <span className="text-xs font-bold text-gray-600 bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-2xs">
                                     {tasksByStatus(col.key).length}
                                 </span>
                             </div>
-                            <div className="space-y-2 min-h-[100px]">
+                            <div className="space-y-2.5 min-h-[120px]">
                                 {tasksByStatus(col.key).map(task => (
                                     <TaskCard
                                         key={task._id}

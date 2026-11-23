@@ -190,48 +190,48 @@ const Assets = () => {
     });
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 h-full flex flex-col space-y-6 bg-gray-50 min-h-screen">
+        <div className="p-3 sm:p-6 lg:p-8 min-h-screen max-w-full overflow-x-hidden flex flex-col space-y-4 sm:space-y-6 bg-gray-50">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                <div className="flex items-center gap-3.5">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                        <Monitor size={24} />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 bg-white p-4 sm:p-5 rounded-xl sm:rounded-2xl shadow-2xs border border-gray-100">
+                <div className="flex items-center gap-3 sm:gap-3.5">
+                    <div className="p-2.5 sm:p-3 bg-blue-50 text-blue-600 rounded-xl shrink-0">
+                        <Monitor size={22} className="sm:w-6 sm:h-6" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Company Assets</h1>
-                        <p className="text-sm text-gray-500 mt-0.5">Manage all hardware and software assets across your organization</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">Company Assets</h1>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Manage all hardware and software assets across your organization</p>
                     </div>
                 </div>
                 <button 
                     onClick={() => handleOpenAssetModal()}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-sm shadow-blue-500/20 active:scale-95 shrink-0 self-start sm:self-auto"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-xs cursor-pointer shrink-0"
                 >
-                    <Plus size={18} /> Add New Asset
+                    <Plus size={16} /> <span>Add New Asset</span>
                 </button>
             </div>
 
             {/* Filter & Search Bar */}
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="relative w-full sm:w-80">
+            <div className="bg-white p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-gray-200/80 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4">
+                <div className="relative w-full md:w-80">
                     <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search by asset name, type, serial..."
-                        className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50/50 focus:bg-white transition"
+                        className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50/50 focus:bg-white transition shadow-2xs"
                     />
                 </div>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
                     {/* Company Filter for Super Admin */}
                     {isSuperAdmin && companies.length > 0 && (
-                        <div className="relative min-w-[220px] w-full sm:w-auto">
+                        <div className="relative w-full sm:w-auto min-w-[200px]">
                             <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                             <select
                                 value={companyFilter}
                                 onChange={(e) => setCompanyFilter(e.target.value)}
-                                className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-sm"
+                                className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-2xs"
                                 title="Filter by Company"
                             >
                                 <option value="">All Companies ({companies.length})</option>
@@ -244,27 +244,27 @@ const Assets = () => {
                         </div>
                     )}
 
-                    <div className="text-xs text-gray-500 font-medium whitespace-nowrap bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
+                    <div className="text-xs text-gray-500 font-medium whitespace-nowrap bg-gray-50 px-3 py-2 rounded-xl border border-gray-100 text-center sm:text-left">
                         Total: <span className="font-bold text-gray-800">{filteredAssets.length}</span> {filteredAssets.length === 1 ? "Asset" : "Assets"}
                     </div>
                 </div>
             </div>
 
             {/* Table */}
-            <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+            <div className="flex-1 bg-white rounded-xl sm:rounded-2xl shadow-2xs border border-gray-100 overflow-hidden flex flex-col">
+                <div className="overflow-x-auto flex-1">
+                    <table className="w-full text-left min-w-[760px]">
                         <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Name</th>
                                 {isSuperAdmin && (
-                                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
+                                    <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Company</th>
                                 )}
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Serial No.</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned To</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Type</th>
+                                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Serial No.</th>
+                                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+                                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Assigned To</th>
+                                <th className="px-4 sm:px-6 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -283,13 +283,13 @@ const Assets = () => {
                                 </tr>
                             ) : (
                                 filteredAssets.map((asset) => (
-                                    <tr key={asset._id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">
+                                    <tr key={asset._id} className="hover:bg-gray-50/60 transition-colors">
+                                        <td className="px-4 sm:px-6 py-3.5 whitespace-nowrap">
                                             <p className="font-semibold text-gray-800">{asset.name}</p>
                                             <p className="text-xs text-gray-500 truncate max-w-[200px]">{asset.description || '-'}</p>
                                         </td>
                                         {isSuperAdmin && (
-                                            <td className="px-6 py-4">
+                                            <td className="px-4 sm:px-6 py-3.5 whitespace-nowrap">
                                                 <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
                                                     asset.companyId?.name
                                                         ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
@@ -299,13 +299,13 @@ const Assets = () => {
                                                 </span>
                                             </td>
                                         )}
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 sm:px-6 py-3.5 whitespace-nowrap">
                                             <span className="inline-flex px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
                                                 {asset.type}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 font-mono text-xs">{asset.serialNumber || '-'}</td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 sm:px-6 py-3.5 text-sm text-gray-600 font-mono text-xs whitespace-nowrap">{asset.serialNumber || '-'}</td>
+                                        <td className="px-4 sm:px-6 py-3.5 whitespace-nowrap">
                                             <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
                                                 asset.status === 'Available' ? 'bg-green-100 text-green-700' :
                                                 asset.status === 'Assigned' ? 'bg-blue-100 text-blue-700' :
@@ -315,7 +315,7 @@ const Assets = () => {
                                                 {asset.status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 sm:px-6 py-3.5 whitespace-nowrap">
                                             {asset.assignedTo ? (
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0">
@@ -332,12 +332,12 @@ const Assets = () => {
                                                 <span className="text-xs text-gray-400 italic">Not Assigned</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
+                                        <td className="px-4 sm:px-6 py-3.5 text-right whitespace-nowrap">
                                             <div className="flex items-center justify-end gap-2">
                                                 {asset.status === 'Available' ? (
                                                     <button 
                                                         onClick={() => handleOpenAssignModal(asset)} 
-                                                        className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition" 
+                                                        className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition active:scale-95 cursor-pointer" 
                                                         title="Assign to Employee"
                                                     >
                                                         <UserPlus size={16} />
@@ -345,7 +345,7 @@ const Assets = () => {
                                                 ) : asset.status === 'Assigned' ? (
                                                     <button 
                                                         onClick={() => handleUnassignAsset(asset._id)} 
-                                                        className="text-orange-500 hover:bg-orange-50 p-2 rounded-lg transition" 
+                                                        className="text-orange-500 hover:bg-orange-50 p-2 rounded-lg transition active:scale-95 cursor-pointer" 
                                                         title="Unassign Asset"
                                                     >
                                                         <UserMinus size={16} />
@@ -354,14 +354,14 @@ const Assets = () => {
                                                 
                                                 <button 
                                                     onClick={() => handleOpenAssetModal(asset)} 
-                                                    className="text-gray-500 hover:bg-gray-100 p-2 rounded-lg transition" 
+                                                    className="text-gray-500 hover:bg-gray-100 p-2 rounded-lg transition active:scale-95 cursor-pointer" 
                                                     title="Edit"
                                                 >
                                                     <Edit size={16} />
                                                 </button>
                                                 <button 
                                                     onClick={() => handleDeleteAsset(asset._id)} 
-                                                    className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" 
+                                                    className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition active:scale-95 cursor-pointer" 
                                                     title="Delete"
                                                 >
                                                     <Trash2 size={16} />

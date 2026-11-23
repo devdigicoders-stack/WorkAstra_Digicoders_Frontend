@@ -86,116 +86,120 @@ const Meetings = () => {
     }
 
     return (
-        <div className="p-6 h-full flex flex-col space-y-6 bg-gray-50 min-h-screen">
+        <div className="p-3 sm:p-6 h-full flex flex-col space-y-4 sm:space-y-6 bg-gray-50 min-h-screen max-w-full overflow-x-hidden">
             {/* Header */}
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl shadow-2xs border border-gray-100">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                        <CalendarIcon size={24} className="text-blue-600" />
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <CalendarIcon size={22} className="text-blue-600 shrink-0" />
                         Meetings Calendar
                     </h1>
-                    <p className="text-sm text-gray-500 mt-1">Track and manage all your scheduled meetings.</p>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">Track and manage all your scheduled meetings.</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <button onClick={today} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition cursor-pointer">
+                <div className="flex items-center justify-between sm:justify-end gap-2.5 sm:gap-4 w-full sm:w-auto">
+                    <button onClick={today} className="px-3.5 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs sm:text-sm font-semibold transition active:scale-95 cursor-pointer">
                         Today
                     </button>
-                    <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-                        <button onClick={prevMonth} className="p-1.5 hover:bg-white rounded-md text-gray-600 transition cursor-pointer">
+                    <div className="flex items-center gap-1 sm:gap-2 bg-gray-100/80 rounded-xl p-1">
+                        <button onClick={prevMonth} className="p-1.5 hover:bg-white rounded-lg text-gray-600 transition active:scale-95 cursor-pointer">
                             <ChevronLeft size={18} />
                         </button>
-                        <span className="min-w-[120px] text-center font-bold text-gray-800">
+                        <span className="min-w-[110px] sm:min-w-[130px] text-center text-xs sm:text-sm font-bold text-gray-800">
                             {monthNames[month]} {year}
                         </span>
-                        <button onClick={nextMonth} className="p-1.5 hover:bg-white rounded-md text-gray-600 transition cursor-pointer">
+                        <button onClick={nextMonth} className="p-1.5 hover:bg-white rounded-lg text-gray-600 transition active:scale-95 cursor-pointer">
                             <ChevronRight size={18} />
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Calendar Grid */}
-            <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
-                    {dayNames.map(day => (
-                        <div key={day} className="py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            {day}
+            {/* Calendar Grid Container */}
+            <div className="flex-1 bg-white rounded-xl sm:rounded-2xl shadow-2xs border border-gray-100 overflow-hidden flex flex-col">
+                <div className="overflow-x-auto w-full">
+                    <div className="min-w-[650px] sm:min-w-full flex flex-col">
+                        <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50/80">
+                            {dayNames.map(day => (
+                                <div key={day} className="py-2.5 sm:py-3 text-center text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    {day}
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
-                <div className="flex-1 grid grid-cols-7 auto-rows-fr bg-gray-200 gap-[1px]">
-                    {cells.map((cell) => (
-                        <div key={cell.key} className={`bg-white min-h-[120px] p-2 transition-colors hover:bg-gray-50 flex flex-col`}>
-                            {!cell.empty && (
-                                <>
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${isToday(cell.day) ? 'bg-blue-600 text-white shadow-md' : 'text-gray-700'}`}>
-                                            {cell.day}
-                                        </span>
-                                        {cell.meetings.length > 0 && (
-                                            <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-md">
-                                                {cell.meetings.length} mtg
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto space-y-1.5 no-scrollbar pr-1">
-                                        {cell.meetings.map(meeting => (
-                                            <div 
-                                                key={meeting._id} 
-                                                onClick={() => setSelectedMeeting(meeting)}
-                                                className={`text-xs p-1.5 rounded border cursor-pointer hover:opacity-80 hover:shadow-sm transition-all truncate ${getStatusColor(meeting.status)}`}
-                                                title={`${meeting.time} - ${meeting.title}`}
-                                            >
-                                                <div className="font-bold mb-0.5">{meeting.time}</div>
-                                                <div className="font-medium truncate">{meeting.title}</div>
+                        <div className="flex-1 grid grid-cols-7 auto-rows-fr bg-gray-200/80 gap-[1px]">
+                            {cells.map((cell) => (
+                                <div key={cell.key} className={`bg-white min-h-[90px] sm:min-h-[120px] p-1.5 sm:p-2 transition-colors hover:bg-gray-50 flex flex-col`}>
+                                    {!cell.empty && (
+                                        <>
+                                            <div className="flex justify-between items-start mb-1 sm:mb-2">
+                                                <span className={`text-xs sm:text-sm font-bold w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full ${isToday(cell.day) ? 'bg-blue-600 text-white shadow-xs' : 'text-gray-700'}`}>
+                                                    {cell.day}
+                                                </span>
+                                                {cell.meetings.length > 0 && (
+                                                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-md">
+                                                        {cell.meetings.length} mtg
+                                                    </span>
+                                                )}
                                             </div>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
+                                            <div className="flex-1 overflow-y-auto space-y-1 sm:space-y-1.5 no-scrollbar pr-0.5 sm:pr-1 max-h-[85px] sm:max-h-[120px]">
+                                                {cell.meetings.map(meeting => (
+                                                    <div 
+                                                        key={meeting._id} 
+                                                        onClick={() => setSelectedMeeting(meeting)}
+                                                        className={`text-[11px] sm:text-xs p-1 sm:p-1.5 rounded-lg border cursor-pointer hover:opacity-85 hover:shadow-xs transition-all truncate active:scale-95 ${getStatusColor(meeting.status)}`}
+                                                        title={`${meeting.time} - ${meeting.title}`}
+                                                    >
+                                                        <div className="font-bold mb-0.5 leading-tight">{meeting.time}</div>
+                                                        <div className="font-medium truncate leading-tight">{meeting.title}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    </div>
                 </div>
             </div>
 
             {/* Meeting Detail Modal */}
             {selectedMeeting && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedMeeting(null)}></div>
-                    <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 m-4 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="pr-4">
-                                <h2 className="text-xl font-bold text-gray-900">{selectedMeeting.title}</h2>
-                                <p className="text-sm font-medium text-blue-600 mt-1">Lead: {selectedMeeting.leadId?.orgName || 'Unknown Lead'}</p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-xs" onClick={() => setSelectedMeeting(null)}></div>
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto border border-gray-100">
+                        <div className="flex justify-between items-start gap-3 mb-4">
+                            <div className="pr-2">
+                                <h2 className="text-lg sm:text-xl font-bold text-gray-900">{selectedMeeting.title}</h2>
+                                <p className="text-xs sm:text-sm font-semibold text-blue-600 mt-1">Lead: {selectedMeeting.leadId?.orgName || 'Unknown Lead'}</p>
                             </div>
-                            <button onClick={() => setSelectedMeeting(null)} className="p-1.5 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition cursor-pointer shrink-0">
+                            <button onClick={() => setSelectedMeeting(null)} className="p-1.5 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition active:scale-95 cursor-pointer shrink-0">
                                 <X size={18} />
                             </button>
                         </div>
                         
-                        <div className="space-y-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-                            <div className="flex items-center gap-3 text-sm text-gray-700">
-                                <Clock size={18} className="text-blue-500" />
+                        <div className="space-y-3 sm:space-y-4 bg-gray-50/75 p-3.5 sm:p-4 rounded-xl border border-gray-100">
+                            <div className="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm text-gray-700">
+                                <Clock size={16} className="text-blue-500 shrink-0" />
                                 <span className="font-medium">
                                     {new Date(selectedMeeting.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })} at {selectedMeeting.time}
                                 </span>
                             </div>
                             
-                            <div className="flex items-center gap-3 text-sm text-gray-700">
-                                <MapPin size={18} className="text-red-500" />
+                            <div className="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm text-gray-700">
+                                <MapPin size={16} className="text-red-500 shrink-0" />
                                 <span className="font-medium">{selectedMeeting.location || 'No location specified'}</span>
                             </div>
 
-                            <div className="flex items-center gap-3 text-sm text-gray-700">
-                                <User size={18} className="text-purple-500" />
+                            <div className="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm text-gray-700">
+                                <User size={16} className="text-purple-500 shrink-0" />
                                 <span className="font-medium">
                                     Assigned to: {selectedMeeting.assignedTo?.firstName} {selectedMeeting.assignedTo?.lastName}
                                 </span>
                             </div>
 
-                            <div className="flex items-start gap-3 text-sm text-gray-700">
-                                <FileText size={18} className="text-orange-500 mt-0.5" />
-                                <div className="font-medium bg-white p-3 rounded-lg border border-gray-200 flex-1 min-h-[80px] whitespace-pre-wrap shadow-sm text-gray-600">
+                            <div className="flex items-start gap-2.5 sm:gap-3 text-xs sm:text-sm text-gray-700">
+                                <FileText size={16} className="text-orange-500 mt-0.5 shrink-0" />
+                                <div className="font-medium bg-white p-2.5 sm:p-3 rounded-xl border border-gray-200 flex-1 min-h-[70px] whitespace-pre-wrap shadow-2xs text-gray-600 text-xs sm:text-sm">
                                     {selectedMeeting.notes || 'No pre-meeting notes added.'}
                                 </div>
                             </div>

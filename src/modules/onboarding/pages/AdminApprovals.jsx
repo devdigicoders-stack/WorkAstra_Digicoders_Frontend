@@ -127,15 +127,15 @@ export default function AdminApprovals() {
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
                     {/* Super Admin Company Filter */}
                     {isSuperAdmin && (
-                        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200 shadow-sm">
+                        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200 shadow-sm w-full sm:w-auto">
                             <Building2 size={16} className="text-blue-600 shrink-0" />
                             <select
                                 value={selectedCompany}
                                 onChange={(e) => setSelectedCompany(e.target.value)}
-                                className="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer pr-2"
+                                className="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer pr-2 w-full sm:w-auto"
                             >
                                 <option value="">🏢 All Companies</option>
                                 {companies.map((c) => (
@@ -148,14 +148,14 @@ export default function AdminApprovals() {
                     )}
 
                     {/* Search Candidates */}
-                    <div className="relative">
+                    <div className="relative flex-1 sm:w-60">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Search candidates…"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none w-52 sm:w-60 transition shadow-sm"
+                            className="pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none w-full transition shadow-sm"
                         />
                         {searchQuery && (
                             <button
@@ -170,32 +170,32 @@ export default function AdminApprovals() {
             </div>
             
             {/* Tabs Bar with Counts */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div className="inline-flex bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200 shadow-inner">
+            <div className="w-full mb-6">
+                <div className="flex sm:inline-flex items-center w-full sm:w-auto bg-gray-100/80 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-gray-200 shadow-inner overflow-x-auto scrollbar-none">
                     <button 
                         onClick={() => setActiveTab("pending")}
-                        className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "pending" ? "bg-white text-blue-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
+                        className={`flex-1 sm:flex-none px-2.5 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === "pending" ? "bg-white text-blue-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
                     >
-                        Pending Approvals
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "pending" ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-600"}`}>
+                        <span>Pending<span className="hidden sm:inline"> Approvals</span></span>
+                        <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold ${activeTab === "pending" ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-600"}`}>
                             {pendingCount}
                         </span>
                     </button>
                     <button 
                         onClick={() => setActiveTab("approved")}
-                        className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "approved" ? "bg-white text-green-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
+                        className={`flex-1 sm:flex-none px-2.5 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === "approved" ? "bg-white text-green-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
                     >
-                        Approved
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "approved" ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"}`}>
+                        <span>Approved</span>
+                        <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold ${activeTab === "approved" ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"}`}>
                             {approvedCount}
                         </span>
                     </button>
                     <button 
                         onClick={() => setActiveTab("rejected")}
-                        className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "rejected" ? "bg-white text-red-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
+                        className={`flex-1 sm:flex-none px-2.5 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap ${activeTab === "rejected" ? "bg-white text-red-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
                     >
-                        Rejected
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "rejected" ? "bg-red-100 text-red-700" : "bg-gray-200 text-gray-600"}`}>
+                        <span>Rejected</span>
+                        <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold ${activeTab === "rejected" ? "bg-red-100 text-red-700" : "bg-gray-200 text-gray-600"}`}>
                             {rejectedCount}
                         </span>
                     </button>

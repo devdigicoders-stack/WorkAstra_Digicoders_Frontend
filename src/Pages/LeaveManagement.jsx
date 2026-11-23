@@ -46,7 +46,7 @@ const LeaveManagement = () => {
     ];
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="p-3 sm:p-6 bg-gray-50 min-h-screen max-w-full overflow-x-hidden">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Leave Management</h1>
                 <p className="text-sm text-gray-500 mt-1">Manage your leave applications and balance</p>
@@ -82,15 +82,17 @@ const LeaveManagement = () => {
                 </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl mb-6 p-1 flex gap-1 overflow-x-auto">
-                {tabs.map(tab => (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition whitespace-nowrap
-                            ${activeTab === tab.id ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"}`}>
-                        <tab.icon size={16} />
-                        {tab.label}
-                    </button>
-                ))}
+            <div className="w-full sm:w-fit overflow-x-auto scrollbar-none mb-6 -mx-1 px-1 sm:mx-0 sm:px-0">
+                <div className="inline-flex min-w-full sm:min-w-0 bg-white border border-gray-200 rounded-xl p-1 gap-1 shadow-2xs">
+                    {tabs.map(tab => (
+                        <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition whitespace-nowrap active:scale-95 cursor-pointer
+                                ${activeTab === tab.id ? "bg-blue-600 text-white shadow-xs" : "text-gray-600 hover:bg-gray-50"}`}>
+                            <tab.icon size={15} />
+                            <span>{tab.label}</span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {activeTab === "my-leaves"   && <MyLeavesTab year={year} />}
@@ -494,14 +496,14 @@ const TeamLeavesTab = ({ year, isAdmin }) => {
 
     return (
         <div>
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
                 {["all", "pending", "approved", "rejected"].map(f => (
                     <button key={f} onClick={() => setFilter(f)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition
-                            ${filter === f ? "bg-blue-600 text-white" : "bg-white text-gray-600 border border-gray-200 hover:border-blue-300"}`}>
-                        {f}
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold capitalize transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0
+                            ${filter === f ? "bg-blue-600 text-white shadow-xs" : "bg-white text-gray-600 border border-gray-200 hover:border-blue-300"}`}>
+                        <span>{f}</span>
                         {f === "pending" && leaves.filter(l => l.status === "pending").length > 0 && (
-                            <span className="ml-1.5 bg-yellow-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${filter === f ? "bg-white/20 text-white" : "bg-yellow-500 text-white"}`}>
                                 {leaves.filter(l => l.status === "pending").length}
                             </span>
                         )}
@@ -514,56 +516,101 @@ const TeamLeavesTab = ({ year, isAdmin }) => {
             ) : (
                 <div className="space-y-3">
                     {filtered.map(leave => (
-                        <div key={leave._id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition">
-                            <div className="flex items-start gap-4">
-                                {leave.userId?.profilePic?.url ? (
-                                    <img src={getImageUrl(leave.userId.profilePic.url)} className="w-10 h-10 rounded-full object-cover shrink-0" alt="" />
-                                ) : (
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold shrink-0">
-                                        {leave.userId?.firstName?.[0]}{leave.userId?.lastName?.[0]}
-                                    </div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                                        <span className="font-semibold text-gray-900">{leave.userId?.firstName} {leave.userId?.lastName}</span>
-                                        {leave.userId?.employeeCode && <span className="text-xs text-gray-400">({leave.userId.employeeCode})</span>}
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium border capitalize ${STATUS_COLORS[leave.status]}`}>
-                                            {leave.status}
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                                        <span className="text-sm font-medium text-blue-600">{leave.leaveTypeId?.name}</span>
-                                        {leave.isHalfDay && (
-                                            <span className="px-2 py-0.5 rounded-full text-xs bg-purple-50 text-purple-600 border border-purple-200">
-                                                Half Day
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-1">
-                                        <span className="flex items-center gap-1"><Calendar size={13} /> {leave.fromDate} → {leave.toDate}</span>
-                                        <span className="flex items-center gap-1"><Clock size={13} /> {leave.days} working day{leave.days !== 1 ? "s" : ""}</span>
-                                        <CalendarDayInfo leave={leave} />
-                                    </div>
-                                    <p className="text-sm text-gray-500 truncate">{leave.reason}</p>
-                                    {leave.rejectionReason && (
-                                        <p className="mt-1 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">
-                                            Rejected: {leave.rejectionReason}
-                                        </p>
+                        <div key={leave._id} className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 hover:shadow-sm transition flex flex-col gap-3">
+                            {/* Card Top Row: User Avatar, Name, Code, Badges, and Desktop Buttons */}
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    {leave.userId?.profilePic?.url ? (
+                                        <img src={getImageUrl(leave.userId.profilePic.url)} className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-gray-200" alt="" />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold shrink-0">
+                                            {leave.userId?.firstName?.[0]}{leave.userId?.lastName?.[0]}
+                                        </div>
                                     )}
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <h4 className="font-semibold text-gray-900 text-sm sm:text-base leading-tight truncate">
+                                                {leave.userId?.firstName} {leave.userId?.lastName}
+                                            </h4>
+                                            {leave.userId?.employeeCode && (
+                                                <span className="text-xs font-medium text-gray-400 shrink-0">
+                                                    ({leave.userId.employeeCode})
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize leading-none ${STATUS_COLORS[leave.status] || "bg-gray-100 text-gray-700"}`}>
+                                                {leave.status}
+                                            </span>
+                                            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 leading-none">
+                                                {leave.leaveTypeId?.name}
+                                            </span>
+                                            {leave.isHalfDay && (
+                                                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-600 border border-purple-200 leading-none">
+                                                    Half Day
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
+
+                                {/* Desktop Action Buttons */}
                                 {leave.status === "pending" && (
-                                    <div className="flex gap-2 shrink-0">
+                                    <div className="hidden sm:flex items-center gap-2 shrink-0">
                                         <button onClick={() => handleApprove(leave._id)}
-                                            className="px-3 py-1.5 bg-green-50 text-green-600 rounded-lg text-xs font-medium hover:bg-green-100 transition flex items-center gap-1">
-                                            <Check size={13} /> Approve
+                                            className="px-3.5 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 active:scale-95 border border-green-200 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                                            <Check size={14} className="stroke-[2.5]" /> Approve
                                         </button>
                                         <button onClick={() => { setRejectModal(leave._id); setRejectReason(""); }}
-                                            className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition flex items-center gap-1">
-                                            <XCircle size={13} /> Reject
+                                            className="px-3.5 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 active:scale-95 border border-red-200 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                                            <XCircle size={14} className="stroke-[2.5]" /> Reject
                                         </button>
                                     </div>
                                 )}
                             </div>
+
+                            {/* Middle Details Box: Full width for Date range, Working Days, Excluded info, and Reason */}
+                            <div className="bg-gray-50/80 border border-gray-100 rounded-xl p-3 flex flex-col gap-2">
+                                <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1.5 text-xs sm:text-sm text-gray-600">
+                                    <span className="inline-flex items-center gap-1.5 font-medium text-gray-800 whitespace-nowrap">
+                                        <Calendar size={14} className="text-blue-500 shrink-0" />
+                                        <span>{leave.fromDate} → {leave.toDate}</span>
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 bg-white border border-gray-200 px-2 py-0.5 rounded-md text-xs font-medium text-gray-700 whitespace-nowrap shadow-2xs">
+                                        <Clock size={12} className="text-gray-400 shrink-0" />
+                                        <span>{leave.days} working day{leave.days !== 1 ? "s" : ""}</span>
+                                    </span>
+                                    <CalendarDayInfo leave={leave} />
+                                </div>
+
+                                {leave.reason && (
+                                    <p className="text-xs sm:text-sm text-gray-600 break-words leading-relaxed pt-1.5 border-t border-gray-200/60">
+                                        <span className="font-semibold text-gray-500">Reason: </span>
+                                        {leave.reason}
+                                    </p>
+                                )}
+
+                                {leave.rejectionReason && (
+                                    <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5 break-words">
+                                        <span className="font-bold">Rejected: </span>
+                                        {leave.rejectionReason}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Mobile Full-Width Action Buttons */}
+                            {leave.status === "pending" && (
+                                <div className="sm:hidden grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
+                                    <button onClick={() => handleApprove(leave._id)}
+                                        className="w-full py-2 bg-green-50 text-green-700 hover:bg-green-100 active:scale-95 border border-green-200 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs">
+                                        <Check size={14} className="stroke-[2.5]" /> Approve
+                                    </button>
+                                    <button onClick={() => { setRejectModal(leave._id); setRejectReason(""); }}
+                                        className="w-full py-2 bg-red-50 text-red-700 hover:bg-red-100 active:scale-95 border border-red-200 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs">
+                                        <XCircle size={14} className="stroke-[2.5]" /> Reject
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

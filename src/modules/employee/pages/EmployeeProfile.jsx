@@ -1602,8 +1602,43 @@ const EmployeeProfile = () => {
                 )}
                 
                 {activeTab === "offer_letter" && (
-                    <div className="bg-gray-100 p-2 md:p-6 rounded-2xl border border-gray-200 shadow-sm">
-                        <OfferLetter userId={id} standalone={false} />
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-10">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-100">
+                            <div>
+                                <h3 className="text-xl font-bold text-gray-800">
+                                    {employee.firstName}'s Offer Letter
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Official employment offer letter for this employee.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleDownloadOfferLetter}
+                                className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-sm hover:shadow font-semibold transition-all text-sm cursor-pointer shrink-0"
+                            >
+                                <Download size={16} /> Download Official PDF
+                            </button>
+                        </div>
+
+                        <div className="mt-8 flex flex-col items-center justify-center text-center py-12 px-4 bg-gray-50/70 border border-dashed border-gray-200 rounded-2xl">
+                            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-2xs">
+                                <FileText size={32} />
+                            </div>
+                            <h4 className="text-base font-bold text-gray-800 mb-1">
+                                Official Offer Letter Document
+                            </h4>
+                            <p className="text-xs text-gray-500 max-w-md mx-auto mb-6">
+                                Click the button below to download the official verified PDF copy of {employee.firstName} {employee.lastName}'s offer letter.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={handleDownloadOfferLetter}
+                                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl shadow-sm hover:shadow font-semibold transition-all text-sm cursor-pointer"
+                            >
+                                <Download size={16} /> Download Official PDF
+                            </button>
+                        </div>
                     </div>
                 )}
 

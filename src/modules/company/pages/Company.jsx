@@ -131,30 +131,30 @@ const Company = () => {
     };
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="p-3 sm:p-6 bg-gray-50 min-h-screen max-w-full overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
-                    <p className="text-gray-500 text-sm mt-0.5">Manage all registered companies and their admins.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Companies</h1>
+                    <p className="text-gray-500 text-xs sm:text-sm mt-0.5">Manage all registered companies and their admins.</p>
                 </div>
                 <button
                     onClick={() => { setSelected(null); setOpen(true); }}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition shadow-xs cursor-pointer"
                 >
-                    <Plus size={16} /> Add Company
+                    <Plus size={16} /> <span>Add Company</span>
                 </button>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
-                <table className="w-full text-sm">
+            <div className="bg-white border border-gray-200/80 rounded-xl sm:rounded-2xl overflow-x-auto shadow-2xs">
+                <table className="w-full text-sm min-w-[700px]">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
-                            <th className="px-4 py-3 text-left">Company</th>
-                            <th className="px-4 py-3 text-left">Domain</th>
-                            <th className="px-4 py-3 text-left">Admin</th>
-                            <th className="px-4 py-3 text-left">Created By</th>
-                            <th className="px-4 py-3 text-left">Status</th>
-                            <th className="px-4 py-3 text-center">Actions</th>
+                            <th className="px-4 py-3 text-left whitespace-nowrap">Company</th>
+                            <th className="px-4 py-3 text-left whitespace-nowrap">Domain</th>
+                            <th className="px-4 py-3 text-left whitespace-nowrap">Admin</th>
+                            <th className="px-4 py-3 text-left whitespace-nowrap">Created By</th>
+                            <th className="px-4 py-3 text-left whitespace-nowrap">Status</th>
+                            <th className="px-4 py-3 text-center whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">

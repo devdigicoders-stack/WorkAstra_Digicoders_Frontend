@@ -84,39 +84,39 @@ const Department = () => {
     });
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="p-3 sm:p-6 bg-gray-50 min-h-screen max-w-full overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Departments</h1>
-                    <p className="text-gray-500 text-sm mt-0.5">Manage departments across your organization.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Departments</h1>
+                    <p className="text-gray-500 text-xs sm:text-sm mt-0.5">Manage departments across your organization.</p>
                 </div>
                 {hasPermission("Create_DEPARTMENT") && (
                     <button
                         onClick={() => { setSelected(null); setOpen(true); }}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition shadow-xs cursor-pointer"
                     >
-                        <Plus size={16} /> Add Department
+                        <Plus size={16} /> <span>Add Department</span>
                     </button>
                 )}
             </div>
 
             {/* Company & Search Filters Bar */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 mb-5 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-1">
+            <div className="bg-white border border-gray-200/80 rounded-xl sm:rounded-2xl p-3.5 sm:p-4 mb-5 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center flex-1">
                     {/* Live Search Input */}
-                    <div className="relative flex-1 max-w-md">
-                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <div className="relative flex-1 w-full max-w-none sm:max-w-md">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search departments..."
-                            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                            className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition shadow-2xs"
                         />
                         {searchQuery && (
                             <button
                                 onClick={() => setSearchQuery("")}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
                             >
                                 <X size={14} />
                             </button>
@@ -124,12 +124,12 @@ const Department = () => {
                     </div>
 
                     {/* Company Filter Dropdown */}
-                    <div className="relative min-w-[220px]">
+                    <div className="relative w-full sm:w-auto min-w-[200px]">
                         <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                         <select
                             value={companyFilter}
                             onChange={(e) => setCompanyFilter(e.target.value)}
-                            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition appearance-none cursor-pointer"
+                            className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition appearance-none cursor-pointer shadow-2xs"
                         >
                             <option value="">All Companies ({companies.length})</option>
                             {companies.map((c) => (
@@ -145,28 +145,28 @@ const Department = () => {
                     {(companyFilter || searchQuery) && (
                         <button
                             onClick={() => { setCompanyFilter(""); setSearchQuery(""); }}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1.5 rounded hover:bg-blue-50 transition flex items-center gap-1 self-start sm:self-auto"
+                            className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1.5 rounded-lg hover:bg-blue-50 transition flex items-center justify-center gap-1 self-start sm:self-auto cursor-pointer"
                         >
                             <X size={13} /> Reset Filters
                         </button>
                     )}
                 </div>
 
-                <div className="text-xs font-medium text-gray-500 shrink-0">
+                <div className="text-xs font-medium text-gray-500 shrink-0 text-center sm:text-left">
                     Showing <span className="text-gray-900 font-semibold">{filteredDepartments.length}</span> of {departments.length} departments
                 </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
-                <table className="w-full text-sm">
+            <div className="bg-white border border-gray-200/80 rounded-xl sm:rounded-2xl overflow-x-auto shadow-2xs">
+                <table className="w-full text-sm min-w-[680px]">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
-                            <th className="px-4 py-3 text-left">Department</th>
-                            <th className="px-4 py-3 text-left">Company</th>
-                            <th className="px-4 py-3 text-left">Description</th>
-                            <th className="px-4 py-3 text-left">Created By</th>
-                            <th className="px-4 py-3 text-left">Status</th>
-                            <th className="px-4 py-3 text-center">Actions</th>
+                            <th className="px-4 py-3 text-left whitespace-nowrap">Department</th>
+                            <th className="px-4 py-3 text-left whitespace-nowrap">Company</th>
+                            <th className="px-4 py-3 text-left whitespace-nowrap">Description</th>
+                            <th className="px-4 py-3 text-left whitespace-nowrap">Created By</th>
+                            <th className="px-4 py-3 text-left whitespace-nowrap">Status</th>
+                            <th className="px-4 py-3 text-center whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">

@@ -39,17 +39,17 @@ const ShiftDrawer = ({ isOpen, onClose, initial, companies, isSuperAdmin, onSubm
 
     return (
         <div className="fixed inset-0 z-50 flex justify-end">
-            <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-            <div className="relative w-full max-w-md bg-white h-full flex flex-col shadow-2xl">
-                <div className="flex items-center justify-between px-6 py-4 border-b">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-2xs" onClick={onClose} />
+            <div className="relative w-full max-w-full sm:max-w-md bg-white h-full flex flex-col shadow-2xl">
+                <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100">
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-900">{initial ? "Edit Shift" : "Add Shift"}</h2>
+                        <h2 className="text-base sm:text-lg font-semibold text-gray-900">{initial ? "Edit Shift" : "Add Shift"}</h2>
                         <p className="text-xs text-gray-400 mt-0.5">Configure shift timings and thresholds</p>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"><X size={18} /></button>
+                    <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 cursor-pointer"><X size={18} /></button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-4">
                     <Field label="Shift Name">
                         <input className={inputCls} value={form.name} onChange={e => set("name", e.target.value)} placeholder="e.g. Morning Shift" required />
                     </Field>
@@ -63,7 +63,7 @@ const ShiftDrawer = ({ isOpen, onClose, initial, companies, isSuperAdmin, onSubm
                         </Field>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
                         <Field label="Start Time">
                             <input type="time" className={inputCls} value={form.startTime} onChange={e => set("startTime", e.target.value)} required />
                         </Field>
@@ -73,15 +73,15 @@ const ShiftDrawer = ({ isOpen, onClose, initial, companies, isSuperAdmin, onSubm
                     </div>
 
                     <Field label="Week Off Days">
-                        <div className="flex flex-wrap gap-2 mt-1">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-1">
                             {DAY_LABELS.map((d, i) => (
                                 <button
                                     key={i}
                                     type="button"
                                     onClick={() => toggleDay(i)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                                    className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer active:scale-95 ${
                                         form.weekOff.includes(i)
-                                            ? "bg-red-500 text-white border-red-500"
+                                            ? "bg-red-500 text-white border-red-500 shadow-2xs"
                                             : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
                                     }`}
                                 >
@@ -92,7 +92,7 @@ const ShiftDrawer = ({ isOpen, onClose, initial, companies, isSuperAdmin, onSubm
                         <p className="text-[10px] text-gray-400 mt-1">Selected days will be marked as week off on the attendance calendar.</p>
                     </Field>
 
-                    <div className="bg-blue-50 rounded-xl p-4 space-y-3">
+                    <div className="bg-blue-50/70 rounded-xl p-3.5 sm:p-4 space-y-3 border border-blue-100">
                         <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Attendance Thresholds</p>
                         <Field label="Grace Period (minutes) — allowed late without penalty">
                             <input type="number" min={0} max={60} className={inputCls} value={form.gracePeriod} onChange={e => set("gracePeriod", +e.target.value)} />
@@ -106,7 +106,7 @@ const ShiftDrawer = ({ isOpen, onClose, initial, companies, isSuperAdmin, onSubm
                     </div>
 
                     {form.startTime && form.endTime && (
-                        <div className="bg-gray-50 rounded-xl p-4 text-xs text-gray-600 space-y-1">
+                        <div className="bg-gray-50 rounded-xl p-3.5 sm:p-4 text-xs text-gray-600 space-y-1 border border-gray-100">
                             <p className="font-semibold text-gray-700 mb-2">Shift Preview</p>
                             <p>✅ On time: before <strong>{form.startTime}</strong> + {form.gracePeriod}min grace</p>
                             <p>⚠️ Late: after <strong>{form.startTime}</strong> + {form.gracePeriod + form.lateThreshold}min</p>
@@ -116,9 +116,9 @@ const ShiftDrawer = ({ isOpen, onClose, initial, companies, isSuperAdmin, onSubm
                     )}
                 </form>
 
-                <div className="px-6 py-4 border-t flex justify-end gap-3">
-                    <button type="button" onClick={onClose} className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
-                    <button onClick={handleSubmit} disabled={loading} className="px-5 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-60">
+                <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-gray-100 flex items-center justify-end gap-3 bg-gray-50/50">
+                    <button type="button" onClick={onClose} className="px-4 py-2 text-xs sm:text-sm border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">Cancel</button>
+                    <button onClick={handleSubmit} disabled={loading} className="px-5 py-2 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-60 cursor-pointer shadow-xs active:scale-95">
                         {loading ? "Saving..." : initial ? "Update Shift" : "Create Shift"}
                     </button>
                 </div>
@@ -203,37 +203,37 @@ const WorkShift = () => {
     const colSpan = showCompanyCol ? 8 : 7;
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="p-3 sm:p-6 bg-gray-50 min-h-screen max-w-full overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Work Shifts</h1>
-                    <p className="text-gray-500 text-sm mt-0.5">Manage shift timings, week off days and attendance thresholds.</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Work Shifts</h1>
+                    <p className="text-gray-500 text-xs sm:text-sm mt-0.5">Manage shift timings, week off days and attendance thresholds.</p>
                 </div>
                 <button
                     onClick={() => { setSelected(null); setOpen(true); }}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition active:scale-95 cursor-pointer w-full sm:w-auto"
                 >
                     <Plus size={16} /> Add Shift
                 </button>
             </div>
 
             {/* Company & Search Filters Bar */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 mb-5 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-1">
+            <div className="bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 mb-4 sm:mb-5 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center flex-1">
                     {/* Live Search Input */}
-                    <div className="relative flex-1 max-w-md">
+                    <div className="relative flex-1 w-full md:max-w-md">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search shifts..."
-                            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                            className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
                         />
                         {searchQuery && (
                             <button
                                 onClick={() => setSearchQuery("")}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                             >
                                 <X size={14} />
                             </button>
@@ -241,12 +241,12 @@ const WorkShift = () => {
                     </div>
 
                     {/* Company Filter Dropdown */}
-                    <div className="relative min-w-[220px]">
+                    <div className="relative w-full sm:w-64">
                         <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                         <select
                             value={companyFilter}
                             onChange={(e) => setCompanyFilter(e.target.value)}
-                            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition appearance-none cursor-pointer"
+                            className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition appearance-none cursor-pointer"
                         >
                             <option value="">All Companies ({companyOptions.length})</option>
                             {companyOptions.map((c) => (
@@ -262,7 +262,7 @@ const WorkShift = () => {
                     {(companyFilter || searchQuery) && (
                         <button
                             onClick={() => { setCompanyFilter(""); setSearchQuery(""); }}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1.5 rounded hover:bg-blue-50 transition flex items-center gap-1 self-start sm:self-auto"
+                            className="text-xs text-blue-600 hover:text-blue-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-blue-50 transition flex items-center gap-1 self-start sm:self-auto cursor-pointer"
                         >
                             <X size={13} /> Reset Filters
                         </button>
@@ -274,7 +274,108 @@ const WorkShift = () => {
                 </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
+            {/* Mobile Cards View (< md) */}
+            <div className="md:hidden space-y-3">
+                {filteredShifts.length === 0 ? (
+                    <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-400">
+                        {searchQuery || companyFilter ? "No shifts match your filters." : "No shifts found. Create one to get started."}
+                    </div>
+                ) : (
+                    filteredShifts.map(s => (
+                        <div key={s._id} className="bg-white border border-gray-200 rounded-2xl p-4 shadow-2xs space-y-3 hover:shadow-xs transition">
+                            {/* Card Top: Shift Icon + Name & Status */}
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                                        <Clock size={16} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="font-semibold text-gray-900 text-sm truncate">{s.name}</p>
+                                        {showCompanyCol && (
+                                            <p className="text-xs text-gray-400 flex items-center gap-1 truncate">
+                                                <Building2 size={12} className="shrink-0" /> {s.companyId?.name || "—"}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                <span className={`shrink-0 text-[11px] px-2.5 py-0.5 rounded-full font-semibold border ${
+                                    s.status ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-500 border-red-200"
+                                }`}>
+                                    {s.status ? "Active" : "Inactive"}
+                                </span>
+                            </div>
+
+                            {/* Timing & Week Off Box */}
+                            <div className="bg-gray-50/80 rounded-xl p-3 border border-gray-100 text-xs space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400 font-medium text-[11px]">Timing:</span>
+                                    <span className="font-bold text-gray-900">{fmt12(s.startTime)} – {fmt12(s.endTime)}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400 font-medium text-[11px]">Week Off:</span>
+                                    <div className="flex flex-wrap gap-1 justify-end">
+                                        {(s.weekOff?.length ? [...s.weekOff].sort() : []).map(d => (
+                                            <span key={d} className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100">
+                                                {DAY_LABELS[d]}
+                                            </span>
+                                        ))}
+                                        {!s.weekOff?.length && <span className="text-gray-400 text-xs">—</span>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Attendance Thresholds */}
+                            <div className="grid grid-cols-3 gap-1.5 text-center text-xs bg-blue-50/40 p-2.5 rounded-xl border border-blue-100/60">
+                                <div>
+                                    <span className="text-[10px] text-gray-400 font-medium block">Grace</span>
+                                    <span className="font-semibold text-gray-800">{s.gracePeriod}m</span>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] text-gray-400 font-medium block">Late After</span>
+                                    <span className="font-semibold text-amber-600">{s.gracePeriod + s.lateThreshold}m</span>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] text-gray-400 font-medium block">Early Leave</span>
+                                    <span className="font-semibold text-orange-600">{s.earlyLeaveThreshold}m</span>
+                                </div>
+                            </div>
+
+                            {/* Card Footer: Creator info & Actions */}
+                            <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+                                <div className="text-[11px] text-gray-400">
+                                    <span>{s.createdBy ? `${s.createdBy.firstName} ${s.createdBy.lastName}` : "System"}</span>
+                                    {s.createdAt && (
+                                        <span className="block text-[10px]">
+                                            {new Date(s.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-1.5">
+                                    <button onClick={() => handleToggle(s._id)}
+                                        className={`p-2 rounded-lg transition cursor-pointer active:scale-95 ${s.status ? "bg-red-50 hover:bg-red-100 text-red-500" : "bg-green-50 hover:bg-green-100 text-green-600"}`}
+                                        title={s.status ? "Deactivate" : "Activate"}>
+                                        {s.status ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                                    </button>
+                                    <button onClick={() => { setSelected(s); setOpen(true); }}
+                                        className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition cursor-pointer active:scale-95"
+                                        title="Edit Shift">
+                                        <Pencil size={15} />
+                                    </button>
+                                    <button onClick={() => handleDelete(s._id)}
+                                        className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition cursor-pointer active:scale-95"
+                                        title="Delete Shift">
+                                        <Trash2 size={15} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Desktop Table View (>= md) */}
+            <div className="hidden md:block bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">

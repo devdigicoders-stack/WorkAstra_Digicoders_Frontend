@@ -463,10 +463,10 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end">
-                <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-200">
-                    <button onClick={() => setViewMode("calendar")} className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "calendar" ? "bg-white shadow text-gray-800" : "text-gray-500 hover:text-gray-700"}`}>Calendar View</button>
-                    <button onClick={() => setViewMode("list")} className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${viewMode === "list" ? "bg-white shadow text-gray-800" : "text-gray-500 hover:text-gray-700"}`}>Table View</button>
+            <div className="flex justify-center sm:justify-end">
+                <div className="flex w-full sm:w-auto bg-gray-100 rounded-xl p-1 border border-gray-200">
+                    <button onClick={() => setViewMode("calendar")} className={`flex-1 sm:flex-initial text-center px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer ${viewMode === "calendar" ? "bg-white shadow-xs text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>Calendar View</button>
+                    <button onClick={() => setViewMode("list")} className={`flex-1 sm:flex-initial text-center px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer ${viewMode === "list" ? "bg-white shadow-xs text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>Table View</button>
                 </div>
             </div>
 
@@ -1028,17 +1028,19 @@ const RegularizationTab = ({ isAdmin, showTeamTab, canApprove, canReject }) => {
 
     return (
         <div>
-            <div className="flex gap-1 mb-5 bg-white border border-gray-200 rounded-xl p-1 w-fit">
-                <button onClick={() => setView("my")}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${view === "my" ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-700"}`}>
-                    My Requests
-                </button>
-                {showTeamTab && (
-                    <button onClick={() => setView("team")}
-                        className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${view === "team" ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-700"}`}>
-                        Team Requests
+            <div className="w-full sm:w-fit overflow-x-auto scrollbar-none mb-5 -mx-1 px-1 sm:mx-0 sm:px-0">
+                <div className="inline-flex min-w-full sm:min-w-0 gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-xs">
+                    <button onClick={() => setView("my")}
+                        className={`flex-1 sm:flex-initial whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 cursor-pointer ${view === "my" ? "bg-blue-600 text-white shadow-xs" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
+                        My Requests
                     </button>
-                )}
+                    {showTeamTab && (
+                        <button onClick={() => setView("team")}
+                            className={`flex-1 sm:flex-initial whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 cursor-pointer ${view === "team" ? "bg-blue-600 text-white shadow-xs" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
+                            Team Requests
+                        </button>
+                    )}
+                </div>
             </div>
 
             {view === "my" && (
@@ -1664,13 +1666,13 @@ const Attendance = () => {
     const checkedOut = checkedIn && !hasOpenPunch && !!today?.checkOut;
 
     return (
-        <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+        <div className="p-3 sm:p-6 bg-gray-50 min-h-screen max-w-full overflow-x-hidden">
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
-                    <p className="text-gray-500 text-sm mt-0.5">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Attendance</h1>
+                    <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
                         {time.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                     </p>
                 </div>
@@ -1805,23 +1807,27 @@ const Attendance = () => {
 
             {/* Tabs */}
             {showTeamTab && (
-                <div className="flex gap-1 mb-5 bg-white border border-gray-200 rounded-xl p-1 w-fit">
-                    {["my", "team", "regularization", "report"].map(t => (
-                        <button key={t} onClick={() => setTab(t)}
-                            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${tab === t ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-700"}`}>
-                            {t === "my" ? "My Attendance" : t === "team" ? "Team Attendance" : t === "report" ? "Reports" : "Regularization"}
-                        </button>
-                    ))}
+                <div className="w-full sm:w-fit overflow-x-auto scrollbar-none mb-5 -mx-1 px-1 sm:mx-0 sm:px-0">
+                    <div className="inline-flex min-w-full sm:min-w-0 gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-xs">
+                        {["my", "team", "regularization", "report"].map(t => (
+                            <button key={t} onClick={() => setTab(t)}
+                                className={`flex-1 sm:flex-initial whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 cursor-pointer ${tab === t ? "bg-blue-600 text-white shadow-xs" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
+                                {t === "my" ? "My Attendance" : t === "team" ? "Team Attendance" : t === "report" ? "Reports" : "Regularization"}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
             {!showTeamTab && (
-                <div className="flex gap-1 mb-5 bg-white border border-gray-200 rounded-xl p-1 w-fit">
-                    {["my", "regularization"].map(t => (
-                        <button key={t} onClick={() => setTab(t)}
-                            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${tab === t ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-700"}`}>
-                            {t === "my" ? "My Attendance" : "Regularization"}
-                        </button>
-                    ))}
+                <div className="w-full sm:w-fit overflow-x-auto scrollbar-none mb-5 -mx-1 px-1 sm:mx-0 sm:px-0">
+                    <div className="inline-flex min-w-full sm:min-w-0 gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-xs">
+                        {["my", "regularization"].map(t => (
+                            <button key={t} onClick={() => setTab(t)}
+                                className={`flex-1 sm:flex-initial whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition active:scale-95 cursor-pointer ${tab === t ? "bg-blue-600 text-white shadow-xs" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
+                                {t === "my" ? "My Attendance" : "Regularization"}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -1900,63 +1906,72 @@ const Attendance = () => {
                 return (
                     <div>
                         {/* Filter bar */}
-                        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-end">
-                            <div className="flex flex-col gap-1 min-w-[220px]">
-                                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Employee</label>
-                                <SearchableEmployeeSelect
-                                    value={filterEmployee}
-                                    onChange={id => { setFilterEmployee(id); setTeamCalMonth(currentMonth()); }}
-                                    options={employees}
-                                    allOptionLabel="All employees"
-                                    placeholder="All employees"
-                                />
-                            </div>
+                        <div className="bg-white border border-gray-200 rounded-2xl p-3 sm:p-4 mb-4 space-y-3 shadow-2xs">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+                                <div className="flex flex-col gap-1 w-full">
+                                    <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Employee</label>
+                                    <SearchableEmployeeSelect
+                                        value={filterEmployee}
+                                        onChange={id => { setFilterEmployee(id); setTeamCalMonth(currentMonth()); }}
+                                        options={employees}
+                                        allOptionLabel="All employees"
+                                        placeholder="All employees"
+                                    />
+                                </div>
 
-                            {!filterEmployee && (
-                                <>
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">From</label>
-                                        <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)}
-                                            className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">To</label>
-                                        <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)}
-                                            min={filterFrom || undefined}
-                                            className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
-                                    </div>
-                                </>
-                            )}
-
-                            <div className="flex items-center gap-3 ml-auto">
-                                {canCreateAttendance && (
-                                    <button onClick={openCreateModal}
-                                        className="self-end mb-0.5 flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition">
-                                        <FileEdit size={13} /> Add Attendance
-                                    </button>
-                                )}
-                                {hasFilter && (
-                                    <button onClick={clearFilters}
-                                        className="text-xs text-red-500 hover:text-red-700 font-medium px-3 py-2 rounded-lg border border-red-200 hover:bg-red-50 transition">
-                                        Clear filters
-                                    </button>
-                                )}
                                 {!filterEmployee && (
                                     <>
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Month</label>
-                                            <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-                                                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                                        <div className="grid grid-cols-2 gap-2 sm:col-span-1 lg:col-span-2">
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">From</label>
+                                                <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)}
+                                                    className="w-full text-xs sm:text-sm border border-gray-200 rounded-xl px-2.5 sm:px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">To</label>
+                                                <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)}
+                                                    min={filterFrom || undefined}
+                                                    className="w-full text-xs sm:text-sm border border-gray-200 rounded-xl px-2.5 sm:px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                                            </div>
                                         </div>
-                                        <span className="text-xs text-gray-400 self-end pb-2">{filtered.length} record{filtered.length !== 1 ? "s" : ""}</span>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Month</label>
+                                            <input type="month" value={month} onChange={e => setMonth(e.target.value)}
+                                                className="w-full text-xs sm:text-sm border border-gray-200 rounded-xl px-2.5 sm:px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                                        </div>
                                     </>
                                 )}
-                                {!filterEmployee && filtered.length > 0 && (
-                                    <button onClick={handleExport}
-                                        className="self-end mb-0.5 flex items-center gap-1.5 px-3 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg text-xs font-medium transition">
-                                        <Download size={13} /> Export CSV
-                                    </button>
-                                )}
+                            </div>
+
+                            {/* Action Buttons & Records count bar */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full">
+                                        {filtered.length} {filtered.length === 1 ? "record" : "records"}
+                                    </span>
+                                    {hasFilter && (
+                                        <button onClick={clearFilters}
+                                            className="text-xs text-rose-500 hover:text-rose-700 font-medium px-2.5 py-1 rounded-lg border border-rose-200 hover:bg-rose-50 transition active:scale-95 cursor-pointer">
+                                            Clear filters
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-2 w-full sm:w-auto">
+                                    {canCreateAttendance && (
+                                        <button onClick={openCreateModal}
+                                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition active:scale-95 cursor-pointer">
+                                            <FileEdit size={14} /> Add Attendance
+                                        </button>
+                                    )}
+                                    {!filterEmployee && filtered.length > 0 && (
+                                        <button onClick={handleExport}
+                                            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-semibold transition active:scale-95 cursor-pointer">
+                                            <Download size={14} /> Export CSV
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -1987,77 +2002,86 @@ const Attendance = () => {
                                 />
                             </div>
                         ) : (
-                            <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
-                                            <th className="px-4 py-3 text-left">Employee</th>
-                                            <th className="px-4 py-3 text-left">Date</th>
-                                            <th className="px-4 py-3 text-left">Shift</th>
-                                            <th className="px-4 py-3 text-left">Check In</th>
-                                            <th className="px-4 py-3 text-left">Check Out</th>
-                                            <th className="px-4 py-3 text-left">Hours</th>
-                                            <th className="px-4 py-3 text-left">Status</th>
-                                            <th className="px-4 py-3 text-left">Device</th>
-                                            <th className="px-4 py-3 text-left">Location</th>
-                                            {canUpdateAttendance && <th className="px-4 py-3 text-center">Actions</th>}
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {filtered.length === 0 ? (
-                                            <tr><td colSpan={canUpdateAttendance ? 10 : 9} className="px-4 py-10 text-center text-gray-400">No records found.</td></tr>
-                                        ) : paginated.map(r => (
-                                            <tr key={r._id} className="hover:bg-gray-50 transition">
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-2">
-                                                        {r.userId?.profilePic?.url
-                                                            ? <img src={getImageUrl(r.userId.profilePic.url)} className="w-7 h-7 rounded-full object-cover" alt="" />
-                                                            : <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                            <>
+                                {/* Mobile Cards View (< md) */}
+                                <div className="md:hidden space-y-3">
+                                    {filtered.length === 0 ? (
+                                        <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-400">
+                                            No records found.
+                                        </div>
+                                    ) : (
+                                        paginated.map(r => (
+                                            <div key={r._id} className="bg-white border border-gray-200 rounded-2xl p-3.5 shadow-2xs space-y-3">
+                                                {/* Header: Employee Info + Status Badge */}
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        {r.userId?.profilePic?.url ? (
+                                                            <img src={getImageUrl(r.userId.profilePic.url)} className="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-200" alt="" />
+                                                        ) : (
+                                                            <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0">
                                                                 {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
-                                                            </div>}
-                                                        <div>
-                                                            <p className="font-medium text-gray-800">{r.userId?.firstName} {r.userId?.lastName}</p>
-                                                            <p className="text-xs text-gray-400">{r.userId?.employeeCode}</p>
+                                                            </div>
+                                                        )}
+                                                        <div className="min-w-0">
+                                                            <p className="font-semibold text-gray-900 text-sm truncate">
+                                                                {r.userId?.firstName} {r.userId?.lastName}
+                                                            </p>
+                                                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                                                                {r.userId?.employeeCode && <span>{r.userId.employeeCode}</span>}
+                                                                {r.workShiftId && (
+                                                                    <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded text-[10px] font-medium">
+                                                                        {r.workShiftId.name}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </td>
-                                                <td className="px-4 py-3 text-gray-600">{fmtDate(r.date)}</td>
-                                                <td className="px-4 py-3">
-                                                    {r.workShiftId
-                                                        ? <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{r.workShiftId.name}</span>
-                                                        : "—"}
-                                                </td>
-                                                <td className="px-4 py-3 text-green-600">{fmt(r.checkIn)}</td>
-                                                <td className="px-4 py-3 text-red-500">{fmt(r.checkOut)}</td>
-                                                <td className="px-4 py-3 text-gray-600">{fmtHours(r.workHours)}</td>
-                                                <td className="px-4 py-3">
-                                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS[r.status]?.cls}`}>
+                                                    <span className={`shrink-0 text-xs px-2.5 py-0.5 rounded-full font-semibold capitalize ${STATUS[r.status]?.cls}`}>
                                                         {r.status}
                                                     </span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {r.deviceType === "Mobile" ? (
-                                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 whitespace-nowrap" title={r.deviceDetails || "Mobile"}>
-                                                            <Smartphone size={11} /> Mobile
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap" title={r.deviceDetails || "Laptop / PC"}>
-                                                            <Laptop size={11} /> Laptop
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {r.checkInLocation?.latitude
-                                                        ? <a href={`https://maps.google.com/?q=${r.checkInLocation.latitude},${r.checkInLocation.longitude}`}
-                                                            target="_blank" rel="noreferrer"
-                                                            className="flex items-center gap-1 text-xs text-blue-500 hover:underline">
-                                                            <MapPin size={11} /> View
-                                                        </a>
-                                                        : "—"}
-                                                </td>
-                                                {canUpdateAttendance && (
-                                                    <td className="px-4 py-3 text-center">
-                                                        <div className="flex items-center justify-center gap-1.5">
+                                                </div>
+
+                                                {/* Middle: Date, In/Out Times & Total Hours */}
+                                                <div className="bg-gray-50/80 rounded-xl p-2.5 border border-gray-100 grid grid-cols-3 gap-2 text-center text-xs">
+                                                    <div>
+                                                        <span className="text-gray-400 text-[10px] uppercase font-bold block mb-0.5">Date</span>
+                                                        <span className="font-semibold text-gray-800 block truncate">{fmtDate(r.date)}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-400 text-[10px] uppercase font-bold block mb-0.5">Check In / Out</span>
+                                                        <span className="font-semibold text-green-600 block">{fmt(r.checkIn)}</span>
+                                                        <span className="text-[11px] text-red-500 block">{fmt(r.checkOut)}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-400 text-[10px] uppercase font-bold block mb-0.5">Work Hours</span>
+                                                        <span className="font-bold text-gray-900 text-xs sm:text-sm block">{fmtHours(r.workHours)}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Bottom: Device, Location & Admin Actions */}
+                                                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-gray-100 text-xs">
+                                                    <div className="flex items-center gap-2">
+                                                        {r.deviceType === "Mobile" ? (
+                                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                                                                <Smartphone size={11} /> Mobile
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                                                <Laptop size={11} /> Laptop
+                                                            </span>
+                                                        )}
+
+                                                        {r.checkInLocation?.latitude && (
+                                                            <a href={`https://maps.google.com/?q=${r.checkInLocation.latitude},${r.checkInLocation.longitude}`}
+                                                                target="_blank" rel="noreferrer"
+                                                                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                                                                <MapPin size={11} /> Map
+                                                            </a>
+                                                        )}
+                                                    </div>
+
+                                                    {canUpdateAttendance && (
+                                                        <div className="flex items-center gap-1.5 ml-auto">
                                                             {updatingPunchId === r._id ? (
                                                                 <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                                                             ) : (
@@ -2065,33 +2089,31 @@ const Attendance = () => {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleQuickStatusUpdate(r, "present")}
-                                                                        title="Mark Present"
-                                                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition ${
+                                                                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer ${
                                                                             r.status === "present"
-                                                                                ? "bg-green-600 text-white font-semibold shadow-sm"
-                                                                                : "bg-white border border-gray-200 text-gray-600 hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+                                                                                ? "bg-green-600 text-white shadow-xs"
+                                                                                : "bg-white border border-gray-200 text-gray-700 hover:bg-green-50"
                                                                         }`}
                                                                     >
-                                                                        <Check size={11} className={r.status === "present" ? "text-white" : "text-green-600"} />
+                                                                        <Check size={12} className={r.status === "present" ? "text-white" : "text-green-600"} />
                                                                         Present
                                                                     </button>
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleQuickStatusUpdate(r, "absent")}
-                                                                        title="Mark Absent"
-                                                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition ${
+                                                                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition active:scale-95 cursor-pointer ${
                                                                             r.status === "absent"
-                                                                                ? "bg-red-600 text-white font-semibold shadow-sm"
-                                                                                : "bg-white border border-gray-200 text-gray-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                                                                                ? "bg-red-600 text-white shadow-xs"
+                                                                                : "bg-white border border-gray-200 text-gray-700 hover:bg-red-50"
                                                                         }`}
                                                                     >
-                                                                        <X size={11} className={r.status === "absent" ? "text-white" : "text-red-600"} />
+                                                                        <X size={12} className={r.status === "absent" ? "text-white" : "text-red-600"} />
                                                                         Absent
                                                                     </button>
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => openEditModal(r)}
-                                                                        className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition"
+                                                                        className="p-1.5 text-blue-600 hover:bg-blue-50 border border-blue-100 rounded-lg transition active:scale-95 cursor-pointer"
                                                                         title="Edit Details"
                                                                     >
                                                                         <FileEdit size={14} />
@@ -2099,16 +2121,137 @@ const Attendance = () => {
                                                                 </>
                                                             )}
                                                         </div>
-                                                    </td>
-                                                )}
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+
+                                {/* Desktop Table View (>= md) */}
+                                <div className="hidden md:block bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                                                <th className="px-4 py-3 text-left">Employee</th>
+                                                <th className="px-4 py-3 text-left">Date</th>
+                                                <th className="px-4 py-3 text-left">Shift</th>
+                                                <th className="px-4 py-3 text-left">Check In</th>
+                                                <th className="px-4 py-3 text-left">Check Out</th>
+                                                <th className="px-4 py-3 text-left">Hours</th>
+                                                <th className="px-4 py-3 text-left">Status</th>
+                                                <th className="px-4 py-3 text-left">Device</th>
+                                                <th className="px-4 py-3 text-left">Location</th>
+                                                {canUpdateAttendance && <th className="px-4 py-3 text-center">Actions</th>}
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {filtered.length === 0 ? (
+                                                <tr><td colSpan={canUpdateAttendance ? 10 : 9} className="px-4 py-10 text-center text-gray-400">No records found.</td></tr>
+                                            ) : paginated.map(r => (
+                                                <tr key={r._id} className="hover:bg-gray-50 transition">
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            {r.userId?.profilePic?.url
+                                                                ? <img src={getImageUrl(r.userId.profilePic.url)} className="w-7 h-7 rounded-full object-cover" alt="" />
+                                                                : <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                                                    {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
+                                                                </div>}
+                                                            <div>
+                                                                <p className="font-medium text-gray-800">{r.userId?.firstName} {r.userId?.lastName}</p>
+                                                                <p className="text-xs text-gray-400">{r.userId?.employeeCode}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-gray-600">{fmtDate(r.date)}</td>
+                                                    <td className="px-4 py-3">
+                                                        {r.workShiftId
+                                                            ? <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{r.workShiftId.name}</span>
+                                                            : "—"}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-green-600">{fmt(r.checkIn)}</td>
+                                                    <td className="px-4 py-3 text-red-500">{fmt(r.checkOut)}</td>
+                                                    <td className="px-4 py-3 text-gray-600">{fmtHours(r.workHours)}</td>
+                                                    <td className="px-4 py-3">
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS[r.status]?.cls}`}>
+                                                            {r.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {r.deviceType === "Mobile" ? (
+                                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 whitespace-nowrap" title={r.deviceDetails || "Mobile"}>
+                                                                <Smartphone size={11} /> Mobile
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap" title={r.deviceDetails || "Laptop / PC"}>
+                                                                <Laptop size={11} /> Laptop
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {r.checkInLocation?.latitude
+                                                            ? <a href={`https://maps.google.com/?q=${r.checkInLocation.latitude},${r.checkInLocation.longitude}`}
+                                                                target="_blank" rel="noreferrer"
+                                                                className="flex items-center gap-1 text-xs text-blue-500 hover:underline">
+                                                                <MapPin size={11} /> View
+                                                            </a>
+                                                            : "—"}
+                                                    </td>
+                                                    {canUpdateAttendance && (
+                                                        <td className="px-4 py-3 text-center">
+                                                            <div className="flex items-center justify-center gap-1.5">
+                                                                {updatingPunchId === r._id ? (
+                                                                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                                                ) : (
+                                                                    <>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleQuickStatusUpdate(r, "present")}
+                                                                            title="Mark Present"
+                                                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition ${
+                                                                                r.status === "present"
+                                                                                    ? "bg-green-600 text-white font-semibold shadow-sm"
+                                                                                    : "bg-white border border-gray-200 text-gray-600 hover:bg-green-50 hover:text-green-700 hover:border-green-300"
+                                                                            }`}
+                                                                        >
+                                                                            <Check size={11} className={r.status === "present" ? "text-white" : "text-green-600"} />
+                                                                            Present
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleQuickStatusUpdate(r, "absent")}
+                                                                            title="Mark Absent"
+                                                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition ${
+                                                                                r.status === "absent"
+                                                                                    ? "bg-red-600 text-white font-semibold shadow-sm"
+                                                                                    : "bg-white border border-gray-200 text-gray-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                                                                            }`}
+                                                                        >
+                                                                            <X size={11} className={r.status === "absent" ? "text-white" : "text-red-600"} />
+                                                                            Absent
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => openEditModal(r)}
+                                                                            className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition"
+                                                                            title="Edit Details"
+                                                                        >
+                                                                            <FileEdit size={14} />
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </>
                         )}
                         {!filterEmployee && totalPages > 1 && (
-                            <div className="flex items-center justify-between mt-4 px-1">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 px-1">
                                 <span className="text-xs text-gray-400">
                                     Showing {(teamPage - 1) * ITEMS_PER_PAGE + 1}&#8211;{Math.min(teamPage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
                                 </span>

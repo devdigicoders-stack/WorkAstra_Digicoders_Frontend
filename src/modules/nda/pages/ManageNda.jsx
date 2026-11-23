@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getImageUrl } from "../../../utils/imageUtils";
 import { useStore } from "../../../context/StoreContext";
-import { FileText, Save, Plus, File, Edit3, ShieldCheck, X, UploadCloud, Download, Trash2, Users, Building2 } from "lucide-react";
+import { FileText, Save, Plus, File, Edit3, ShieldCheck, X, UploadCloud, Download, Trash2, Users, Building2, Search, ExternalLink, Calendar, Mail } from "lucide-react";
 import { toast } from "react-toastify";
 import { getAllNdas, createOrUpdateNda, getNdaSignatures, deleteNda, getClientNdaSignatures } from "../../../services/ndaService";
 import { fetchAllCompaniesList } from "../../company/services/companyService";
@@ -17,6 +17,7 @@ const ManageNda = () => {
     const [clientSignatures, setClientSignatures] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("employee"); // "employee" or "client"
+    const [clientSearch, setClientSearch] = useState("");
     
     // Editor State
     const [title, setTitle] = useState("");
@@ -158,38 +159,38 @@ const ManageNda = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 w-full space-y-8 h-[calc(100vh-64px)] overflow-y-auto">
+        <div className="p-3 sm:p-6 lg:p-8 w-full space-y-5 sm:space-y-6 min-h-screen max-w-full overflow-x-hidden">
             {/* Header */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                        <FileText size={24} />
+            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-2xs border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="p-2.5 sm:p-3 bg-blue-50 text-blue-600 rounded-xl shrink-0">
+                        <FileText size={22} className="sm:w-6 sm:h-6" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Manage NDA</h1>
-                        <p className="text-sm text-gray-500 mt-1">Create or update Non-Disclosure Agreements</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">Manage NDA</h1>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Create or update Non-Disclosure Agreements</p>
                     </div>
                 </div>
                 
                 {/* Tabs */}
-                <div className="flex items-center bg-gray-50/80 p-1.5 rounded-xl border border-gray-100/50">
+                <div className="w-full md:w-auto flex items-center bg-gray-100/80 p-1 rounded-xl border border-gray-200/50 shadow-2xs">
                     <button 
                         onClick={() => setActiveTab("employee")}
-                        className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                            activeTab === "employee" ? "bg-white text-blue-600 shadow-sm border border-gray-100" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+                        className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap active:scale-95 cursor-pointer ${
+                            activeTab === "employee" ? "bg-white text-blue-600 shadow-xs border border-gray-100" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
                         }`}
                     >
                         <FileText size={15} />
-                        Employee NDAs
+                        <span>Employee NDAs</span>
                     </button>
                     <button 
                         onClick={() => setActiveTab("client")}
-                        className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                            activeTab === "client" ? "bg-white text-blue-600 shadow-sm border border-gray-100" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+                        className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap active:scale-95 cursor-pointer ${
+                            activeTab === "client" ? "bg-white text-blue-600 shadow-xs border border-gray-100" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
                         }`}
                     >
                         <Users size={15} />
-                        Client NDAs
+                        <span>Client NDAs</span>
                     </button>
                 </div>
             </div>
@@ -388,157 +389,382 @@ const ManageNda = () => {
             </div>
             </>
             ) : (
-                <div className="flex flex-col gap-6">
-                    {/* Client NDA Templates Section */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 md:p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <File size={18} className="text-blue-600" />
-                                <h2 className="text-base font-semibold text-gray-800">Existing Client NDAs</h2>
-                            </div>
+                <div className="flex flex-col gap-5 sm:gap-6">
+                    {/* Client NDAs Overview KPIs */}
+                    {(() => {
+                        const clientNdas = ndas.filter(n => n.targetAudience === 'Client');
+                        const filteredClientSignatures = clientSignatures.filter(sig => {
+                            if (!clientSearch.trim()) return true;
+                            const q = clientSearch.toLowerCase();
+                            const name = `${sig.userId?.firstName || ''} ${sig.userId?.lastName || ''}`.toLowerCase();
+                            const email = (sig.userId?.email || '').toLowerCase();
+                            const title = (sig.ndaId?.title || '').toLowerCase();
+                            const company = (sig.userId?.companyId?.name || '').toLowerCase();
+                            return name.includes(q) || email.includes(q) || title.includes(q) || company.includes(q);
+                        });
 
-                            {isSuperAdmin && companies.length > 0 && (
-                                <div className="relative min-w-[220px]">
-                                    <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                    <select
-                                        value={companyFilter}
-                                        onChange={(e) => setCompanyFilter(e.target.value)}
-                                        className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-sm"
-                                        title="Filter by Company"
-                                    >
-                                        <option value="">All Companies ({companies.length})</option>
-                                        {companies.map((c) => (
-                                            <option key={c._id} value={c._id}>
-                                                {c.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                        return (
+                            <>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                                    <div className="bg-white border border-gray-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-2xs hover:shadow-xs transition">
+                                        <div className="w-11 h-11 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0 border border-orange-100">
+                                            <FileText size={22} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Client Templates</p>
+                                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5">{clientNdas.length}</h3>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border border-gray-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-2xs hover:shadow-xs transition">
+                                        <div className="w-11 h-11 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0 border border-emerald-100">
+                                            <ShieldCheck size={22} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Signed Documents</p>
+                                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5">{clientSignatures.length}</h3>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-xl sm:rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-2xs">
+                                        <div>
+                                            <p className="text-xs font-semibold text-blue-100 uppercase tracking-wider">Create New</p>
+                                            <p className="text-sm font-semibold text-white/95 mt-0.5">Draft Client NDA</p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setTitle("");
+                                                setTargetAudience("Client");
+                                                setTargetCompanyId(companyFilter || "");
+                                                setFile(null);
+                                                setActiveTab("employee");
+                                                window.scrollTo({ top: 0, behavior: "smooth" });
+                                            }}
+                                            className="px-3.5 py-2 bg-white text-blue-600 hover:bg-blue-50 active:scale-95 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
+                                        >
+                                            <Plus size={15} /> <span>Create NDA</span>
+                                        </button>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                        <div className="p-4 md:p-6">
-                            {ndas.filter(n => n.targetAudience === 'Client').length === 0 ? (
-                                <div className="text-center py-12 px-4">
-                                    <FileText size={48} className="mx-auto text-gray-200 mb-4" />
-                                    <p className="text-gray-500">No Client NDAs found{isSuperAdmin && companyFilter ? " for this company" : ""}. Create one from the Employee/Intern tab by selecting "Client" audience.</p>
-                                </div>
-                            ) : (
-                                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-                                    {ndas.filter(n => n.targetAudience === 'Client').map((n) => (
-                                        <div key={n._id} className="border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all bg-white group flex flex-col justify-between">
+
+                                {/* Client NDA Templates Section */}
+                                <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xs border border-gray-200/80 overflow-hidden">
+                                    <div className="p-3.5 sm:p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/70">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="p-1.5 bg-blue-100/70 text-blue-600 rounded-lg">
+                                                <File size={16} />
+                                            </div>
                                             <div>
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                                                            <FileText size={16} />
-                                                        </div>
-                                                        <h3 className="font-semibold text-gray-800 truncate" title={n.title}>{n.title}</h3>
-                                                    </div>
-                                                    <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-700 shrink-0">
-                                                        Client
+                                                <div className="flex items-center gap-2">
+                                                    <h2 className="text-sm sm:text-base font-bold text-gray-900">Existing Client NDAs</h2>
+                                                    <span className="text-xs bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full border border-orange-200">
+                                                        {clientNdas.length}
                                                     </span>
                                                 </div>
-                                                <div className="flex items-center justify-between gap-2 mt-2">
-                                                    <p className="text-xs text-gray-400">
-                                                        Last updated: {new Date(n.updatedAt).toLocaleDateString()}
-                                                    </p>
-                                                    {isSuperAdmin && (
-                                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 truncate max-w-[120px] ${
-                                                            n.companyId?.name
-                                                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                                                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                        }`} title={n.companyId?.name || "Global (All Companies)"}>
-                                                            {n.companyId?.name || "Global"}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="mt-4 pt-4 border-t border-gray-50 flex gap-2">
-                                                <button 
-                                                    onClick={() => handleDeleteClick(n)}
-                                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-medium transition"
-                                                >
-                                                    <Trash2 size={14} /> Delete
-                                                </button>
+                                                <p className="text-xs text-gray-500 mt-0.5">Templates assigned to client audiences</p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-4 md:p-6 border-b border-gray-100 flex items-center gap-3 bg-gray-50/50">
-                        <Users size={18} className="text-blue-600" />
-                        <h2 className="text-base font-semibold text-gray-800">Client NDA Signatures</h2>
-                    </div>
-                    <div className="p-4 md:p-6">
-                        {clientSignatures.length === 0 ? (
-                            <div className="text-center py-12 px-4">
-                                <FileText size={48} className="mx-auto text-gray-200 mb-4" />
-                                <p className="text-gray-500">No client signatures yet.</p>
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left border-collapse">
-                                    <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
-                                        <tr>
-                                            <th className="px-6 py-4 font-semibold">Client</th>
-                                            <th className="px-6 py-4 font-semibold">NDA Name</th>
-                                            <th className="px-6 py-4 font-semibold">Email</th>
-                                            <th className="px-6 py-4 font-semibold">Signed On</th>
-                                            <th className="px-6 py-4 font-semibold text-right">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {clientSignatures.map((sig) => (
-                                            <tr key={sig._id} className="hover:bg-gray-50/50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-                                                            {sig.userId?.firstName?.[0] || 'C'}
-                                                        </div>
+                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                                            {isSuperAdmin && companies.length > 0 && (
+                                                <div className="relative w-full sm:w-auto min-w-[200px]">
+                                                    <Building2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                    <select
+                                                        value={companyFilter}
+                                                        onChange={(e) => setCompanyFilter(e.target.value)}
+                                                        className="w-full pl-8 pr-7 py-2 text-xs sm:text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-2xs"
+                                                        title="Filter by Company"
+                                                    >
+                                                        <option value="">All Companies ({companies.length})</option>
+                                                        {companies.map((c) => (
+                                                            <option key={c._id} value={c._id}>
+                                                                {c.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    setTitle("");
+                                                    setTargetAudience("Client");
+                                                    setTargetCompanyId(companyFilter || "");
+                                                    setFile(null);
+                                                    setActiveTab("employee");
+                                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                                }}
+                                                className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-semibold transition shadow-2xs cursor-pointer"
+                                            >
+                                                <Plus size={14} /> <span>New Client NDA</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-3.5 sm:p-5">
+                                        {clientNdas.length === 0 ? (
+                                            <div className="text-center py-10 px-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                                <FileText size={42} className="mx-auto text-gray-300 mb-3" />
+                                                <h4 className="text-sm font-semibold text-gray-800">No Client NDAs Found</h4>
+                                                <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+                                                    You haven't created any client NDAs yet${isSuperAdmin && companyFilter ? " for this company" : ""}. Click the button below to draft a new client NDA.
+                                                </p>
+                                                <button
+                                                    onClick={() => {
+                                                        setTitle("");
+                                                        setTargetAudience("Client");
+                                                        setTargetCompanyId(companyFilter || "");
+                                                        setFile(null);
+                                                        setActiveTab("employee");
+                                                        window.scrollTo({ top: 0, behavior: "smooth" });
+                                                    }}
+                                                    className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 active:scale-95 transition shadow-xs cursor-pointer"
+                                                >
+                                                    <Plus size={14} /> Create Client NDA
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                                {clientNdas.map((n) => (
+                                                    <div key={n._id} className="border border-gray-200/80 rounded-xl p-3.5 sm:p-4 hover:shadow-xs transition-all bg-white flex flex-col justify-between gap-3 shadow-2xs">
                                                         <div>
-                                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                                <span className="font-medium text-gray-900">
-                                                                    {sig.userId?.firstName} {sig.userId?.lastName}
+                                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                                    <div className="p-2 bg-orange-50 text-orange-600 rounded-lg shrink-0 border border-orange-100">
+                                                                        <FileText size={16} />
+                                                                    </div>
+                                                                    <h3 className="font-semibold text-gray-900 text-xs sm:text-sm truncate" title={n.title}>
+                                                                        {n.title}
+                                                                    </h3>
+                                                                </div>
+                                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-700 border border-orange-200 shrink-0">
+                                                                    Client
                                                                 </span>
-                                                                {isSuperAdmin && sig.userId?.companyId?.name && (
-                                                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                                                        {sig.userId.companyId.name}
+                                                            </div>
+                                                            <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-100 text-[11px] text-gray-400">
+                                                                <span className="flex items-center gap-1">
+                                                                    <Calendar size={11} className="text-gray-400" />
+                                                                    {new Date(n.updatedAt).toLocaleDateString()}
+                                                                </span>
+                                                                {isSuperAdmin && (
+                                                                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 truncate max-w-[120px] ${
+                                                                        n.companyId?.name
+                                                                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                                                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                                    }`} title={n.companyId?.name || "Global (All Companies)"}>
+                                                                        {n.companyId?.name || "Global"}
                                                                     </span>
                                                                 )}
                                                             </div>
                                                         </div>
+                                                        <div className="pt-2.5 border-t border-gray-100 flex items-center gap-1.5">
+                                                            <button 
+                                                                onClick={() => handleEdit(n)}
+                                                                className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 bg-gray-50 hover:bg-gray-100 active:scale-95 text-gray-700 border border-gray-200/80 rounded-lg text-xs font-semibold transition cursor-pointer"
+                                                            >
+                                                                <Edit3 size={13} /> <span>Edit</span>
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleViewSignatures(n)}
+                                                                className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-700 border border-blue-200/80 rounded-lg text-xs font-semibold transition cursor-pointer"
+                                                            >
+                                                                <Users size={13} /> <span>Signatures</span>
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleDeleteClick(n)}
+                                                                className="p-1.5 bg-red-50 hover:bg-red-100 active:scale-95 text-red-600 border border-red-200/80 rounded-lg text-xs font-semibold transition cursor-pointer"
+                                                                title="Delete NDA"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-gray-800 font-medium">{sig.ndaId?.title || 'N/A'}</td>
-                                                <td className="px-6 py-4 text-gray-600">{sig.userId?.email || 'N/A'}</td>
-                                                <td className="px-6 py-4 text-gray-600">{new Date(sig.createdAt).toLocaleDateString()}</td>
-                                                <td className="px-6 py-4 text-right">
-                                                    {sig.signedDocumentUrl ? (
-                                                        <a
-                                                            href={sig.signedDocumentUrl}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-medium transition"
-                                                        >
-                                                            <FileText size={14} /> View Document
-                                                        </a>
-                                                    ) : (
-                                                        <span className="text-gray-400 text-xs">No File</span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Client NDA Signatures Section */}
+                                <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xs border border-gray-200/80 overflow-hidden mb-6">
+                                    <div className="p-3.5 sm:p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/70">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="p-1.5 bg-blue-100/70 text-blue-600 rounded-lg">
+                                                <Users size={16} />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h2 className="text-sm sm:text-base font-bold text-gray-900">Client NDA Signatures</h2>
+                                                    <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                                                        {filteredClientSignatures.length}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-gray-500 mt-0.5">Records of all signed documents submitted by clients</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Search Filter */}
+                                        <div className="relative w-full sm:w-auto min-w-[240px]">
+                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                            <input
+                                                type="text"
+                                                value={clientSearch}
+                                                onChange={(e) => setClientSearch(e.target.value)}
+                                                placeholder="Search client, email, NDA..."
+                                                className="w-full pl-8 pr-3 py-1.5 sm:py-2 text-xs sm:text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition font-medium text-gray-700 shadow-2xs"
+                                            />
+                                            {clientSearch && (
+                                                <button
+                                                    onClick={() => setClientSearch("")}
+                                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold p-1 cursor-pointer"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-3.5 sm:p-5">
+                                        {clientSignatures.length === 0 ? (
+                                            <div className="text-center py-12 px-4 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                                <FileText size={42} className="mx-auto text-gray-300 mb-3" />
+                                                <h4 className="text-sm font-semibold text-gray-800">No Client Signatures Yet</h4>
+                                                <p className="text-xs text-gray-500 mt-1">When clients review and sign their NDA, the records and copies will appear here.</p>
+                                            </div>
+                                        ) : filteredClientSignatures.length === 0 ? (
+                                            <div className="text-center py-10 px-4 text-gray-500 text-sm">
+                                                No signatures found matching "{clientSearch}".
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {/* Mobile Cards View (md:hidden) */}
+                                                <div className="space-y-3 md:hidden">
+                                                    {filteredClientSignatures.map((sig) => (
+                                                        <div key={sig._id} className="bg-white border border-gray-200 rounded-xl p-3.5 space-y-3 shadow-2xs">
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                                    <div className="h-9 w-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0 border border-blue-200">
+                                                                        {sig.userId?.firstName?.[0] || 'C'}
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <h4 className="font-semibold text-gray-900 text-sm leading-tight truncate">
+                                                                            {sig.userId?.firstName} {sig.userId?.lastName}
+                                                                        </h4>
+                                                                        {sig.userId?.email && (
+                                                                            <span className="text-xs text-gray-500 truncate block mt-0.5">
+                                                                                {sig.userId.email}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <span className="text-[11px] font-medium text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0">
+                                                                    {new Date(sig.createdAt).toLocaleDateString()}
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="bg-gray-50/80 rounded-lg p-2.5 border border-gray-100 flex flex-col gap-1.5 text-xs text-gray-600">
+                                                                <div className="flex items-center gap-1.5 font-medium text-gray-800">
+                                                                    <FileText size={13} className="text-blue-500 shrink-0" />
+                                                                    <span className="truncate">{sig.ndaId?.title || 'Standard Client NDA'}</span>
+                                                                </div>
+                                                                {isSuperAdmin && sig.userId?.companyId?.name && (
+                                                                    <div className="flex items-center gap-1.5 text-[11px]">
+                                                                        <Building2 size={12} className="text-indigo-500 shrink-0" />
+                                                                        <span className="text-indigo-700 font-semibold">{sig.userId.companyId.name}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {sig.signedDocumentUrl ? (
+                                                                <a
+                                                                    href={sig.signedDocumentUrl}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="w-full py-2 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-2xs"
+                                                                >
+                                                                    <FileText size={14} />
+                                                                    <span>View Signed Document</span>
+                                                                    <ExternalLink size={12} />
+                                                                </a>
+                                                            ) : (
+                                                                <div className="text-center py-2 text-xs text-gray-400 bg-gray-50 rounded-lg border border-gray-100">
+                                                                    No Document Attached
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Desktop Table View (hidden md:block) */}
+                                                <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100">
+                                                    <table className="w-full text-sm text-left border-collapse">
+                                                        <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+                                                            <tr>
+                                                                <th className="px-5 py-3.5 font-semibold">Client</th>
+                                                                <th className="px-5 py-3.5 font-semibold">NDA Name</th>
+                                                                <th className="px-5 py-3.5 font-semibold">Email</th>
+                                                                <th className="px-5 py-3.5 font-semibold">Signed On</th>
+                                                                <th className="px-5 py-3.5 font-semibold text-right">Action</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-gray-100">
+                                                            {filteredClientSignatures.map((sig) => (
+                                                                <tr key={sig._id} className="hover:bg-gray-50/60 transition-colors">
+                                                                    <td className="px-5 py-3.5">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs border border-blue-200 shrink-0">
+                                                                                {sig.userId?.firstName?.[0] || 'C'}
+                                                                            </div>
+                                                                            <div>
+                                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                                    <span className="font-semibold text-gray-900">
+                                                                                        {sig.userId?.firstName} {sig.userId?.lastName}
+                                                                                    </span>
+                                                                                    {isSuperAdmin && sig.userId?.companyId?.name && (
+                                                                                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                                                            {sig.userId.companyId.name}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-5 py-3.5 text-gray-800 font-medium">
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <FileText size={14} className="text-blue-500 shrink-0" />
+                                                                            <span>{sig.ndaId?.title || 'N/A'}</span>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-5 py-3.5 text-gray-600 font-mono text-xs">{sig.userId?.email || 'N/A'}</td>
+                                                                    <td className="px-5 py-3.5 text-gray-600 whitespace-nowrap">{new Date(sig.createdAt).toLocaleDateString()}</td>
+                                                                    <td className="px-5 py-3.5 text-right">
+                                                                        {sig.signedDocumentUrl ? (
+                                                                            <a
+                                                                                href={sig.signedDocumentUrl}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 active:scale-95 border border-blue-200 rounded-lg text-xs font-semibold transition shadow-2xs"
+                                                                            >
+                                                                                <FileText size={13} />
+                                                                                <span>View Document</span>
+                                                                                <ExternalLink size={11} />
+                                                                            </a>
+                                                                        ) : (
+                                                                            <span className="text-gray-400 text-xs">No File</span>
+                                                                        )}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        );
+                    })()}
                 </div>
-            </div>
             )}
 
             {/* Signatures Modal */}

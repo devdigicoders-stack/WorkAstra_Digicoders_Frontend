@@ -218,21 +218,23 @@ const PerformanceReport = () => {
     };
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
+        <div className="p-3 sm:p-6 bg-gray-50 min-h-screen max-w-full overflow-x-hidden">
             {/* Header & Filters */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{canViewAll ? "Team Performance Report" : "My Performance"}</h1>
-                    <p className="text-sm text-gray-500 mt-0.5">Track task completion, attendance, and overall scores</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{canViewAll ? "Team Performance Report" : "My Performance"}</h1>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Track task completion, attendance, and overall scores</p>
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full md:w-auto">
                     {/* Specific Month Selector (Outside Dropdown) */}
-                    <div className={`flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border shadow-xs transition ${
+                    <div className={`flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-xl border shadow-2xs transition w-full sm:w-auto ${
                         dateRange === "specific_month" ? "border-indigo-500 ring-2 ring-indigo-100" : "border-gray-200 hover:border-gray-300"
                     }`}>
-                        <Calendar size={14} className={dateRange === "specific_month" ? "text-indigo-600" : "text-gray-400"} />
-                        <span className="text-xs font-semibold text-gray-500">Month:</span>
+                        <div className="flex items-center gap-2">
+                            <Calendar size={14} className={dateRange === "specific_month" ? "text-indigo-600" : "text-gray-400"} />
+                            <span className="text-xs font-semibold text-gray-500">Month:</span>
+                        </div>
                         <input 
                             type="month" 
                             value={selectedMonth} 
@@ -247,46 +249,53 @@ const PerformanceReport = () => {
                     </div>
 
                     {/* Date Range: From - To (Outside Dropdown) */}
-                    <div className={`flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border shadow-xs transition ${
+                    <div className={`flex items-center justify-between sm:justify-start gap-2 bg-white px-2.5 sm:px-3 py-1.5 rounded-xl border shadow-2xs transition w-full sm:w-auto ${
                         dateRange === "custom" ? "border-indigo-500 ring-2 ring-indigo-100" : "border-gray-200 hover:border-gray-300"
                     }`}>
-                        <span className="text-xs font-semibold text-gray-500">From:</span>
-                        <input 
-                            type="date" 
-                            value={startDate} 
-                            onFocus={() => setDateRange("custom")}
-                            onChange={(e) => {
-                                setStartDate(e.target.value);
-                                setDateRange("custom");
-                            }}
-                            className="text-xs font-medium text-gray-800 bg-transparent focus:outline-none cursor-pointer"
-                        />
-                        <span className="text-xs text-gray-400 font-medium">To:</span>
-                        <input 
-                            type="date" 
-                            value={endDate} 
-                            onFocus={() => setDateRange("custom")}
-                            onChange={(e) => {
-                                setEndDate(e.target.value);
-                                setDateRange("custom");
-                            }}
-                            min={startDate || undefined}
-                            className="text-xs font-medium text-gray-800 bg-transparent focus:outline-none cursor-pointer"
-                        />
+                        <div className="flex items-center gap-1 min-w-0">
+                            <span className="text-[11px] sm:text-xs font-semibold text-gray-500">From:</span>
+                            <input 
+                                type="date" 
+                                value={startDate} 
+                                onFocus={() => setDateRange("custom")}
+                                onChange={(e) => {
+                                    setStartDate(e.target.value);
+                                    setDateRange("custom");
+                                }}
+                                className="text-xs font-medium text-gray-800 bg-transparent focus:outline-none cursor-pointer max-w-[110px] sm:max-w-none"
+                            />
+                        </div>
+                        <div className="flex items-center gap-1 min-w-0">
+                            <span className="text-[11px] sm:text-xs text-gray-400 font-medium">To:</span>
+                            <input 
+                                type="date" 
+                                value={endDate} 
+                                onFocus={() => setDateRange("custom")}
+                                onChange={(e) => {
+                                    setEndDate(e.target.value);
+                                    setDateRange("custom");
+                                }}
+                                min={startDate || undefined}
+                                className="text-xs font-medium text-gray-800 bg-transparent focus:outline-none cursor-pointer max-w-[110px] sm:max-w-none"
+                            />
+                        </div>
                     </div>
 
                     {/* Quick Presets Dropdown (Only Presets) */}
-                    <div className={`flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border shadow-xs transition ${
+                    <div className={`flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-xl border shadow-2xs transition w-full sm:w-auto ${
                         dateRange !== "specific_month" && dateRange !== "custom" ? "border-indigo-500 ring-2 ring-indigo-100" : "border-gray-200 hover:border-gray-300"
                     }`}>
-                        <Filter size={14} className="text-gray-500" />
+                        <div className="flex items-center gap-2">
+                            <Filter size={14} className="text-gray-500" />
+                            <span className="text-xs font-semibold text-gray-500 sm:hidden">Preset:</span>
+                        </div>
                         <select 
                             value={dateRange === "specific_month" || dateRange === "custom" ? "" : dateRange} 
                             onChange={(e) => {
                                 const val = e.target.value;
                                 if (val) setDateRange(val);
                             }}
-                            className="text-xs font-medium text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                            className="text-xs font-medium text-gray-700 focus:outline-none bg-transparent cursor-pointer w-full sm:w-auto"
                         >
                             {(dateRange === "specific_month" || dateRange === "custom") && (
                                 <option value="" disabled hidden>Quick Presets</option>
@@ -300,39 +309,42 @@ const PerformanceReport = () => {
                         </select>
                     </div>
 
-                    {/* Reset Button */}
-                    {(dateRange === "specific_month" || dateRange === "custom") && (
-                        <button
-                            onClick={() => {
-                                setDateRange("this_month");
-                                setSelectedMonth(currentMonth());
-                                setStartDate(firstDayOfMonth());
-                                setEndDate(todayDate());
-                            }}
-                            className="px-2.5 py-1.5 text-xs text-gray-600 hover:text-indigo-600 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition shadow-xs cursor-pointer font-medium"
-                            title="Reset to current month"
-                        >
-                            Reset
-                        </button>
-                    )}
+                    {/* Actions Row */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        {/* Reset Button */}
+                        {(dateRange === "specific_month" || dateRange === "custom") && (
+                            <button
+                                onClick={() => {
+                                    setDateRange("this_month");
+                                    setSelectedMonth(currentMonth());
+                                    setStartDate(firstDayOfMonth());
+                                    setEndDate(todayDate());
+                                }}
+                                className="px-3 py-1.5 text-xs text-gray-600 hover:text-indigo-600 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition shadow-2xs cursor-pointer font-medium active:scale-95"
+                                title="Reset to current month"
+                            >
+                                Reset
+                            </button>
+                        )}
 
-                    <button 
-                        onClick={fetchReport} 
-                        className="p-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 rounded-lg transition shadow-xs cursor-pointer"
-                        title="Refresh"
-                    >
-                        <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                    </button>
-                    
-                    {canViewAll && (
                         <button 
-                            onClick={exportToCSV}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition shadow-xs cursor-pointer"
+                            onClick={fetchReport} 
+                            className="p-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 rounded-xl transition shadow-2xs cursor-pointer active:scale-95 shrink-0"
+                            title="Refresh"
                         >
-                            <Download size={14} />
-                            Export CSV
+                            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
                         </button>
-                    )}
+                        
+                        {canViewAll && (
+                            <button 
+                                onClick={exportToCSV}
+                                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-semibold transition shadow-xs cursor-pointer"
+                            >
+                                <Download size={14} />
+                                <span>Export CSV</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -399,23 +411,26 @@ const PerformanceReport = () => {
                     )}
 
                     {/* Performance Table */}
-                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-800">
+                    <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200/80 shadow-2xs overflow-hidden">
+                        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-gray-100 flex items-center justify-between">
+                            <h2 className="text-base sm:text-lg font-bold text-gray-900">
                                 {canViewAll ? "Leaderboard" : "My Detailed Metrics"}
                             </h2>
+                            <span className="text-xs font-semibold text-gray-500 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
+                                {performanceData.length} {performanceData.length === 1 ? "Employee" : "Employees"}
+                            </span>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
+                            <table className="w-full text-sm text-left min-w-[700px]">
+                                <thead className="bg-gray-50/75 text-gray-500 text-xs uppercase font-semibold">
                                     <tr>
-                                        {canViewAll && <th className="px-6 py-4">Developer</th>}
-                                        <th className="px-6 py-4 text-center">Tasks Assigned</th>
-                                        <th className="px-6 py-4 text-center">Completed</th>
-                                        <th className="px-6 py-4 text-center">Completion %</th>
-                                        <th className="px-6 py-4 text-center">Attendance %</th>
-                                        <th className="px-6 py-4 text-center">Late Days</th>
-                                        <th className="px-6 py-4 text-right">Score</th>
+                                        {canViewAll && <th className="px-4 sm:px-6 py-3.5 whitespace-nowrap">Developer</th>}
+                                        <th className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">Tasks Assigned</th>
+                                        <th className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">Completed</th>
+                                        <th className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">Completion %</th>
+                                        <th className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">Attendance %</th>
+                                        <th className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">Late Days</th>
+                                        <th className="px-4 sm:px-6 py-3.5 text-right whitespace-nowrap">Score</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -439,7 +454,7 @@ const PerformanceReport = () => {
                                             return (
                                                 <tr key={dev.userId} className="hover:bg-gray-50 transition group">
                                                     {canViewAll && (
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">
+                                                        <td className="px-4 sm:px-6 py-3.5 whitespace-nowrap text-sm text-gray-800 font-medium">
                                                             <div className="flex items-center gap-3">
                                                                 {dev.profilePic ? (
                                                                     <>
@@ -479,7 +494,7 @@ const PerformanceReport = () => {
                                                             </div>
                                                         </td>
                                                     )}
-                                                    <td className="px-6 py-4 text-center">
+                                                    <td className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">
                                                         {dev.tasksAssigned > 0 ? (
                                                             <button
                                                                 type="button"
@@ -494,7 +509,7 @@ const PerformanceReport = () => {
                                                             <span className="text-gray-400 font-medium">0</span>
                                                         )}
                                                     </td>
-                                                    <td className="px-6 py-4 text-center">
+                                                    <td className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">
                                                         {dev.tasksCompleted > 0 ? (
                                                             <button
                                                                 type="button"
@@ -509,7 +524,7 @@ const PerformanceReport = () => {
                                                             <span className="text-gray-400 font-medium">0</span>
                                                         )}
                                                     </td>
-                                                    <td className="px-6 py-4 text-center">
+                                                    <td className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">
                                                         <div className="flex items-center justify-center gap-2">
                                                             <span className="text-gray-600 w-8">{dev.taskCompletionRate}%</span>
                                                             <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -520,13 +535,13 @@ const PerformanceReport = () => {
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 text-center">
+                                                    <td className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">
                                                         <span className={dev.attendanceRate >= 80 ? 'text-green-600' : 'text-red-600'}>
                                                             {dev.attendanceRate}%
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 text-center text-red-500">{dev.daysLate}</td>
-                                                    <td className="px-6 py-4 text-right">
+                                                    <td className="px-4 sm:px-6 py-3.5 text-center text-red-500 whitespace-nowrap">{dev.daysLate}</td>
+                                                    <td className="px-4 sm:px-6 py-3.5 text-right whitespace-nowrap">
                                                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${dev.performanceScore >= 80 ? 'bg-green-100 text-green-800' : dev.performanceScore >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
                                                              {dev.performanceScore} Pts
                                                          </span>
@@ -590,30 +605,30 @@ const PerformanceReport = () => {
 
                         <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 z-10 animate-in zoom-in-95 duration-150">
                             {/* Modal Header */}
-                            <div className="px-6 py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between shrink-0">
-                                <div className="flex items-center gap-3.5">
+                            <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
                                     {selectedDevModal.profilePic ? (
                                         <img 
                                             src={getImageUrl(selectedDevModal.profilePic?.url || selectedDevModal.profilePic)} 
                                             alt={selectedDevModal.name} 
-                                            className="w-11 h-11 rounded-full object-cover ring-2 ring-indigo-400" 
+                                            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover ring-2 ring-indigo-400 shrink-0" 
                                         />
                                     ) : (
-                                        <div className="w-11 h-11 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-base ring-2 ring-indigo-400">
+                                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm sm:text-base ring-2 ring-indigo-400 shrink-0">
                                             {selectedDevModal.name?.charAt(0)?.toUpperCase() || "U"}
                                         </div>
                                     )}
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="text-lg font-bold text-white">{selectedDevModal.name}</h3>
-                                            <span className="text-xs bg-indigo-500/30 text-indigo-200 px-2.5 py-0.5 rounded-full border border-indigo-400/30">
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <h3 className="text-base sm:text-lg font-bold text-white truncate">{selectedDevModal.name}</h3>
+                                            <span className="text-[11px] sm:text-xs bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/30 font-semibold shrink-0">
                                                 Score: {selectedDevModal.performanceScore || 0} Pts
                                             </span>
                                         </div>
-                                        <p className="text-xs text-indigo-200/80 mt-0.5 flex items-center gap-2">
-                                            <span>Task & Project Performance Breakdown</span>
+                                        <p className="text-[11px] sm:text-xs text-indigo-200/80 mt-0.5 flex items-center gap-1.5 truncate">
+                                            <span>Breakdown</span>
                                             <span>•</span>
-                                            <span>
+                                            <span className="truncate">
                                                 {dateRange === "specific_month" ? `Month: ${selectedMonth}` :
                                                  dateRange === "custom" ? `${startDate} to ${endDate}` :
                                                  dateRange.replace("_", " ").toUpperCase()}
@@ -623,7 +638,7 @@ const PerformanceReport = () => {
                                 </div>
                                 <button 
                                     onClick={() => setSelectedDevModal(null)}
-                                    className="text-gray-300 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition cursor-pointer"
+                                    className="text-gray-300 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition cursor-pointer shrink-0 ml-2"
                                     title="Close Modal"
                                 >
                                     <X size={20} />
@@ -631,28 +646,28 @@ const PerformanceReport = () => {
                             </div>
 
                             {/* KPI Summary Cards */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-gray-50 border-b border-gray-200 shrink-0">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 p-3 sm:p-4 bg-gray-50 border-b border-gray-200 shrink-0">
                                 <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-xs">
-                                    <span className="text-xs font-medium text-gray-500">Total Tasks</span>
-                                    <div className="text-xl font-bold text-gray-900 mt-0.5">{totalCount}</div>
+                                    <span className="text-[11px] sm:text-xs font-medium text-gray-500">Total Tasks</span>
+                                    <div className="text-lg sm:text-xl font-bold text-gray-900 mt-0.5">{totalCount}</div>
                                 </div>
                                 <div className="bg-white p-3 rounded-xl border border-emerald-100 shadow-xs">
-                                    <span className="text-xs font-medium text-emerald-600">Completed</span>
-                                    <div className="text-xl font-bold text-emerald-600 mt-0.5">{completedCount}</div>
+                                    <span className="text-[11px] sm:text-xs font-medium text-emerald-600">Completed</span>
+                                    <div className="text-lg sm:text-xl font-bold text-emerald-600 mt-0.5">{completedCount}</div>
                                 </div>
                                 <div className="bg-white p-3 rounded-xl border border-amber-100 shadow-xs">
-                                    <span className="text-xs font-medium text-amber-600">Pending / In Progress</span>
-                                    <div className="text-xl font-bold text-amber-600 mt-0.5">{pendingCount}</div>
+                                    <span className="text-[11px] sm:text-xs font-medium text-amber-600">Pending / Review</span>
+                                    <div className="text-lg sm:text-xl font-bold text-amber-600 mt-0.5">{pendingCount}</div>
                                 </div>
                                 <div className="bg-white p-3 rounded-xl border border-indigo-100 shadow-xs">
-                                    <span className="text-xs font-medium text-indigo-600">Projects Worked On</span>
-                                    <div className="text-xl font-bold text-indigo-600 mt-0.5">{projectList.length}</div>
+                                    <span className="text-[11px] sm:text-xs font-medium text-indigo-600">Projects</span>
+                                    <div className="text-lg sm:text-xl font-bold text-indigo-600 mt-0.5">{projectList.length}</div>
                                 </div>
                             </div>
 
                             {/* Projects Breakdown Pills */}
                             {projectList.length > 0 && (
-                                <div className="px-6 py-3 bg-white border-b border-gray-100 shrink-0">
+                                <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-white border-b border-gray-100 shrink-0 overflow-x-auto scrollbar-none">
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
                                             <Briefcase size={13} className="text-indigo-600" /> Projects Contributed ({projectList.length})
@@ -666,10 +681,10 @@ const PerformanceReport = () => {
                                             </button>
                                         )}
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                                         <button
                                             onClick={() => setTaskProjectFilter("all")}
-                                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
+                                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                                                 taskProjectFilter === "all"
                                                     ? "bg-indigo-600 text-white shadow-xs"
                                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -686,7 +701,7 @@ const PerformanceReport = () => {
                                             <button
                                                 key={proj.name}
                                                 onClick={() => setTaskProjectFilter(taskProjectFilter === proj.name ? "all" : proj.name)}
-                                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 border ${
+                                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 border whitespace-nowrap ${
                                                     taskProjectFilter === proj.name
                                                         ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
                                                         : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
@@ -706,7 +721,7 @@ const PerformanceReport = () => {
                             )}
 
                             {/* Filter and Search Bar */}
-                            <div className="px-6 py-3 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+                            <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
                                 {/* Status Tabs */}
                                 <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg w-full sm:w-auto">
                                     <button
@@ -737,18 +752,18 @@ const PerformanceReport = () => {
 
                                 {/* Search Bar */}
                                 <div className="relative w-full sm:w-64">
-                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                                     <input
                                         type="text"
                                         placeholder="Search tasks or projects..."
                                         value={taskSearchQuery}
                                         onChange={(e) => setTaskSearchQuery(e.target.value)}
-                                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                        className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs"
                                     />
                                     {taskSearchQuery && (
                                         <button
                                             onClick={() => setTaskSearchQuery("")}
-                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs p-1 cursor-pointer font-bold"
                                         >
                                             ×
                                         </button>
@@ -757,7 +772,7 @@ const PerformanceReport = () => {
                             </div>
 
                             {/* Tasks Table Body */}
-                            <div className="flex-1 overflow-y-auto">
+                            <div className="flex-1 overflow-y-auto overflow-x-auto">
                                 {filteredTasks.length === 0 ? (
                                     <div className="py-16 text-center text-gray-400 flex flex-col items-center">
                                         <Layers size={40} className="text-gray-300 mb-2 stroke-[1.5]" />
@@ -769,44 +784,44 @@ const PerformanceReport = () => {
                                         </p>
                                     </div>
                                 ) : (
-                                    <table className="w-full text-xs text-left">
+                                    <table className="w-full text-xs text-left min-w-[580px]">
                                         <thead className="bg-gray-50 text-gray-500 font-semibold uppercase tracking-wider sticky top-0 border-b border-gray-200">
                                             <tr>
-                                                <th className="px-5 py-3">Task Title</th>
-                                                <th className="px-5 py-3">Project</th>
-                                                <th className="px-4 py-3 text-center">Priority</th>
-                                                <th className="px-4 py-3 text-center">Status</th>
-                                                <th className="px-5 py-3 text-right">Due Date</th>
-                                                <th className="px-5 py-3 text-right">Created</th>
+                                                <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Task Title</th>
+                                                <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Project</th>
+                                                <th className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">Priority</th>
+                                                <th className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">Status</th>
+                                                <th className="px-4 sm:px-5 py-3 text-right whitespace-nowrap">Due Date</th>
+                                                <th className="px-4 sm:px-5 py-3 text-right whitespace-nowrap">Created</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {filteredTasks.map((task) => (
                                                 <tr key={task._id} className="hover:bg-indigo-50/30 transition">
-                                                    <td className="px-5 py-3 font-medium text-gray-900 max-w-xs">
-                                                        <div className="font-semibold text-gray-900">{task.title}</div>
+                                                    <td className="px-4 sm:px-5 py-3 font-medium text-gray-900 max-w-xs">
+                                                        <div className="font-semibold text-gray-900 leading-snug">{task.title}</div>
                                                         {task.description && (
                                                             <div className="text-[11px] text-gray-400 truncate max-w-xs mt-0.5">
                                                                 {task.description}
                                                             </div>
                                                         )}
                                                     </td>
-                                                    <td className="px-5 py-3 whitespace-nowrap">
+                                                    <td className="px-4 sm:px-5 py-3 whitespace-nowrap">
                                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
                                                             <Folder size={12} className="text-indigo-500" />
                                                             <span>{task.projectName || "General"}</span>
                                                         </span>
                                                     </td>
-                                                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                                                    <td className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
                                                         {getPriorityBadge(task.priority)}
                                                     </td>
-                                                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                                                    <td className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
                                                         {getStatusBadge(task.status)}
                                                     </td>
-                                                    <td className="px-5 py-3 text-right whitespace-nowrap text-gray-600">
+                                                    <td className="px-4 sm:px-5 py-3 text-right whitespace-nowrap text-gray-600">
                                                         {formatDate(task.dueDate)}
                                                     </td>
-                                                    <td className="px-5 py-3 text-right whitespace-nowrap text-gray-400">
+                                                    <td className="px-4 sm:px-5 py-3 text-right whitespace-nowrap text-gray-400">
                                                         {formatDate(task.createdAt)}
                                                     </td>
                                                 </tr>
@@ -817,13 +832,13 @@ const PerformanceReport = () => {
                             </div>
 
                             {/* Modal Footer */}
-                            <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between shrink-0">
+                            <div className="px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between shrink-0">
                                 <span className="text-xs text-gray-500">
                                     Showing <span className="font-semibold text-gray-800">{filteredTasks.length}</span> of <span className="font-semibold text-gray-800">{allDevTasks.length}</span> tasks
                                 </span>
                                 <button
                                     onClick={() => setSelectedDevModal(null)}
-                                    className="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg transition shadow-xs cursor-pointer"
+                                    className="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg transition shadow-xs cursor-pointer active:scale-95"
                                 >
                                     Close
                                 </button>

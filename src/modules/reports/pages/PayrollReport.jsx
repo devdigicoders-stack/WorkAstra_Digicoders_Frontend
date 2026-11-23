@@ -143,7 +143,7 @@ const PayrollReport = () => {
     };
 
     return (
-        <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+        <div className="p-3 sm:p-6 bg-gray-50 min-h-screen max-w-full overflow-x-hidden">
             {selectedEmployeeHistory && (
                 <EmployeePayrollHistoryModal
                     employee={selectedEmployeeHistory}
@@ -153,25 +153,25 @@ const PayrollReport = () => {
             )}
             {selectedPayslip && <PayslipPrint run={selectedPayslip} company={user?.companyId} onClose={() => setSelectedPayslip(null)} />}
             
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Payroll Analytics</h1>
-                <p className="text-sm text-gray-500 mt-1">Detailed monthly analytics & trends for company payroll</p>
+            <div className="mb-4 sm:mb-6">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Payroll Analytics</h1>
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">Detailed monthly analytics & trends for company payroll</p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="bg-white border border-gray-200/80 rounded-xl sm:rounded-2xl p-3.5 sm:p-6 shadow-2xs mb-6 max-w-full overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900">Monthly Payroll Report</h2>
-                        <p className="text-sm text-gray-500 mt-1">Select month and company to view details</p>
+                        <h2 className="text-base sm:text-lg font-bold text-gray-900">Monthly Payroll Report</h2>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">Select month and company to view details</p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                         {companies.length > 0 && (
-                            <div className="relative min-w-[200px]">
-                                <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <div className="relative flex-1 sm:flex-initial min-w-[130px] sm:min-w-[190px]">
+                                <Building2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                                 <select
                                     value={companyFilter}
                                     onChange={e => setCompanyFilter(e.target.value)}
-                                    className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-sm"
+                                    className="w-full pl-8 sm:pl-9 pr-8 py-2 text-xs sm:text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition cursor-pointer font-medium text-gray-700 shadow-2xs"
                                     title="Filter by Company"
                                 >
                                     <option value="">All Companies ({companies.length})</option>
@@ -182,63 +182,71 @@ const PayrollReport = () => {
                             </div>
                         )}
                         <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-                            className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm" />
-                        <button onClick={handleExportReport} className="flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-lg text-sm font-medium transition shadow-sm">
-                            <Download size={15} /> Export CSV
+                            className="flex-1 sm:flex-initial text-xs sm:text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-2xs" />
+                        <button onClick={handleExportReport} className="w-full sm:w-auto flex items-center justify-center gap-2 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs sm:text-sm font-semibold transition active:scale-95 shadow-2xs cursor-pointer">
+                            <Download size={14} /> Export CSV
                         </button>
                     </div>
                 </div>
 
                 {loading ? (
-                    <div className="py-10 text-center text-gray-400">Loading payroll data...</div>
+                    <div className="py-10 text-center text-gray-400 text-sm">Loading payroll data...</div>
                 ) : (
                     <>
                         {/* Widgets */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                            <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/60 rounded-2xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition duration-300">
-                                <div>
-                                    <p className="text-sm font-semibold text-blue-600 mb-1 tracking-wide">Processed Runs</p>
-                                    <p className="text-3xl font-bold text-blue-800">{runs.length}</p>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-6 sm:mb-8">
+                            <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200/60 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center justify-between shadow-2xs hover:shadow-xs transition duration-300 min-w-0">
+                                <div className="min-w-0">
+                                    <p className="text-[11px] sm:text-sm font-semibold text-blue-600 mb-0.5 sm:mb-1 tracking-wide truncate">Processed Runs</p>
+                                    <p className="text-xl sm:text-3xl font-bold text-blue-800 truncate">{runs.length}</p>
                                 </div>
-                                <div className="p-3.5 bg-white/60 backdrop-blur-sm rounded-full text-blue-600 shadow-sm border border-blue-100"><Users size={26} /></div>
+                                <div className="p-2 sm:p-3.5 bg-white/70 backdrop-blur-xs rounded-full text-blue-600 shadow-2xs border border-blue-100 shrink-0 ml-1.5 sm:ml-2">
+                                    <Users className="w-4 h-4 sm:w-6 sm:h-6" />
+                                </div>
                             </div>
-                            <div className="bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200/60 rounded-2xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition duration-300">
-                                <div>
-                                    <p className="text-sm font-semibold text-green-600 mb-1 tracking-wide">Net Payout</p>
-                                    <p className="text-2xl font-bold text-green-800">₹{totalNetPayout.toLocaleString()}</p>
+                            <div className="bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200/60 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center justify-between shadow-2xs hover:shadow-xs transition duration-300 min-w-0">
+                                <div className="min-w-0">
+                                    <p className="text-[11px] sm:text-sm font-semibold text-green-600 mb-0.5 sm:mb-1 tracking-wide truncate">Net Payout</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-green-800 truncate">₹{totalNetPayout.toLocaleString()}</p>
                                 </div>
-                                <div className="p-3.5 bg-white/60 backdrop-blur-sm rounded-full text-green-600 shadow-sm border border-green-100"><Banknote size={26} /></div>
+                                <div className="p-2 sm:p-3.5 bg-white/70 backdrop-blur-xs rounded-full text-green-600 shadow-2xs border border-green-100 shrink-0 ml-1.5 sm:ml-2">
+                                    <Banknote className="w-4 h-4 sm:w-6 sm:h-6" />
+                                </div>
                             </div>
-                            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/60 rounded-2xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition duration-300">
-                                <div>
-                                    <p className="text-sm font-semibold text-indigo-600 mb-1 tracking-wide">Gross Salary</p>
-                                    <p className="text-2xl font-bold text-indigo-800">₹{totalGross.toLocaleString()}</p>
+                            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/60 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center justify-between shadow-2xs hover:shadow-xs transition duration-300 min-w-0">
+                                <div className="min-w-0">
+                                    <p className="text-[11px] sm:text-sm font-semibold text-indigo-600 mb-0.5 sm:mb-1 tracking-wide truncate">Gross Salary</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-indigo-800 truncate">₹{totalGross.toLocaleString()}</p>
                                 </div>
-                                <div className="p-3.5 bg-white/60 backdrop-blur-sm rounded-full text-indigo-600 shadow-sm border border-indigo-100"><CreditCard size={26} /></div>
+                                <div className="p-2 sm:p-3.5 bg-white/70 backdrop-blur-xs rounded-full text-indigo-600 shadow-2xs border border-indigo-100 shrink-0 ml-1.5 sm:ml-2">
+                                    <CreditCard className="w-4 h-4 sm:w-6 sm:h-6" />
+                                </div>
                             </div>
-                            <div className="bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200/60 rounded-2xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition duration-300">
-                                <div>
-                                    <p className="text-sm font-semibold text-red-600 mb-1 tracking-wide">Deductions</p>
-                                    <p className="text-2xl font-bold text-red-800">₹{totalDeductions.toLocaleString()}</p>
+                            <div className="bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200/60 rounded-xl sm:rounded-2xl p-3 sm:p-5 flex items-center justify-between shadow-2xs hover:shadow-xs transition duration-300 min-w-0">
+                                <div className="min-w-0">
+                                    <p className="text-[11px] sm:text-sm font-semibold text-red-600 mb-0.5 sm:mb-1 tracking-wide truncate">Deductions</p>
+                                    <p className="text-lg sm:text-2xl font-bold text-red-800 truncate">₹{totalDeductions.toLocaleString()}</p>
                                 </div>
-                                <div className="p-3.5 bg-white/60 backdrop-blur-sm rounded-full text-red-600 shadow-sm border border-red-100"><Banknote size={26} /></div>
+                                <div className="p-2 sm:p-3.5 bg-white/70 backdrop-blur-xs rounded-full text-red-600 shadow-2xs border border-red-100 shrink-0 ml-1.5 sm:ml-2">
+                                    <Banknote className="w-4 h-4 sm:w-6 sm:h-6" />
+                                </div>
                             </div>
                         </div>
 
                         {/* Charts Grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                             
                             {/* Trend Chart */}
-                            <div className="border border-gray-100 bg-white rounded-2xl p-5 shadow-sm lg:col-span-2">
-                                <h3 className="text-sm font-bold text-slate-800 mb-4 tracking-wide uppercase flex items-center gap-2">
-                                    <TrendingUp size={16} className="text-indigo-500" /> Salary Expense Trend (Last 6 Months)
+                            <div className="border border-gray-100 bg-white rounded-xl sm:rounded-2xl p-3.5 sm:p-5 shadow-2xs lg:col-span-2 min-w-0 overflow-hidden">
+                                <h3 className="text-xs sm:text-sm font-bold text-slate-800 mb-3 sm:mb-4 tracking-wide uppercase flex items-center gap-2">
+                                    <TrendingUp size={16} className="text-indigo-500 shrink-0" /> Salary Expense Trend (Last 6 Months)
                                 </h3>
-                                <div className="h-60">
+                                <div className="h-56 sm:h-60 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={trendData}>
+                                        <LineChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} dy={10} />
-                                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} dx={-10} tickFormatter={(v) => `₹${v/1000}k`} />
+                                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b'}} dy={10} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b'}} dx={-5} tickFormatter={(v) => `₹${v/1000}k`} />
                                             <RechartsTooltip 
                                                 formatter={(value) => [`₹${value.toLocaleString()}`, 'Net Payout']}
                                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
@@ -250,40 +258,40 @@ const PayrollReport = () => {
                             </div>
 
                             {/* Status Pie */}
-                            <div className="border border-gray-100 bg-white rounded-2xl p-5 shadow-sm relative overflow-hidden">
-                                <h3 className="text-sm font-bold text-slate-800 mb-4 tracking-wide uppercase flex items-center gap-2">
-                                    <PieChartIcon size={16} className="text-blue-500" /> Payroll Status
+                            <div className="border border-gray-100 bg-white rounded-xl sm:rounded-2xl p-3.5 sm:p-5 shadow-2xs relative overflow-hidden min-w-0">
+                                <h3 className="text-xs sm:text-sm font-bold text-slate-800 mb-3 sm:mb-4 tracking-wide uppercase flex items-center gap-2">
+                                    <PieChartIcon size={16} className="text-blue-500 shrink-0" /> Payroll Status
                                 </h3>
-                                <div className="h-60">
+                                <div className="h-56 sm:h-60 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
-                                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={75} paddingAngle={4} dataKey="value">
+                                            <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={4} dataKey="value">
                                                 {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />)}
                                             </Pie>
                                             <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}/>
-                                            <Legend verticalAlign="bottom" height={20} iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: '500' }} />
+                                            <Legend verticalAlign="bottom" height={20} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: '500' }} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
                             </div>
 
                             {/* Department Bar */}
-                            <div className="border border-gray-100 bg-white rounded-2xl p-5 shadow-sm lg:col-span-3">
-                                <h3 className="text-sm font-bold text-slate-800 mb-4 tracking-wide uppercase flex items-center gap-2">
-                                    <Building2 size={16} className="text-emerald-500" /> Department-wise Expenses
+                            <div className="border border-gray-100 bg-white rounded-xl sm:rounded-2xl p-3.5 sm:p-5 shadow-2xs lg:col-span-3 min-w-0 overflow-hidden">
+                                <h3 className="text-xs sm:text-sm font-bold text-slate-800 mb-3 sm:mb-4 tracking-wide uppercase flex items-center gap-2">
+                                    <Building2 size={16} className="text-emerald-500 shrink-0" /> Department-wise Expenses
                                 </h3>
-                                <div className="h-64">
+                                <div className="h-56 sm:h-64 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={barData} margin={{ top: 10, right: 10, left: 20, bottom: 20 }}>
+                                        <BarChart data={barData} margin={{ top: 10, right: 10, left: -5, bottom: 20 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} dy={10} />
-                                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b'}} dx={-10} tickFormatter={(v) => `₹${v/1000}k`} />
+                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b'}} dy={10} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b'}} dx={-5} tickFormatter={(v) => `₹${v/1000}k`} />
                                             <RechartsTooltip 
                                                 cursor={{fill: '#f8fafc'}}
                                                 formatter={(value) => [`₹${value.toLocaleString()}`, 'Total Net']}
                                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                             />
-                                            <Bar dataKey="total" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                                            <Bar dataKey="total" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={50} />
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
@@ -292,24 +300,24 @@ const PayrollReport = () => {
                         </div>
 
                         {/* Filter & Table */}
-                        <div className="border border-gray-100 rounded-2xl bg-white shadow-sm">
-                            <div className="p-4 border-b border-gray-100 flex flex-wrap gap-4 items-center justify-between bg-gray-50/50 rounded-t-2xl">
+                        <div className="border border-gray-100 rounded-xl sm:rounded-2xl bg-white shadow-2xs overflow-hidden">
+                            <div className="p-3.5 sm:p-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-gray-50/50">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="font-bold text-gray-800">Employee Breakdown</h3>
+                                    <h3 className="font-bold text-sm sm:text-base text-gray-800">Employee Breakdown</h3>
                                     {companyFilter && (
                                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                                             {companies.find(c => c._id === companyFilter)?.name || "Filtered"}
                                         </span>
                                     )}
                                 </div>
-                                <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
                                     {companies.length > 0 && (
-                                        <div className="relative min-w-[170px]">
+                                        <div className="relative flex-1 sm:flex-initial min-w-[130px] sm:min-w-[170px]">
                                             <Building2 size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                                             <select
                                                 value={companyFilter}
                                                 onChange={e => setCompanyFilter(e.target.value)}
-                                                className="w-full pl-8 pr-7 py-1.5 text-sm border border-gray-200 rounded-lg outline-none focus:border-blue-400 bg-white font-medium text-gray-700 cursor-pointer"
+                                                className="w-full pl-8 pr-7 py-1.5 text-xs sm:text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-400 bg-white font-medium text-gray-700 cursor-pointer shadow-2xs"
                                                 title="Filter by Company"
                                             >
                                                 <option value="">All Companies</option>
@@ -317,11 +325,11 @@ const PayrollReport = () => {
                                             </select>
                                         </div>
                                     )}
-                                    <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-400 bg-white font-medium text-gray-700">
+                                    <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} className="flex-1 sm:flex-initial text-xs sm:text-sm border border-gray-200 rounded-xl px-2.5 sm:px-3 py-1.5 outline-none focus:border-blue-400 bg-white font-medium text-gray-700 shadow-2xs cursor-pointer">
                                         <option value="">All Departments</option>
                                         {departments.map(d => <option key={d} value={d}>{d}</option>)}
                                     </select>
-                                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-400 bg-white font-medium text-gray-700">
+                                    <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="flex-1 sm:flex-initial text-xs sm:text-sm border border-gray-200 rounded-xl px-2.5 sm:px-3 py-1.5 outline-none focus:border-blue-400 bg-white font-medium text-gray-700 shadow-2xs cursor-pointer">
                                         <option value="">All Statuses</option>
                                         <option value="draft">Draft</option>
                                         <option value="approved">Approved</option>
@@ -330,28 +338,28 @@ const PayrollReport = () => {
                                     {(companyFilter || deptFilter || statusFilter) && (
                                         <button
                                             onClick={() => { setCompanyFilter(""); setDeptFilter(""); setStatusFilter(""); }}
-                                            className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50 transition flex items-center gap-1"
+                                            className="text-xs text-rose-600 hover:text-rose-800 font-semibold px-2.5 py-1.5 rounded-xl border border-rose-200 hover:bg-rose-50 transition flex items-center gap-1 active:scale-95 cursor-pointer shadow-2xs"
                                         >
                                             <X size={12} /> Reset
                                         </button>
                                     )}
                                 </div>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-white text-gray-500 text-[11px] uppercase tracking-wider font-bold border-b border-gray-100">
+                            <div className="overflow-x-auto w-full">
+                                <table className="w-full text-xs sm:text-sm text-left min-w-[780px]">
+                                    <thead className="bg-gray-50/75 text-gray-500 text-[10px] sm:text-[11px] uppercase tracking-wider font-bold border-b border-gray-100">
                                         <tr>
-                                            <th className="px-5 py-3">Employee</th>
-                                            <th className="px-5 py-3">Work Days</th>
-                                            <th className="px-5 py-3">LOP</th>
-                                            <th className="px-5 py-3">Gross</th>
-                                            <th className="px-5 py-3">Deductions</th>
-                                            <th className="px-5 py-3">Net Salary</th>
-                                            <th className="px-5 py-3">Status</th>
-                                            <th className="px-5 py-3 text-center">Actions & History</th>
+                                            <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Employee</th>
+                                            <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Work Days</th>
+                                            <th className="px-4 sm:px-5 py-3 whitespace-nowrap">LOP</th>
+                                            <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Gross</th>
+                                            <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Deductions</th>
+                                            <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Net Salary</th>
+                                            <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Status</th>
+                                            <th className="px-4 sm:px-5 py-3 text-center whitespace-nowrap">Actions & History</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-gray-50">
+                                    <tbody className="divide-y divide-gray-100">
                                         {filteredRuns.length === 0 ? (
                                             <tr>
                                                 <td colSpan="8" className="px-5 py-8 text-center text-gray-400">No records found</td>
@@ -359,13 +367,13 @@ const PayrollReport = () => {
                                         ) : (
                                             filteredRuns.map((r, idx) => (
                                                 <tr key={idx} className="hover:bg-gray-50/50 transition">
-                                                    <td className="px-5 py-3">
+                                                    <td className="px-4 sm:px-5 py-3 whitespace-nowrap">
                                                         <div 
                                                             onClick={() => setSelectedEmployeeHistory(r.userId || r)}
-                                                            className="flex items-center gap-3 cursor-pointer group"
+                                                            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group"
                                                             title="Click to view full payroll history"
                                                         >
-                                                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition shadow-sm">
+                                                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition shadow-2xs">
                                                                 {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
                                                             </div>
                                                             <div>
@@ -379,14 +387,14 @@ const PayrollReport = () => {
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-5 py-3 font-medium text-gray-600">{r.totalWorkingDays}</td>
-                                                    <td className="px-5 py-3">
+                                                    <td className="px-4 sm:px-5 py-3 font-medium text-gray-600 whitespace-nowrap">{r.totalWorkingDays}</td>
+                                                    <td className="px-4 sm:px-5 py-3 whitespace-nowrap">
                                                         {r.lopDays > 0 ? <span className="text-red-500 font-bold">{r.lopDays} d</span> : <span className="text-gray-300">-</span>}
                                                     </td>
-                                                    <td className="px-5 py-3 font-medium text-gray-600">₹{(r.grossEarnings || 0).toLocaleString()}</td>
-                                                    <td className="px-5 py-3 font-medium text-red-500">-₹{(r.totalDeductions || 0).toLocaleString()}</td>
-                                                    <td className="px-5 py-3 font-bold text-gray-900">₹{(r.netSalary || 0).toLocaleString()}</td>
-                                                    <td className="px-5 py-3">
+                                                    <td className="px-4 sm:px-5 py-3 font-medium text-gray-600 whitespace-nowrap">₹{(r.grossEarnings || 0).toLocaleString()}</td>
+                                                    <td className="px-4 sm:px-5 py-3 font-medium text-red-500 whitespace-nowrap">-₹{(r.totalDeductions || 0).toLocaleString()}</td>
+                                                    <td className="px-4 sm:px-5 py-3 font-bold text-gray-900 whitespace-nowrap">₹{(r.netSalary || 0).toLocaleString()}</td>
+                                                    <td className="px-4 sm:px-5 py-3 whitespace-nowrap">
                                                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                                                             r.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
                                                             r.status === 'approved' ? 'bg-blue-100 text-blue-700' :
@@ -395,21 +403,21 @@ const PayrollReport = () => {
                                                             {r.status}
                                                         </span>
                                                     </td>
-                                                    <td className="px-5 py-3 text-center">
-                                                        <div className="flex items-center justify-center gap-2">
+                                                    <td className="px-4 sm:px-5 py-3 text-center whitespace-nowrap">
+                                                        <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                                                             <button 
                                                                 onClick={() => setSelectedEmployeeHistory(r.userId || r)}
-                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white border border-indigo-200/80 rounded-lg text-xs font-semibold transition shadow-sm"
+                                                                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white border border-indigo-200/80 rounded-lg text-xs font-semibold transition shadow-2xs active:scale-95 cursor-pointer"
                                                                 title="View Month-wise Payroll History"
                                                             >
-                                                                <Eye size={14} /> View History
+                                                                <Eye size={13} /> View History
                                                             </button>
                                                             <button 
                                                                 onClick={() => setSelectedPayslip(r)}
-                                                                className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg transition"
+                                                                className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-lg transition active:scale-95 cursor-pointer shadow-2xs"
                                                                 title="Print / Download This Month's Payslip"
                                                             >
-                                                                <FileText size={15} />
+                                                                <FileText size={14} />
                                                             </button>
                                                         </div>
                                                     </td>

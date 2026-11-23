@@ -328,54 +328,54 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-            <div className="relative w-[calc(100vw-32px)] h-[calc(100vh-32px)] max-w-6xl bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-xs" onClick={onClose} />
+            <div className="relative w-full max-w-6xl max-h-[94vh] sm:h-[calc(100vh-32px)] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-100">
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-base font-semibold text-gray-900">
+                <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0 pr-2">
+                        <h2 className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                             {viewMode ? (activeLead?.orgName || "Lead Details") : isEdit ? "Edit Lead" : "New Lead"}
                         </h2>
                         {isExisting && activeLead?.status && (
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${STATUS_COLORS[activeLead.status] || ""}`}>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0 ${STATUS_COLORS[activeLead.status] || ""}`}>
                                 {activeLead.status}
                             </span>
                         )}
                         {matchedLead && !isEdit && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border bg-amber-50 text-amber-700 border-amber-200">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium border bg-amber-50 text-amber-700 border-amber-200 shrink-0">
                                 Existing — will update
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         {isEdit && viewMode && (
                             <button onClick={() => setViewMode(false)}
-                                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-medium">
+                                className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-medium transition cursor-pointer active:scale-95">
                                 <Pencil size={12} /> Edit
                             </button>
                         )}
                         {isEdit && !viewMode && (
                             <button onClick={() => setViewMode(true)}
-                                className="flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-medium">
+                                className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-medium transition cursor-pointer active:scale-95">
                                 <Eye size={12} /> View
                             </button>
                         )}
-                        <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500" title="Close (Esc)">
+                        <button onClick={onClose} className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition cursor-pointer" title="Close (Esc)">
                             <X size={16} />
                         </button>
                     </div>
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+                <div className="flex-1 overflow-y-auto lg:overflow-hidden flex flex-col lg:flex-row">
 
                     {/* LEFT */}
-                    <div className="flex flex-col w-full lg:w-1/2 lg:border-r overflow-y-auto">
-                        <div className="flex-1 px-6 py-5">
+                    <div className="flex flex-col w-full lg:w-1/2 lg:border-r border-gray-100 overflow-visible lg:overflow-y-auto">
+                        <div className="flex-1 px-4 sm:px-6 py-4 sm:py-5">
                             {viewMode ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-3.5 sm:gap-y-4">
                                     {[
                                         { label: "Contact Number",    value: fmtUS(activeLead?.contactNumber || "") },
                                         { label: "Organisation Name", value: activeLead?.orgName },
@@ -492,13 +492,13 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                         </div>
 
                         {!viewMode && (
-                            <div className="px-6 py-4 border-t flex justify-end gap-3 shrink-0">
+                            <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100 flex justify-end gap-2.5 sm:gap-3 shrink-0 bg-gray-50/50">
                                 <button onClick={onClose}
-                                    className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
+                                    className="px-3.5 sm:px-4 py-2 text-xs sm:text-sm border border-gray-200 rounded-xl hover:bg-gray-100 transition active:scale-95 cursor-pointer">
                                     Cancel
                                 </button>
                                 <button onClick={handleSubmit} disabled={saving}
-                                    className="flex items-center gap-1.5 px-5 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-60">
+                                    className="flex items-center gap-1.5 px-4 sm:px-5 py-2 text-xs sm:text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold disabled:opacity-60 transition active:scale-95 cursor-pointer shadow-xs">
                                     {saving ? "Saving…" : isExisting ? "Update Lead" : "Create Lead"}
                                     {!isExisting && newComm.description && <Send size={13} />}
                                 </button>
@@ -507,11 +507,11 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                     </div>
 
                     {/* RIGHT */}
-                    <div className="flex flex-col w-full lg:w-1/2 overflow-hidden border-t lg:border-t-0">
+                    <div className="flex flex-col w-full lg:w-1/2 overflow-visible lg:overflow-hidden border-t lg:border-t-0 border-gray-100">
                         {isExisting ? (
                             <>
                                 {/* Tabs */}
-                                <div className="px-6 pt-5 border-b flex gap-4 overflow-x-auto shrink-0">
+                                <div className="px-4 sm:px-6 pt-3 sm:pt-5 border-b border-gray-100 flex gap-3 sm:gap-4 overflow-x-auto shrink-0 scrollbar-none">
                                     {[
                                         { key: "communication", label: "Communication" },
                                         { key: "meetings",      label: "Meetings", icon: Calendar },
@@ -520,10 +520,10 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                                     ].map(({ key, label, icon: Icon }) => (
                                         <button key={key}
                                             onClick={() => setRightTabActive(key)}
-                                            className={`pb-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 ${
+                                            className={`pb-2.5 sm:pb-3 text-xs sm:text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-1 cursor-pointer ${
                                                 rightTabActive === key
                                                     ? "border-blue-600 text-blue-600"
-                                                    : "border-transparent text-gray-600 hover:text-gray-900"
+                                                    : "border-transparent text-gray-500 hover:text-gray-900"
                                             }`}>
                                             {Icon && <Icon size={13} />} {label}
                                         </button>
@@ -531,25 +531,23 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                                 </div>
 
                                 {/* Tab Content */}
-                                <div className="flex-1 overflow-y-auto">
+                                <div className="flex-1 overflow-visible lg:overflow-y-auto">
                                     {rightTabActive === "communication" && (
-                                        <>
-                                            <div className="px-6 py-5 border-b">
-                                                <LeadCommunication
-                                                    leadId={activeLeadId}
-                                                    communications={communications}
-                                                    onAdded={handleCommAdded}
-                                                />
-                                            </div>
-                                        </>
+                                        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100">
+                                            <LeadCommunication
+                                                leadId={activeLeadId}
+                                                communications={communications}
+                                                onAdded={handleCommAdded}
+                                            />
+                                        </div>
                                     )}
                                     {rightTabActive === "meetings" && (
-                                        <div className="px-6 py-5">
+                                        <div className="px-4 sm:px-6 py-4 sm:py-5">
                                             <LeadMeetings leadId={activeLeadId} />
                                         </div>
                                     )}
                                     {rightTabActive === "quotes" && (
-                                        <div className="px-6 py-5 min-h-[400px]">
+                                        <div className="px-4 sm:px-6 py-4 sm:py-5 min-h-[350px] sm:min-h-[400px]">
                                             {!selectedQuotePreview ? (
                                                 <QuoteForm
                                                     leadId={activeLeadId}
@@ -570,14 +568,14 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
                                         </div>
                                     )}
                                     {rightTabActive === "history" && (
-                                        <div className="px-6 py-5">
+                                        <div className="px-4 sm:px-6 py-4 sm:py-5">
                                             <LeadHistory history={history} users={users} />
                                         </div>
                                     )}
                                 </div>
                             </>
                         ) : (
-                            <div className="px-6 py-5">
+                            <div className="px-4 sm:px-6 py-4 sm:py-5">
                                 <NewLeadCommForm comm={newComm} onChange={setNewComm} />
                             </div>
                         )}
@@ -782,51 +780,51 @@ const Leads = () => {
     };
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="flex flex-col gap-4 mb-6">
+        <div className="p-3 sm:p-6 bg-gray-50 min-h-screen max-w-full overflow-x-hidden">
+            <div className="flex flex-col gap-3.5 sm:gap-4 mb-5 sm:mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
-                        <p className="text-sm text-gray-500 mt-0.5">
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Leads</h1>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
                             {total > 0 ? `${total.toLocaleString()} total leads` : "Track and manage sales leads"}
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                         <input
                             value={searchInput}
                             onChange={e => handleSearchInput(e.target.value)}
                             placeholder="Search leads…"
-                            className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-52"
+                            className="flex-1 sm:w-52 min-w-[130px] px-3 py-2 border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-2xs"
                         />
                         {isAdmin && (
                             <button onClick={() => setFieldManagerOpen(true)}
-                                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition">
-                                <Settings size={15} /> Manage Fields
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-xs sm:text-sm font-semibold transition active:scale-95 shadow-2xs cursor-pointer">
+                                <Settings size={14} /> <span className="whitespace-nowrap">Manage Fields</span>
                             </button>
                         )}
                         {canCreate && (
                             <button onClick={() => setImportOpen(true)}
-                                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium transition">
-                                <Upload size={15} /> Import CSV
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-xs sm:text-sm font-semibold transition active:scale-95 shadow-2xs cursor-pointer">
+                                <Upload size={14} /> <span className="whitespace-nowrap">Import CSV</span>
                             </button>
                         )}
                         {canCreate && (
                             <button onClick={openNew}
-                                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
-                                <Plus size={15} /> New Lead
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition active:scale-95 shadow-2xs cursor-pointer">
+                                <Plus size={15} /> <span className="whitespace-nowrap">New Lead</span>
                             </button>
                         )}
                     </div>
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-wrap items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
-                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Filters:</span>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-white rounded-xl border border-gray-200 shadow-2xs">
+                    <span className="text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wide">Filters:</span>
 
                     {/* Super Admin Company Filter */}
                     {isSuperAdmin && (
                         <div className="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-200">
-                            <Building2 size={15} className="text-blue-600 shrink-0" />
+                            <Building2 size={14} className="text-blue-600 shrink-0" />
                             <select
                                 value={selectedCompany}
                                 onChange={e => {
@@ -834,7 +832,7 @@ const Leads = () => {
                                     setFilterAssignedTo("");
                                     setPage(1);
                                 }}
-                                className="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer pr-2"
+                                className="bg-transparent text-xs sm:text-sm font-medium text-gray-700 outline-none cursor-pointer pr-1"
                             >
                                 <option value="">🏢 All Companies</option>
                                 {companies.map(c => (
@@ -849,7 +847,7 @@ const Leads = () => {
                     <select
                         value={filterStatus}
                         onChange={e => handleFilterChange(e.target.value, filterAssignedTo)}
-                        className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                        className="flex-1 sm:flex-initial text-xs sm:text-sm border border-gray-200 rounded-lg px-2.5 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium text-gray-700 shadow-2xs cursor-pointer"
                     >
                         <option value="">All Statuses</option>
                         {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -859,7 +857,7 @@ const Leads = () => {
                         <select
                             value={filterAssignedTo}
                             onChange={e => handleFilterChange(filterStatus, e.target.value)}
-                            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            className="flex-1 sm:flex-initial text-xs sm:text-sm border border-gray-200 rounded-lg px-2.5 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium text-gray-700 shadow-2xs cursor-pointer"
                         >
                             <option value="">All Assigned To</option>
                             {filteredUsers.map(u => <option key={u._id} value={u._id}>{u.firstName} {u.lastName}</option>)}
@@ -869,7 +867,7 @@ const Leads = () => {
                     {(filterStatus || filterAssignedTo || (isSuperAdmin && selectedCompany)) && (
                         <button
                             onClick={handleClearFilters}
-                            className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg font-medium transition"
+                            className="text-xs text-rose-600 hover:text-rose-800 font-semibold px-2.5 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 transition active:scale-95 cursor-pointer shadow-2xs"
                         >
                             Clear Filters
                         </button>
@@ -888,82 +886,87 @@ const Leads = () => {
                     {!search && <p className="text-gray-400 text-sm mt-1">Add your first lead to get started</p>}
                 </div>
             ) : (
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                {["Contact Number", "Organisation", "Contact Person", "Status", "Assigned To", "Action"].map(h => (
-                                    <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap ${h === "Action" ? "text-center" : "text-left"}`}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {leads.map(lead => (
-                                <tr key={lead._id} className="hover:bg-gray-50 transition group">
-                                    <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{fmtUS(lead.contactNumber || "")}</td>
-                                    <td className="px-4 py-3 text-gray-700">
-                                        <div className="font-medium text-gray-900">{lead.orgName}</div>
-                                        {isSuperAdmin && lead.companyId?.name && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50 border border-blue-200/60 px-1.5 py-0.5 rounded font-normal mt-0.5">
-                                                <Building2 size={11} className="text-blue-500" />
-                                                {lead.companyId.name}
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3 text-gray-600">{lead.contactPerson || "—"}</td>
-                                    <td className="px-4 py-3">
-                                        <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-medium border whitespace-nowrap ${STATUS_COLORS[lead.status] || ""}`}>
-                                            {lead.status}
-                                        </span>
-                                        {lead.dealPrice > 0 && (
-                                            <div className="text-[11px] font-semibold text-emerald-600 mt-0.5">
-                                                ₹{Number(lead.dealPrice).toLocaleString("en-IN")}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-3 text-gray-600">
-                                        {lead.assignedTo && typeof lead.assignedTo === "object"
-                                            ? `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`
-                                            : lead.assignedTo
-                                                ? (users.find(u => u._id === lead.assignedTo?.toString())
-                                                    ? `${users.find(u => u._id === lead.assignedTo?.toString()).firstName} ${users.find(u => u._id === lead.assignedTo?.toString()).lastName}`
-                                                    : <span className="text-gray-300">—</span>)
-                                                : <span className="text-gray-300">—</span>}
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        {deleteConfirmId === lead._id ? (
-                                            <div className="flex items-center gap-1.5 justify-center">
-                                                <span className="text-[10px] text-red-600 font-medium">Delete?</span>
-                                                <button onClick={() => handleDelete(lead._id)}
-                                                    className="px-2 py-1 text-[10px] bg-red-600 text-white rounded-lg hover:bg-red-700">Yes</button>
-                                                <button onClick={() => setDeleteConfirmId(null)}
-                                                    className="px-2 py-1 text-[10px] bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200">No</button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-1 transition justify-center">
-                                                <button onClick={() => openView(lead)}
-                                                    className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg">
-                                                    <Eye size={13} />
-                                                </button>
-                                                {canWrite && (
-                                                    <button onClick={() => { setSelected(lead); setModalOpen(true); }}
-                                                        className="p-1.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg">
-                                                        <Pencil size={13} />
-                                                    </button>
-                                                )}
-                                                {canDelete && (
-                                                    <button onClick={() => setDeleteConfirmId(lead._id)}
-                                                        className="p-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg">
-                                                        <Trash2 size={13} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </td>
+                <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 shadow-2xs overflow-hidden">
+                    <div className="overflow-x-auto w-full">
+                        <table className="w-full text-xs sm:text-sm min-w-[720px]">
+                            <thead className="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    {["Contact Number", "Organisation", "Contact Person", "Status", "Assigned To", "Action"].map(h => (
+                                        <th key={h} className={`px-4 py-3 text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap ${h === "Action" ? "text-center" : "text-left"}`}>{h}</th>
+                                    ))}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {leads.map(lead => (
+                                    <tr key={lead._id} className="hover:bg-gray-50 transition group">
+                                        <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{fmtUS(lead.contactNumber || "")}</td>
+                                        <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                                            <div className="font-semibold text-gray-900">{lead.orgName}</div>
+                                            {isSuperAdmin && lead.companyId?.name && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] text-blue-700 bg-blue-50 border border-blue-200/60 px-1.5 py-0.5 rounded font-normal mt-0.5">
+                                                    <Building2 size={10} className="text-blue-500" />
+                                                    {lead.companyId.name}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{lead.contactPerson || "—"}</td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-semibold border whitespace-nowrap ${STATUS_COLORS[lead.status] || ""}`}>
+                                                {lead.status}
+                                            </span>
+                                            {lead.dealPrice > 0 && (
+                                                <div className="text-[11px] font-semibold text-emerald-600 mt-0.5">
+                                                    ₹{Number(lead.dealPrice).toLocaleString("en-IN")}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                                            {lead.assignedTo && typeof lead.assignedTo === "object"
+                                                ? `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`
+                                                : lead.assignedTo
+                                                    ? (users.find(u => u._id === lead.assignedTo?.toString())
+                                                        ? `${users.find(u => u._id === lead.assignedTo?.toString()).firstName} ${users.find(u => u._id === lead.assignedTo?.toString()).lastName}`
+                                                        : <span className="text-gray-300">—</span>)
+                                                    : <span className="text-gray-300">—</span>}
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            {deleteConfirmId === lead._id ? (
+                                                <div className="flex items-center gap-1.5 justify-center">
+                                                    <span className="text-[10px] text-red-600 font-medium">Delete?</span>
+                                                    <button onClick={() => handleDelete(lead._id)}
+                                                        className="px-2 py-1 text-[10px] bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition cursor-pointer">Yes</button>
+                                                    <button onClick={() => setDeleteConfirmId(null)}
+                                                        className="px-2 py-1 text-[10px] bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 active:scale-95 transition cursor-pointer">No</button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1 transition justify-center">
+                                                    <button onClick={() => openView(lead)}
+                                                        className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition active:scale-95 cursor-pointer"
+                                                        title="View Lead Details">
+                                                        <Eye size={13} />
+                                                    </button>
+                                                    {canWrite && (
+                                                        <button onClick={() => { setSelected(lead); setModalOpen(true); }}
+                                                            className="p-1.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition active:scale-95 cursor-pointer"
+                                                            title="Edit Lead">
+                                                            <Pencil size={13} />
+                                                        </button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <button onClick={() => setDeleteConfirmId(lead._id)}
+                                                            className="p-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition active:scale-95 cursor-pointer"
+                                                            title="Delete Lead">
+                                                            <Trash2 size={13} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                     <Pagination page={page} total={total} limit={PAGE_SIZE} onChange={handlePageChange} />
                 </div>
             )}
