@@ -336,7 +336,7 @@ export default function QuoteManagement() {
             {preview && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50" onClick={() => setPreview(null)} />
-                    <div className="relative w-full max-w-4xl max-h-[92vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+                    <div className="relative w-full max-w-7xl max-h-[92vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
                         <div className="flex-1 overflow-y-auto p-6">
                             <QuotePreview
                                 quote={preview}

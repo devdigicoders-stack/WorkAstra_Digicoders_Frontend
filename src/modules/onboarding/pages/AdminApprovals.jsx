@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { getOnboardingRequests, approveOnboarding, rejectOnboarding } from "../../../services/onboardingService";
+import { fetchAllCompaniesList } from "../../company/services/companyService";
 import { toast } from "react-toastify";
-import { CheckCircle, XCircle, Eye, FileText, Download, X, User, Phone, MapPin, Briefcase, Users, Link, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Eye, FileText, Download, X, User, Phone, MapPin, Briefcase, Users, Link, Loader2, Building2, Search } from "lucide-react";
 import { FaReact } from "react-icons/fa";
 import { useStore } from "../../../context/StoreContext";
 import Swal from "sweetalert2";
@@ -9,16 +10,35 @@ import { getFileUrl } from "../../../utils/imageUtils";
 
 export default function AdminApprovals() {
     const { user } = useStore();
+    const isSuperAdmin = (user?.role?.name || user?.role || "").toString().toLowerCase() === "super_admin";
+
     const [requests, setRequests] = useState([]);
+    const [companies, setCompanies] = useState([]);
+    const [selectedCompany, setSelectedCompany] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("pending");
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [basicSalary, setBasicSalary] = useState("");
     const [isApproving, setIsApproving] = useState(false);
 
+    // Load Companies for Super Admin
+    useEffect(() => {
+        if (isSuperAdmin) {
+            fetchAllCompaniesList()
+                .then(res => setCompanies(res?.companies || []))
+                .catch(err => console.error("Failed to load companies:", err));
+        }
+    }, [isSuperAdmin]);
+
     const fetchRequests = async () => {
+        setLoading(true);
         try {
-            const data = await getOnboardingRequests();
+            const params = {};
+            if (isSuperAdmin && selectedCompany && selectedCompany !== "all") {
+                params.companyId = selectedCompany;
+            }
+            const data = await getOnboardingRequests(params);
             setRequests(data.requests || []);
         } catch (error) {
             toast.error("Failed to fetch pending requests");
@@ -29,7 +49,7 @@ export default function AdminApprovals() {
 
     useEffect(() => {
         fetchRequests();
-    }, []);
+    }, [selectedCompany]);
 
     const handleApprove = async () => {
         if (!basicSalary || basicSalary <= 0) {
@@ -73,43 +93,122 @@ export default function AdminApprovals() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Loading requests...</div>;
+    const pendingCount = requests.filter(r => r.status === "submitted").length;
+    const approvedCount = requests.filter(r => r.status === "approved").length;
+    const rejectedCount = requests.filter(r => r.status === "rejected").length;
 
     const filteredRequests = requests.filter(r => {
-        if (activeTab === "pending") return r.status === "submitted";
-        if (activeTab === "approved") return r.status === "approved";
-        if (activeTab === "rejected") return r.status === "rejected";
-        return false;
+        let matchesTab = false;
+        if (activeTab === "pending") matchesTab = r.status === "submitted";
+        else if (activeTab === "approved") matchesTab = r.status === "approved";
+        else if (activeTab === "rejected") matchesTab = r.status === "rejected";
+        if (!matchesTab) return false;
+
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            const name = `${r.user?.firstName || ""} ${r.user?.lastName || ""}`.toLowerCase();
+            const email = (r.user?.email || "").toLowerCase();
+            const phone = (r.user?.phone || r.alternateMobile || "").toLowerCase();
+            const comp = (r.companyId?.name || r.user?.companyId?.name || "").toLowerCase();
+            return name.includes(q) || email.includes(q) || phone.includes(q) || comp.includes(q);
+        }
+
+        return true;
     });
 
     return (
         <div className="p-6 w-full h-full">
-            <h1 className="text-2xl font-bold text-gray-800 mb-4">Onboarding Approvals</h1>
+            {/* Header with Title & Controls */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800">Onboarding Approvals</h1>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                        Review and approve employee onboarding submissions across {isSuperAdmin ? "all companies" : "your organization"}
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Super Admin Company Filter */}
+                    {isSuperAdmin && (
+                        <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-gray-200 shadow-sm">
+                            <Building2 size={16} className="text-blue-600 shrink-0" />
+                            <select
+                                value={selectedCompany}
+                                onChange={(e) => setSelectedCompany(e.target.value)}
+                                className="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer pr-2"
+                            >
+                                <option value="">🏢 All Companies</option>
+                                {companies.map((c) => (
+                                    <option key={c._id} value={c._id}>
+                                        🏢 {c.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Search Candidates */}
+                    <div className="relative">
+                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search candidates…"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none w-52 sm:w-60 transition shadow-sm"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
             
-            <div className="inline-flex bg-gray-100/80 p-1.5 rounded-2xl mb-8 border border-gray-200 shadow-inner">
-                <button 
-                    onClick={() => setActiveTab("pending")}
-                    className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "pending" ? "bg-white text-blue-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
-                >
-                    Pending Approvals
-                </button>
-                <button 
-                    onClick={() => setActiveTab("approved")}
-                    className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "approved" ? "bg-white text-green-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
-                >
-                    Approved
-                </button>
-                <button 
-                    onClick={() => setActiveTab("rejected")}
-                    className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "rejected" ? "bg-white text-red-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
-                >
-                    Rejected
-                </button>
+            {/* Tabs Bar with Counts */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div className="inline-flex bg-gray-100/80 p-1.5 rounded-2xl border border-gray-200 shadow-inner">
+                    <button 
+                        onClick={() => setActiveTab("pending")}
+                        className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "pending" ? "bg-white text-blue-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
+                    >
+                        Pending Approvals
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "pending" ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-600"}`}>
+                            {pendingCount}
+                        </span>
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab("approved")}
+                        className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "approved" ? "bg-white text-green-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
+                    >
+                        Approved
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "approved" ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"}`}>
+                            {approvedCount}
+                        </span>
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab("rejected")}
+                        className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${activeTab === "rejected" ? "bg-white text-red-600 shadow-sm ring-1 ring-gray-200/50" : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"}`}
+                    >
+                        Rejected
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === "rejected" ? "bg-red-100 text-red-700" : "bg-gray-200 text-gray-600"}`}>
+                            {rejectedCount}
+                        </span>
+                    </button>
+                </div>
             </div>
 
-            {filteredRequests.length === 0 ? (
+            {loading ? (
+                <div className="flex items-center justify-center py-24 bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <Loader2 size={32} className="animate-spin text-blue-600" />
+                </div>
+            ) : filteredRequests.length === 0 ? (
                 <div className="bg-white p-8 rounded-xl shadow-sm text-center text-gray-500 border border-gray-100">
-                    No {activeTab} onboarding requests found.
+                    No {activeTab} onboarding requests found{selectedCompany ? " for the selected company" : ""}.
                 </div>
             ) : (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -135,6 +234,12 @@ export default function AdminApprovals() {
                                                 <div>
                                                     <p className="font-bold text-gray-900">{req.user?.firstName} {req.user?.lastName}</p>
                                                     {req.linkedInProfile && <a href={req.linkedInProfile} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-0.5"><Link size={10}/> LinkedIn</a>}
+                                                    {isSuperAdmin && (req.companyId?.name || req.user?.companyId?.name) && (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded font-normal mt-1">
+                                                            <Building2 size={11} className="text-blue-500" />
+                                                            {req.companyId?.name || req.user?.companyId?.name}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
@@ -183,7 +288,15 @@ export default function AdminApprovals() {
                                     <h2 className="text-xl font-bold text-gray-900 tracking-tight capitalize">
                                         {selectedRequest.user?.firstName} {selectedRequest.user?.lastName}
                                     </h2>
-                                    <p className="text-sm font-medium text-gray-500 mt-0.5">{selectedRequest.user?.email}</p>
+                                    <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                                        <p className="text-sm font-medium text-gray-500">{selectedRequest.user?.email}</p>
+                                        {(selectedRequest.companyId?.name || selectedRequest.user?.companyId?.name) && (
+                                            <span className="inline-flex items-center gap-1 text-xs text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-lg font-medium">
+                                                <Building2 size={12} className="text-blue-500" />
+                                                {selectedRequest.companyId?.name || selectedRequest.user?.companyId?.name}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                             <button onClick={() => setSelectedRequest(null)} className="p-2.5 hover:bg-gray-100 rounded-xl text-gray-500 transition-colors">

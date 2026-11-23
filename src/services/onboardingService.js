@@ -9,8 +9,8 @@ export const submitOnboarding = async (formData) => {
     return response.data;
 };
 
-export const getOnboardingRequests = async () => {
-    const response = await api.get(ENDPOINTS.ONBOARDING.REQUESTS);
+export const getOnboardingRequests = async (params) => {
+    const response = await api.get(ENDPOINTS.ONBOARDING.REQUESTS, { params });
     return response.data;
 };
 
