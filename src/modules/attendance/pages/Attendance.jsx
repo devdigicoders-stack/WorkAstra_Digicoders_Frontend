@@ -14,7 +14,7 @@ import {
     MapPin, Clock, LogIn, LogOut, CheckCircle, AlertCircle,
     Timer, TrendingUp, Calendar, RefreshCw, ChevronLeft, ChevronRight, Palmtree,
     FileEdit, Check, X, Download, BarChart2, ScanFace, Camera,
-    Search, ChevronDown
+    Search, ChevronDown, Smartphone, Laptop
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as faceapi from "face-api.js";
@@ -860,7 +860,15 @@ const AttendanceCalendar = ({ records, holidays, leaves, weekOff, month, onMonth
                                             <tr key={r._id} className="hover:bg-gray-50 transition">
                                                 <td className="px-5 py-3">{fmtDate(r.date)}</td>
                                                 <td className="px-5 py-3">
-                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${s.cls}`}>{s.label}</span>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${s.cls}`}>{s.label}</span>
+                                                        {r.deviceType && (
+                                                            <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${r.deviceType === "Mobile" ? "bg-purple-50 text-purple-700 border-purple-200" : "bg-blue-50 text-blue-700 border-blue-200"}`} title={r.deviceDetails || ""}>
+                                                                {r.deviceType === "Mobile" ? <Smartphone size={10} /> : <Laptop size={10} />}
+                                                                {r.deviceType}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-5 py-3 font-medium text-green-600">{fmt(r.checkIn) || "—"}</td>
                                                 <td className="px-5 py-3 font-medium text-red-500">{fmt(r.checkOut) || "—"}</td>
@@ -1990,13 +1998,14 @@ const Attendance = () => {
                                             <th className="px-4 py-3 text-left">Check Out</th>
                                             <th className="px-4 py-3 text-left">Hours</th>
                                             <th className="px-4 py-3 text-left">Status</th>
+                                            <th className="px-4 py-3 text-left">Device</th>
                                             <th className="px-4 py-3 text-left">Location</th>
                                             {canUpdateAttendance && <th className="px-4 py-3 text-center">Actions</th>}
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {filtered.length === 0 ? (
-                                            <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">No records found.</td></tr>
+                                            <tr><td colSpan={canUpdateAttendance ? 10 : 9} className="px-4 py-10 text-center text-gray-400">No records found.</td></tr>
                                         ) : paginated.map(r => (
                                             <tr key={r._id} className="hover:bg-gray-50 transition">
                                                 <td className="px-4 py-3">
@@ -2025,6 +2034,17 @@ const Attendance = () => {
                                                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS[r.status]?.cls}`}>
                                                         {r.status}
                                                     </span>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    {r.deviceType === "Mobile" ? (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 whitespace-nowrap" title={r.deviceDetails || "Mobile"}>
+                                                            <Smartphone size={11} /> Mobile
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap" title={r.deviceDetails || "Laptop / PC"}>
+                                                            <Laptop size={11} /> Laptop
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {r.checkInLocation?.latitude

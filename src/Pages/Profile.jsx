@@ -6,7 +6,7 @@ import { getCompanyWorkShifts } from "../modules/workshift/services/workShiftSer
 import {
     Camera, Pencil, X, Check, User, Mail, Phone, Calendar,
     Briefcase, Building2, ShieldCheck, Clock, Eye, EyeOff, Lock, MapPin, Banknote, ScanFace,
-    KeyRound, ArrowLeft, RefreshCw
+    KeyRound, ArrowLeft, RefreshCw, Smartphone, Laptop
 } from "lucide-react";
 import BankDetailsComponent from "../modules/employee/components/BankDetailsComponent";
 import * as faceapi from "face-api.js";
@@ -569,6 +569,57 @@ const Profile = () => {
                             <div className="flex items-start gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-xs text-yellow-700">
                                 <Lock size={14} className="shrink-0 mt-0.5" />
                                 <span>After changing your password you'll stay logged in. For security, log out and back in on other devices.</span>
+                            </div>
+
+                            {/* Logged in devices list */}
+                            <div className="pt-4 border-t border-gray-100">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-gray-800">Your Logged-in Devices</h4>
+                                        <p className="text-xs text-gray-400">Where you're currently logged in</p>
+                                    </div>
+                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                        {(rawUser?.loggedDevices?.length || 1)} Active
+                                    </span>
+                                </div>
+
+                                <div className="space-y-2.5">
+                                    {(!rawUser?.loggedDevices || rawUser.loggedDevices.length === 0) ? (
+                                        <div className="p-3 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                                    {rawUser?.lastLoginDevice === "Mobile" ? <Smartphone size={16} /> : <Laptop size={16} />}
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-semibold text-gray-800">{rawUser?.lastLoginDeviceDetails || rawUser?.lastLoginDevice || "Current Device"}</p>
+                                                    <p className="text-[10px] text-gray-400">This Device (Active Now)</p>
+                                                </div>
+                                            </div>
+                                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Active</span>
+                                        </div>
+                                    ) : (
+                                        rawUser.loggedDevices.map((dev, idx) => (
+                                            <div key={dev.sessionId || idx} className="p-3 rounded-xl border border-gray-100 hover:border-gray-200 bg-gray-50/70 flex items-center justify-between gap-3">
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${dev.deviceType === "Mobile" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"}`}>
+                                                        {dev.deviceType === "Mobile" ? <Smartphone size={16} /> : <Laptop size={16} />}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <span className="text-xs font-semibold text-gray-800">{dev.deviceDetails || dev.deviceType}</span>
+                                                            {idx === 0 && (
+                                                                <span className="text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded">This device</span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-gray-400 mt-0.5">
+                                                            IP: {dev.ip || "127.0.0.1"} • {new Date(dev.loginAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}

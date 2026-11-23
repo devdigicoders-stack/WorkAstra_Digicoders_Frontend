@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getImageUrl } from "../../../utils/imageUtils";
 import { useNavigate } from "react-router-dom";
 import EmployeeDrawer from "../components/EmployeeDrawer"
-import { Plus, Pencil, Users, Building2, ShieldCheck, Search, X, ToggleLeft, ToggleRight, KeyRound, Eye, EyeOff, Trash2 } from "lucide-react";
+import { Plus, Pencil, Users, Building2, ShieldCheck, Search, X, ToggleLeft, ToggleRight, KeyRound, Eye, EyeOff, Trash2, Smartphone, Laptop, Shield } from "lucide-react";
 import { fetchUsers, createUser, updateUser, toggleUserStatus, deleteUser } from "../services/UserService";
 import { fetchRoles, getAllRolesForAdmin, getRolesByCompany } from "../../roles/service/RoleService";
 import { useStore } from "../../../context/StoreContext";
@@ -63,6 +63,9 @@ const User = () => {
             toast.error(err?.message || "Failed to change password");
         } finally { setPwLoading(false); }
     };
+
+    // Logged-in devices modal state
+    const [deviceModalUser, setDeviceModalUser] = useState(null);
 
     // Filter states
     const [search, setSearch] = useState("");
@@ -389,7 +392,36 @@ const User = () => {
                                             )}
                                             <div>
                                                 <p className="font-medium text-gray-800">{u.firstName} {u.lastName}</p>
-                                                <p className="text-xs text-gray-400">{u.employeeCode || "—"}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                                    <span className="text-xs text-gray-400">{u.employeeCode || "—"}</span>
+                                                    {u.loggedDevices && u.loggedDevices.length > 0 ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.stopPropagation(); setDeviceModalUser(u); }}
+                                                            className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-white hover:bg-blue-50 text-gray-700 hover:text-blue-700 border-gray-200 hover:border-blue-300 transition shadow-2xs cursor-pointer"
+                                                            title="Click to view all logged-in devices"
+                                                        >
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                            <span>{u.loggedDevices.length} {u.loggedDevices.length === 1 ? "Device" : "Devices"}</span>
+                                                            <div className="flex items-center gap-0.5 ml-0.5">
+                                                                {u.loggedDevices.some(d => d.deviceType === "Mobile") && <Smartphone size={10} className="text-purple-600" />}
+                                                                {u.loggedDevices.some(d => d.deviceType === "Laptop") && <Laptop size={10} className="text-blue-600" />}
+                                                            </div>
+                                                        </button>
+                                                    ) : u.lastLoginDevice ? (
+                                                        <span
+                                                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.2 rounded-full border ${
+                                                                u.lastLoginDevice === "Mobile"
+                                                                    ? "bg-purple-50 text-purple-700 border-purple-200"
+                                                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                                                            }`}
+                                                            title={`Last Login: ${u.lastLoginDeviceDetails || u.lastLoginDevice}`}
+                                                        >
+                                                            {u.lastLoginDevice === "Mobile" ? <Smartphone size={10} /> : <Laptop size={10} />}
+                                                            {u.lastLoginDevice}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -591,6 +623,89 @@ const User = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Active Logged-in Devices Modal */}
+            {deviceModalUser && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                        {/* Header */}
+                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-slate-50/70">
+                            <div className="flex items-center gap-3">
+                                {deviceModalUser.profilePic?.url ? (
+                                    <img src={getImageUrl(deviceModalUser.profilePic.url)} alt="" className="w-10 h-10 rounded-full object-cover border" />
+                                ) : (
+                                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">
+                                        {deviceModalUser.firstName?.[0]}{deviceModalUser.lastName?.[0]}
+                                    </div>
+                                )}
+                                <div>
+                                    <h3 className="text-base font-semibold text-gray-900 leading-tight">
+                                        {deviceModalUser.firstName} {deviceModalUser.lastName}
+                                    </h3>
+                                    <p className="text-xs text-gray-500">
+                                        Active Login Sessions ({deviceModalUser.loggedDevices?.length || 0})
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setDeviceModalUser(null)}
+                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200/60 rounded-full transition"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6 max-h-[60vh] overflow-y-auto space-y-3">
+                            {(!deviceModalUser.loggedDevices || deviceModalUser.loggedDevices.length === 0) ? (
+                                <div className="text-center py-8 text-gray-400">
+                                    <Shield size={36} className="mx-auto mb-2 text-gray-300" />
+                                    <p className="text-sm font-medium text-gray-600">No active sessions recorded yet</p>
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        Last login: {deviceModalUser.lastLoginDevice || "Laptop"} {deviceModalUser.lastLoginDeviceDetails ? `(${deviceModalUser.lastLoginDeviceDetails})` : ""}
+                                    </p>
+                                </div>
+                            ) : (
+                                deviceModalUser.loggedDevices.map((dev, idx) => (
+                                    <div key={dev.sessionId || idx} className="p-3.5 rounded-xl border border-gray-100 hover:border-blue-200 bg-gray-50/60 hover:bg-blue-50/20 transition flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${dev.deviceType === "Mobile" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"}`}>
+                                                {dev.deviceType === "Mobile" ? <Smartphone size={20} /> : <Laptop size={20} />}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="text-sm font-semibold text-gray-800">{dev.deviceDetails || dev.deviceType}</span>
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1 flex-wrap">
+                                                    <span>IP: <code className="text-gray-700 bg-white px-1.5 py-0.5 rounded border border-gray-200">{dev.ip || "127.0.0.1"}</code></span>
+                                                    <span>•</span>
+                                                    <span>Logged in: {new Date(dev.loginAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                            <span>Logged-in devices overview</span>
+                            <button
+                                type="button"
+                                onClick={() => setDeviceModalUser(null)}
+                                className="px-4 py-1.5 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition font-medium"
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

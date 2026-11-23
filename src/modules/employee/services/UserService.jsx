@@ -72,3 +72,9 @@ export const adminEditBankDetails = async (userId, formData) => {
     return res.data;
 };
 
+export const terminateDeviceSession = async (data) => {
+    const res = await api.post("/api/user/terminate-session", data);
+    return res.data;
+};
+
+
