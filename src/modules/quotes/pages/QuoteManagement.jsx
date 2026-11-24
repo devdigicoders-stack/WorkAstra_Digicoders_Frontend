@@ -1,11 +1,11 @@
  import { useState, useEffect, useCallback, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
     FileText, Search, Filter, Eye, CheckCircle2, Clock,
     Send, ChevronLeft, ChevronRight, RefreshCw, IndianRupee, Calendar, CreditCard,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { getAllQuotes } from "../../leads/services/quoteService";
+import { getAllQuotes, getQuoteById } from "../../leads/services/quoteService";
 import QuotePreview from "../../leads/components/QuotePreview";
 
 const STATUS_META = {
@@ -61,6 +61,20 @@ export default function QuoteManagement() {
     const [preview, setPreview]         = useState(null);
     const [tab, setTab]                 = useState("quotes");
     const debounceRef                   = useRef(null);
+
+    const [searchParams] = useSearchParams();
+    const quoteIdParam = searchParams.get("quoteId") || searchParams.get("id");
+    const panelParam = searchParams.get("panel") || "preview";
+
+    // Auto-open quote preview if quoteId is in URL query
+    useEffect(() => {
+        if (quoteIdParam) {
+            getQuoteById(quoteIdParam).then(res => {
+                const q = res?.quote ?? res;
+                if (q) setPreview(q);
+            }).catch(() => {});
+        }
+    }, [quoteIdParam]);
 
     // Fetch accurate global stats once (no filter, no search)
     const loadStats = useCallback(async () => {
@@ -343,6 +357,7 @@ export default function QuoteManagement() {
                                 lead={preview.leadId}
                                 onClose={() => setPreview(null)}
                                 onUpdated={handlePreviewUpdated}
+                                initialPanel={panelParam}
                             />
                         </div>
                     </div>

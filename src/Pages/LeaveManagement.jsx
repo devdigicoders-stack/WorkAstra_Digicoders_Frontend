@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { getImageUrl } from "../utils/imageUtils";
 import { useStore } from "../context/StoreContext";
 import { Calendar, Clock, FileText, Users, TrendingUp, Plus, Check, XCircle, ChevronDown, CheckCircle2 } from "lucide-react";
@@ -19,12 +20,26 @@ const STATUS_COLORS = {
 
 const LeaveManagement = () => {
     const { user } = useStore();
+    const [searchParams] = useSearchParams();
+    const tabParam = searchParams.get("tab");
+    const leaveIdParam = searchParams.get("leaveId");
+    const userIdParam = searchParams.get("userId");
+
     const isAdmin = ["admin", "super_admin"].includes(user?.role?.name);
     const permissions = user?.role?.permissions || [];
     const canApprove = isAdmin || permissions.includes("APPROVE_LEAVE");
     const canReject  = isAdmin || permissions.includes("REJECT_LEAVE");
     const showTeamTab = canApprove || canReject;
-    const [activeTab, setActiveTab] = useState("my-leaves");
+    const [activeTab, setActiveTab] = useState(() => {
+        if (tabParam) return tabParam;
+        if (leaveIdParam || userIdParam) return "team-leaves";
+        return "my-leaves";
+    });
+
+    useEffect(() => {
+        if (tabParam) setActiveTab(tabParam);
+        else if (leaveIdParam || userIdParam) setActiveTab("team-leaves");
+    }, [tabParam, leaveIdParam, userIdParam]);
     const year = new Date().getFullYear();
     const [balances, setBalances] = useState([]);
 
@@ -98,7 +113,16 @@ const LeaveManagement = () => {
             {activeTab === "my-leaves"   && <MyLeavesTab year={year} />}
             {activeTab === "apply"       && <ApplyLeaveTab onApplied={() => setActiveTab("my-leaves")} />}
             {activeTab === "balance"     && <BalanceTab year={year} />}
-            {activeTab === "team-leaves" && showTeamTab && <TeamLeavesTab year={year} isAdmin={isAdmin} canApprove={canApprove} canReject={canReject} />}
+            {activeTab === "team-leaves" && showTeamTab && (
+                <TeamLeavesTab 
+                    year={year} 
+                    isAdmin={isAdmin} 
+                    canApprove={canApprove} 
+                    canReject={canReject} 
+                    highlightLeaveId={leaveIdParam}
+                    targetUserId={userIdParam}
+                />
+            )}
         </div>
     );
 };
@@ -457,7 +481,7 @@ const BalanceTab = ({ year }) => {
 };
 
 // ─── Team Leaves (Admin/Manager) ────────────────────────────────────────────
-const TeamLeavesTab = ({ year, isAdmin }) => {
+const TeamLeavesTab = ({ year, isAdmin, canApprove, canReject, highlightLeaveId, targetUserId }) => {
     const [leaves, setLeaves] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState("pending");
@@ -470,6 +494,18 @@ const TeamLeavesTab = ({ year, isAdmin }) => {
             .catch(e => toast.error(e.response?.data?.message || "Failed to load team leaves"))
             .finally(() => setLoading(false));
     }, [year]);
+
+    useEffect(() => {
+        if (!loading && (highlightLeaveId || targetUserId)) {
+            const timer = setTimeout(() => {
+                const el = highlightLeaveId ? document.getElementById(`leave-${highlightLeaveId}`) : null;
+                if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }, 250);
+            return () => clearTimeout(timer);
+        }
+    }, [loading, highlightLeaveId, targetUserId]);
 
     const handleApprove = async (id) => {
         try {
@@ -515,8 +551,16 @@ const TeamLeavesTab = ({ year, isAdmin }) => {
                 <Empty icon={Users} text="No team leave applications found" />
             ) : (
                 <div className="space-y-3">
-                    {filtered.map(leave => (
-                        <div key={leave._id} className="bg-white border border-gray-200 rounded-xl p-3.5 sm:p-4 hover:shadow-sm transition flex flex-col gap-3">
+                    {filtered.map(leave => {
+                        const isTarget = leave._id === highlightLeaveId || (targetUserId && (leave.userId?._id === targetUserId || leave.userId === targetUserId));
+                        return (
+                        <div 
+                            key={leave._id} 
+                            id={`leave-${leave._id}`}
+                            className={`bg-white border rounded-xl p-3.5 sm:p-4 hover:shadow-sm transition flex flex-col gap-3 ${
+                                isTarget ? "border-blue-500 ring-2 ring-blue-400/50 bg-blue-50/15 shadow-sm" : "border-gray-200"
+                            }`}
+                        >
                             {/* Card Top Row: User Avatar, Name, Code, Badges, and Desktop Buttons */}
                             <div className="flex items-start justify-between gap-3">
                                 <div className="flex items-center gap-3 min-w-0">
@@ -539,6 +583,11 @@ const TeamLeavesTab = ({ year, isAdmin }) => {
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                            {isTarget && (
+                                                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-600 text-white leading-none shadow-2xs">
+                                                    Selected
+                                                </span>
+                                            )}
                                             <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border capitalize leading-none ${STATUS_COLORS[leave.status] || "bg-gray-100 text-gray-700"}`}>
                                                 {leave.status}
                                             </span>
@@ -612,7 +661,8 @@ const TeamLeavesTab = ({ year, isAdmin }) => {
                                 </div>
                             )}
                         </div>
-                    ))}
+                    );
+                })}
                 </div>
             )}
 

@@ -276,12 +276,15 @@ const ProjectDetail = () => {
         markProjectNotificationsRead(id).then(() => refreshNotifications()).catch(() => {});
     }, [id]);
 
-    // Auto-open task from notification link (?taskId=xxx)
+    // Auto-open task from notification or dashboard link (?taskId=xxx)
     useEffect(() => {
         const taskId = searchParams.get("taskId");
-        if (taskId && tasks.length) {
-            const t = tasks.find(t => t._id === taskId);
-            if (t) setSelectedTask(t);
+        if (taskId) {
+            if (tasks.length) {
+                const t = tasks.find(t => t._id === taskId || t._id?.toString() === taskId);
+                if (t) setSelectedTask(t);
+                else setSelectedTask({ _id: taskId });
+            }
         }
     }, [searchParams, tasks]);
 

@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import api from "../../../services/axios";
 import { toast } from "react-toastify";
-import { Download, FileText, CheckCircle2 } from "lucide-react";
+import { Download, FileText, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useStore } from "../../../context/StoreContext";
 import { Navigate } from "react-router-dom";
+import OfferLetterViewer from "../../employee/components/OfferLetterViewer";
 
 export default function OfferLetter({ userId = null, standalone = true }) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showPreview, setShowPreview] = useState(false);
     const { user: currentUser } = useStore();
 
     const isSuperAdmin = currentUser?.role?.name === "super_admin";
@@ -79,7 +81,7 @@ export default function OfferLetter({ userId = null, standalone = true }) {
     return (
         <div className="p-4 sm:p-8 w-full min-h-screen bg-gray-50/70 flex flex-col items-center justify-center max-w-full overflow-x-hidden">
             {/* Offer Letter Main Action Card */}
-            <div className="bg-white border border-gray-200/80 rounded-2xl shadow-sm p-6 sm:p-10 max-w-xl w-full text-center">
+            <div className={`bg-white border border-gray-200/80 rounded-2xl shadow-sm p-6 sm:p-10 w-full text-center transition-all ${showPreview ? "max-w-4xl" : "max-w-xl"}`}>
                 <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xs">
                     <FileText size={32} />
                 </div>
@@ -115,16 +117,35 @@ export default function OfferLetter({ userId = null, standalone = true }) {
                     </div>
                 </div>
 
-                {/* Download Button Only */}
-                <div className="w-full">
+                {/* Action Buttons */}
+                <div className="w-full flex flex-col sm:flex-row gap-3">
+                    <button 
+                        type="button"
+                        onClick={() => setShowPreview(!showPreview)}
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-3 rounded-xl font-semibold transition active:scale-95 text-sm cursor-pointer"
+                    >
+                        {showPreview ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showPreview ? "Hide Preview" : "View Offer Letter"}
+                    </button>
                     <button 
                         type="button"
                         onClick={handleDownload}
-                        className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition active:scale-95 text-sm sm:text-base shadow-sm hover:shadow cursor-pointer"
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-semibold transition active:scale-95 text-sm shadow-sm hover:shadow cursor-pointer"
                     >
                         <Download size={18} /> Download Official PDF
                     </button>
                 </div>
+
+                {/* Live PDF Preview */}
+                {showPreview && (
+                    <div className="mt-8 pt-6 border-t border-gray-100 text-left">
+                        <OfferLetterViewer
+                            userId={userId}
+                            myOfferLetter={!userId}
+                            employeeName={`${user.firstName} ${user.lastName}`}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

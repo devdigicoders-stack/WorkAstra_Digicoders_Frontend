@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useStore } from "../../../context/StoreContext";
 import api from "../../../services/axios";
 import { ENDPOINTS } from "../../../services/endpoints";
@@ -7,6 +8,8 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Use
 
 const Meetings = () => {
     const { user } = useStore();
+    const [searchParams] = useSearchParams();
+    const meetingIdParam = searchParams.get("meetingId") || searchParams.get("id");
     const [meetings, setMeetings] = useState([]);
     const [loading, setLoading] = useState(false);
     
@@ -17,6 +20,19 @@ const Meetings = () => {
     useEffect(() => {
         fetchMeetings();
     }, []);
+
+    // Auto-open meeting detail if meetingId is in URL query
+    useEffect(() => {
+        if (meetingIdParam && meetings.length > 0) {
+            const found = meetings.find(m => String(m._id) === String(meetingIdParam));
+            if (found) {
+                setSelectedMeeting(found);
+                if (found.date) {
+                    setCurrentDate(new Date(found.date));
+                }
+            }
+        }
+    }, [meetingIdParam, meetings]);
 
     const fetchMeetings = async () => {
         try {

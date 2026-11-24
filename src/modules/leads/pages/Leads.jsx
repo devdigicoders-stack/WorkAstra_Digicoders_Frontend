@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Plus, X, Pencil, Trash2, Eye, User, Send, MessageSquare, ChevronLeft, ChevronRight, Upload, Settings, FileText, Calendar, IndianRupee, Building2 } from "lucide-react";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
@@ -134,7 +135,7 @@ const NewLeadCommForm = ({ comm, onChange }) => (
 );
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
-const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentUserId, onLeadUpdate, customFields, isSuperAdmin, companies, defaultCompanyId }) => {
+const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentUserId, onLeadUpdate, customFields, isSuperAdmin, companies, defaultCompanyId, initialTab = "communication" }) => {
     const emptyForm = useCallback(() => {
         const base = {
             contactNumber: "", orgName: "", address: "", contactPerson: "",
@@ -151,7 +152,11 @@ const LeadModal = ({ isOpen, onClose, initial, onSubmit, saving, users, currentU
     const [matchedLead, setMatchedLead] = useState(null);
     const [fullLead, setFullLead] = useState(null);
     const [newComm, setNewComm] = useState({ subject: "", description: "" });
-    const [rightTabActive, setRightTabActive] = useState("communication"); // communication | quotes | history
+    const [rightTabActive, setRightTabActive] = useState(initialTab || "communication"); // communication | quotes | history | meetings
+
+    useEffect(() => {
+        if (initialTab) setRightTabActive(initialTab);
+    }, [initialTab]);
     const [selectedQuotePreview, setSelectedQuotePreview] = useState(null);
     const [quoteToEdit, setQuoteToEdit] = useState(null);
     const debounceRef = useRef(null);
@@ -639,6 +644,22 @@ const Leads = () => {
     const [selectedCompany, setSelectedCompany] = useState("");
     const searchDebounce          = useRef(null);
 
+    const [searchParams] = useSearchParams();
+    const leadIdParam = searchParams.get("leadId") || searchParams.get("id");
+    const tabParam = searchParams.get("tab");
+
+    // Auto-open lead modal if leadId is in URL query
+    useEffect(() => {
+        if (leadIdParam) {
+            getLeadById(leadIdParam).then(r => {
+                if (r?.lead) {
+                    setSelected(r.lead);
+                    setModalOpen(true);
+                }
+            }).catch(() => {});
+        }
+    }, [leadIdParam]);
+
     // Load Companies for Super Admin
     useEffect(() => {
         if (isSuperAdmin) {
@@ -987,6 +1008,7 @@ const Leads = () => {
                 isSuperAdmin={isSuperAdmin}
                 companies={companies}
                 defaultCompanyId={selectedCompany && selectedCompany !== "all" ? selectedCompany : (user?.companyId?._id || user?.company || "")}
+                initialTab={tabParam || "communication"}
             />
 
             <LeadFieldManager

@@ -35,4 +35,5 @@ export const deleteComment = (id, commentId) => api.delete(ENDPOINTS.TASK.DELETE
 export const grantCommentAccess = (id, userIds) => api.patch(ENDPOINTS.TASK.COMMENT_ACCESS(id), { userIds });
 export const addAttachment = (id, formData) => api.post(ENDPOINTS.TASK.ADD_ATTACHMENT(id), formData, { headers: { "Content-Type": "multipart/form-data" } });
 export const getMyTaskHistory = () => api.get(ENDPOINTS.TASK.MY_HISTORY);
+export const getPendingTasks = () => api.get(ENDPOINTS.TASK.PENDING);
 export const deleteAttachment = (id, attId) => api.delete(ENDPOINTS.TASK.DELETE_ATTACHMENT(id, attId));

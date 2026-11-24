@@ -17,12 +17,16 @@ const STATUS_STYLES = {
     rejected: "bg-red-100 text-red-600 border-red-200",
 };
 
-export default function QuotePreview({ quote: initialQuote, lead, onClose, onUpdated }) {
+export default function QuotePreview({ quote: initialQuote, lead, onClose, onUpdated, initialPanel = "preview" }) {
     const [quote, setQuote]             = useState(initialQuote);
     const [quoteLoading, setQuoteLoading] = useState(true);
     const [pdfLoading, setPdfLoading]   = useState(false);
     const [sendEmail, setSendEmail]     = useState("");
-    const [activePanel, setActivePanel] = useState("preview");
+    const [activePanel, setActivePanel] = useState(initialPanel || "preview");
+
+    useEffect(() => {
+        if (initialPanel) setActivePanel(initialPanel);
+    }, [initialPanel]);
     const [pageEditorOpen, setPageEditorOpen] = useState(false);
     const [leadFieldConfig, setLeadFieldConfig] = useState([]);
     const [quoteProfiles, setQuoteProfiles] = useState([]);

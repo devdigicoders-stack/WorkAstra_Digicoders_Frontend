@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { getImageUrl, getFileUrl } from "../utils/imageUtils";
 import { useStore } from "../context/StoreContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
     Users, Building2, FolderKanban, ShieldCheck, Clock,
     LogIn, LogOut, CheckCircle, TrendingUp, Receipt, CreditCard,
     ArrowRight, Calendar, Timer, MapPin, IndianRupee, FileText, AlertCircle, PieChart,
     UserX, ClockAlert, Palmtree, PartyPopper, Activity, Banknote, Sun,
     Briefcase, Target, ListTodo, BarChart2,
-    PhoneCall, FileCheck, Percent, UserCheck
+    PhoneCall, FileCheck, Percent, UserCheck, X
 } from "lucide-react";
 import api from "../services/axios";
 import { ENDPOINTS } from "../services/endpoints";
@@ -17,12 +17,12 @@ import { fetchAllCompaniesList } from "../modules/company/services/companyServic
 import { getAllCompanyDepartments } from "../modules/department/services/departmentService";
 import { getTodayAttendance, getAttendanceSummary, getCompanyAttendance } from "../modules/attendance/services/attendanceService";
 import { checkIn, checkOut } from "../modules/attendance/services/attendanceService";
-import { getMyTaskHistory } from "../modules/projects/services/projectService";
+import { getMyTaskHistory, getPendingTasks, getProjects } from "../modules/projects/services/projectService";
+import TaskDetail from "../modules/projects/pages/TaskDetail";
 import { getLeads } from "../modules/leads/services/leadService";
 import { getAllQuotes } from "../modules/leads/services/quoteService";
 import { getCompanyLeaves, getMyBalance, getHolidays } from "../modules/leave/services/leaveService";
 import { getPayrollSummary, getMyPayslips } from "../modules/payroll/services/payrollService";
-import { getProjects } from "../modules/projects/services/projectService";
 import { toast } from "react-toastify";
 import UpcomingEventsWidget from "../modules/dashboard/components/UpcomingEventsWidget";
 
@@ -30,6 +30,27 @@ const currentMonth = () => new Date().toISOString().slice(0, 7);
 
 const fmt = (d) => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "—";
 const fmtDate = (d) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+const fmtLeaveDate = (l) => {
+    if (!l) return "";
+    const parseD = (v) => {
+        if (!v) return null;
+        const d = new Date(typeof v === "string" && !v.includes("T") ? v + "T00:00:00" : v);
+        return isNaN(d.getTime()) ? null : d;
+    };
+    const start = parseD(l.fromDate || l.startDate);
+    const end = parseD(l.toDate || l.endDate);
+    if (start && end && (l.fromDate || l.startDate) !== (l.toDate || l.endDate)) {
+        return `${start.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })} - ${end.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}`;
+    }
+    if (start) {
+        return start.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+    }
+    if (l.createdAt) {
+        const c = parseD(l.createdAt);
+        if (c) return c.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+    }
+    return "";
+};
 const fmtSalary = (val) => {
     if (val === undefined || val === null || val === "" || val === "••••••" || (typeof val === "string" && (val.includes("•") || val.toLowerCase().includes("nan")))) {
         return "••••••";
@@ -80,6 +101,7 @@ const StatCard = ({ icon: Icon, label, value, sub, color, to }) => {
 };
 
 const Home = () => {
+    const navigate = useNavigate();
     const { user } = useStore();
     const permissions = user?.role?.permissions || [];
     const isSuperAdmin = user?.role?.name === "super_admin";
@@ -127,7 +149,10 @@ const Home = () => {
     const [myPayslips, setMyPayslips] = useState([]);
     // PM widgets
     const [pmProjects, setPmProjects] = useState([]);
+    const [pendingTasks, setPendingTasks] = useState([]);
+    const [selectedTaskId, setSelectedTaskId] = useState(null);
     const [pmPerformance, setPmPerformance] = useState(null);
+    const [showResourceModal, setShowResourceModal] = useState(false);
     // BDE widgets
     const [bdeStats, setBdeStats] = useState({ totalLeads: 0, newLeads: 0, todayFollowUps: [], totalQuotes: 0, acceptedQuotes: 0, rejectedQuotes: 0 });
 
@@ -276,6 +301,7 @@ const Home = () => {
     useEffect(() => {
         if (!canViewPM) return;
         getProjects().then(res => setPmProjects(res.data?.data || [])).catch(() => {});
+        getPendingTasks().then(res => setPendingTasks(res.data?.data || [])).catch(() => {});
         api.get("/api/performance").then(res => setPmPerformance(res.data || null)).catch(() => {});
     }, [canViewPM]);
 
@@ -316,7 +342,7 @@ const Home = () => {
                         time: m.time || "Today",
                         status: m.status,
                         type: "meeting",
-                        link: "/meetings",
+                        link: `/meetings?meetingId=${m._id}`,
                     });
                 }
             }
@@ -333,7 +359,7 @@ const Home = () => {
                             time: f.scheduledAt ? new Date(f.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Today",
                             status: f.status,
                             type: "quote",
-                            link: "/quotes",
+                            link: `/quotes?quoteId=${q._id}&panel=send`,
                         });
                     }
                 }
@@ -350,7 +376,7 @@ const Home = () => {
                         time: "Today",
                         status: l.status,
                         type: "lead",
-                        link: "/leads",
+                        link: `/leads?leadId=${l._id}&tab=meetings`,
                     });
                 }
             }
@@ -416,6 +442,13 @@ const Home = () => {
     const teamAvgHours = perfSummary.avgCompletionHours ?? pmPerformance?.avgCompletionTime ?? 0;
     const totalTasksAssigned = perfSummary.totalAssigned ?? perfData.reduce((s, d) => s + (d.tasksAssigned || 0), 0);
     const totalTasksCompleted = perfSummary.totalCompleted ?? perfData.reduce((s, d) => s + (d.tasksCompleted || 0), 0);
+    const teamAvgTimeDisplay = perfSummary.avgCompletionFormatted || pmPerformance?.avgCompletionFormatted || (
+        totalTasksCompleted > 0
+            ? (teamAvgHours > 0 
+                ? (teamAvgHours < 1 ? `${Math.max(1, Math.round(teamAvgHours * 60))} mins` : `${teamAvgHours} hrs`)
+                : (perfSummary.avgCompletionMinutes ? `${perfSummary.avgCompletionMinutes} mins` : "< 1 min"))
+            : "—"
+    );
 
     return (
         <div className="p-6 bg-gray-50 min-h-screen space-y-6">
@@ -585,10 +618,18 @@ const Home = () => {
                             <p className="text-sm text-gray-400 text-center py-8">No task assignments yet.</p>
                         ) : (
                             <div className="space-y-3 max-h-64 overflow-y-auto no-scrollbar">
-                                {taskHistory.map(t => (
-                                    <div key={t._id} className="border border-gray-100 rounded-xl p-3">
+                                {taskHistory.map(t => {
+                                    const projectId = t.project?._id || t.project;
+                                    const targetUrl = projectId ? `/projects/${projectId}?taskId=${t._id}` : "/projects";
+                                    return (
+                                    <Link 
+                                        key={t._id} 
+                                        to={targetUrl}
+                                        className="block border border-gray-100 rounded-xl p-3 hover:bg-orange-50/40 hover:border-orange-200 transition cursor-pointer group"
+                                        title={`Open in ${t.project?.name || "project"}`}
+                                    >
                                         <div className="flex items-center justify-between gap-2 mb-1.5">
-                                            <p className="text-sm font-medium text-gray-800 truncate">{t.title}</p>
+                                            <p className="text-sm font-medium text-gray-800 truncate group-hover:text-blue-600 transition">{t.title}</p>
                                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize shrink-0">{t.status?.replace("_", " ")}</span>
                                         </div>
                                         {t.project?.name && (
@@ -609,8 +650,9 @@ const Home = () => {
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-                                ))}
+                                    </Link>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -781,30 +823,85 @@ const Home = () => {
                         <h2 className="font-semibold text-gray-800 flex items-center gap-2">
                             <span className="p-1.5 bg-orange-100 rounded-lg"><ListTodo size={15} className="text-orange-500" /></span>
                             Pending Tasks
+                            {(pendingTasks.length > 0 || totalPendingTasks > 0) && (
+                                <span className="ml-1 text-xs bg-orange-500 text-white rounded-full px-2 py-0.5 font-bold">
+                                    {pendingTasks.length || totalPendingTasks}
+                                </span>
+                            )}
                         </h2>
-                        <Link to="/projects" className="text-xs text-blue-500 hover:underline">View</Link>
+                        <Link to="/projects" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View all <ArrowRight size={12} /></Link>
                     </div>
-                    <div className="flex items-center gap-4 mt-6">
-                        <div className="w-14 h-14 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
-                            <span className="text-xl text-orange-600 font-bold">
-                                {totalPendingTasks}
-                            </span>
+
+                    {pendingTasks.length > 0 ? (
+                        <div className="space-y-2 max-h-52 overflow-y-auto no-scrollbar">
+                            {pendingTasks.map(t => {
+                                const projectId = t.project?._id || t.project;
+                                const targetUrl = projectId ? `/projects/${projectId}?taskId=${t._id}` : "/projects";
+                                return (
+                                <Link 
+                                    key={t._id} 
+                                    to={targetUrl} 
+                                    className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:bg-orange-50/70 hover:border-orange-200 transition cursor-pointer group"
+                                    title={`Open in ${t.project?.name || "project"}`}
+                                >
+                                    <div className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold shrink-0">
+                                        {t.assignedTo?.[0]?.firstName?.[0] || <ListTodo size={12} />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium text-gray-800 truncate group-hover:text-orange-600 transition">{t.title}</p>
+                                        <p className="text-[10px] text-gray-400 truncate">
+                                            {t.project?.name || "Project"} {t.priority ? `· ${t.priority}` : ""}
+                                        </p>
+                                    </div>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-semibold shrink-0 capitalize">
+                                        {(t.status || "todo").replace("_", " ")}
+                                    </span>
+                                </Link>
+                                );
+                            })}
                         </div>
-                        <div>
-                            <p className="text-sm font-semibold text-gray-800">Tasks to do</p>
-                            <p className="text-[10px] text-gray-500 leading-tight mt-0.5">Across {pmProjects.length} projects</p>
+                    ) : totalPendingTasks > 0 ? (
+                        <div 
+                            onClick={() => {
+                                const pWithTasks = pmProjects.find(p => (p.pendingTasksCount || 0) > 0);
+                                if (pWithTasks?._id) {
+                                    navigate(`/projects/${pWithTasks._id}`);
+                                } else {
+                                    navigate("/projects");
+                                }
+                            }} 
+                            className="flex items-center gap-4 mt-6 p-2 rounded-xl hover:bg-orange-50/50 transition cursor-pointer group"
+                            title="Click to view project tasks"
+                        >
+                            <div className="w-14 h-14 rounded-full bg-orange-50 group-hover:bg-orange-100 flex items-center justify-center shrink-0 transition">
+                                <span className="text-xl text-orange-600 font-bold">
+                                    {totalPendingTasks}
+                                </span>
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold text-gray-800 group-hover:text-orange-600 transition">Tasks to do</p>
+                                <p className="text-[10px] text-gray-500 leading-tight mt-0.5">Across {pmProjects.length} projects · Click to open</p>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <p className="text-sm text-gray-400 text-center py-6">No pending tasks 🎉</p>
+                    )}
                 </div>
 
                 {/* Team Performance */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                <div 
+                    onClick={() => navigate("/reports/performance")}
+                    className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-teal-300 transition cursor-pointer group"
+                    title="Click to view team performance report"
+                >
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                            <span className="p-1.5 bg-teal-100 rounded-lg"><Target size={15} className="text-teal-600" /></span>
+                            <span className="p-1.5 bg-teal-100 group-hover:bg-teal-200 rounded-lg transition"><Target size={15} className="text-teal-600" /></span>
                             Team Performance
                         </h2>
-                        <Link to="/reports/performance" className="text-xs text-blue-500 hover:underline">View</Link>
+                        <span className="text-xs text-blue-500 group-hover:text-blue-600 group-hover:underline flex items-center gap-0.5">
+                            View &rarr;
+                        </span>
                     </div>
 
                     <div className="space-y-3">
@@ -828,7 +925,7 @@ const Home = () => {
                             <div>
                                 <span className="text-gray-500 text-[11px]">Avg Time: </span>
                                 <span className="font-semibold text-gray-800 text-xs">
-                                    {teamAvgHours > 0 ? `${teamAvgHours} hrs` : "—"}
+                                    {teamAvgTimeDisplay}
                                 </span>
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -846,12 +943,19 @@ const Home = () => {
                 </div>
 
                 {/* Resource Utilization */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                <div 
+                    onClick={() => setShowResourceModal(true)}
+                    className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-fuchsia-300 transition cursor-pointer group"
+                    title="Click to view team resource utilization"
+                >
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                            <span className="p-1.5 bg-fuchsia-100 rounded-lg"><BarChart2 size={15} className="text-fuchsia-600" /></span>
+                            <span className="p-1.5 bg-fuchsia-100 group-hover:bg-fuchsia-200 rounded-lg transition"><BarChart2 size={15} className="text-fuchsia-600" /></span>
                             Resource Utilization
                         </h2>
+                        <span className="text-xs text-blue-500 group-hover:text-blue-600 group-hover:underline flex items-center gap-0.5">
+                            View &rarr;
+                        </span>
                     </div>
                     <div className="mt-4">
                         <p className="text-[10px] text-gray-500 mb-3">Team engagement across projects</p>
@@ -880,7 +984,10 @@ const Home = () => {
                                 </div>
                             )}
                         </div>
-                        <p className="text-xs font-semibold text-gray-800">{allProjectMembers.length} active members</p>
+                        <p className="text-xs font-semibold text-gray-800 flex items-center justify-between">
+                            <span>{allProjectMembers.length} active members</span>
+                            <span className="text-[11px] text-fuchsia-600 font-medium group-hover:underline">Details &rarr;</span>
+                        </p>
                     </div>
                 </div>
 
@@ -918,25 +1025,34 @@ const Home = () => {
                 </div>
 
                 {/* Today's Follow-ups */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                <div 
+                    onClick={() => navigate("/meetings")}
+                    className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-rose-300 transition cursor-pointer group"
+                    title="Click to view all meetings & follow-ups"
+                >
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                            <span className="p-1.5 bg-rose-100 rounded-lg"><PhoneCall size={15} className="text-rose-600" /></span>
+                            <span className="p-1.5 bg-rose-100 group-hover:bg-rose-200 rounded-lg transition"><PhoneCall size={15} className="text-rose-600" /></span>
                             Today's Follow-ups
                         </h2>
-                        <Link to="/meetings" className="text-xs text-blue-500 hover:underline">View All</Link>
+                        <span className="text-xs text-blue-500 group-hover:text-blue-600 group-hover:underline flex items-center gap-0.5">
+                            View All &rarr;
+                        </span>
                     </div>
                     {bdeStats.todayFollowUps.length === 0 ? (
-                        <p className="text-sm text-gray-400 text-center py-4 mt-2">No follow-ups for today 🎉</p>
+                        <div className="text-center py-4 mt-2">
+                            <p className="text-sm text-gray-400 group-hover:text-rose-600 transition">No follow-ups for today 🎉</p>
+                            <p className="text-[10px] text-gray-400 mt-1">Click to open Meetings Calendar &rarr;</p>
+                        </div>
                     ) : (
-                        <div className="space-y-2 max-h-32 overflow-y-auto no-scrollbar">
+                        <div className="space-y-2 max-h-36 overflow-y-auto no-scrollbar" onClick={(e) => e.stopPropagation()}>
                             {bdeStats.todayFollowUps.map(item => (
-                                <Link to={item.link || "/meetings"} key={item._id} className="flex justify-between items-center p-2 rounded-lg bg-rose-50 border border-rose-100 hover:bg-rose-100/60 transition block">
+                                <Link to={item.link || "/meetings"} key={item._id} className="flex justify-between items-center p-2.5 rounded-lg bg-rose-50 border border-rose-100 hover:bg-rose-100/70 transition block group/item">
                                     <div className="truncate pr-2">
-                                        <p className="text-xs font-semibold text-gray-800 truncate">{item.orgName}</p>
+                                        <p className="text-xs font-semibold text-gray-800 group-hover/item:text-rose-600 transition truncate">{item.orgName}</p>
                                         <p className="text-[10px] text-gray-500 truncate">{item.title}</p>
                                     </div>
-                                    <span className="text-[10px] font-bold text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full shrink-0">
+                                    <span className="text-[10px] font-bold text-rose-600 bg-rose-100 group-hover/item:bg-rose-200 px-2 py-0.5 rounded-full shrink-0 transition">
                                         {item.time || "Due"}
                                     </span>
                                 </Link>
@@ -967,21 +1083,39 @@ const Home = () => {
                 </div>
 
                 {/* Conversion Ratio */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-6">
+                <div 
+                    onClick={() => {
+                        if (isAdmin || permissions.includes("VIEW_SALES_REPORTS") || permissions.includes("VIEW_ALL_LEADS")) {
+                            navigate("/reports/sales");
+                        } else {
+                            navigate("/quotes");
+                        }
+                    }}
+                    className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-emerald-300 transition cursor-pointer group"
+                    title="Click to view sales and conversion report"
+                >
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                            <span className="p-1.5 bg-emerald-100 rounded-lg"><Percent size={15} className="text-emerald-600" /></span>
+                            <span className="p-1.5 bg-emerald-100 group-hover:bg-emerald-200 rounded-lg transition"><Percent size={15} className="text-emerald-600" /></span>
                             Conversion Ratio
                         </h2>
+                        <span className="text-xs text-blue-500 group-hover:text-blue-600 group-hover:underline flex items-center gap-0.5">
+                            View Report &rarr;
+                        </span>
                     </div>
-                    <div className="flex items-center justify-center h-24 mt-2 relative">
-                        <svg viewBox="0 0 36 36" className="w-24 h-24 text-emerald-500 transform -rotate-90">
-                            <path className="text-gray-100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path strokeDasharray={`${bdeStats.totalQuotes ? Math.round((bdeStats.acceptedQuotes / bdeStats.totalQuotes) * 100) : 0}, 100`} strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        </svg>
-                        <div className="absolute flex flex-col items-center justify-center">
-                            <span className="text-xl font-bold text-gray-800">{bdeStats.totalQuotes ? Math.round((bdeStats.acceptedQuotes / bdeStats.totalQuotes) * 100) : 0}%</span>
+                    <div className="flex flex-col items-center justify-center">
+                        <div className="flex items-center justify-center h-24 relative">
+                            <svg viewBox="0 0 36 36" className="w-24 h-24 text-emerald-500 transform -rotate-90">
+                                <path className="text-gray-100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path strokeDasharray={`${bdeStats.totalQuotes ? Math.round((bdeStats.acceptedQuotes / bdeStats.totalQuotes) * 100) : 0}, 100`} strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div className="absolute flex flex-col items-center justify-center">
+                                <span className="text-xl font-bold text-gray-800">{bdeStats.totalQuotes ? Math.round((bdeStats.acceptedQuotes / bdeStats.totalQuotes) * 100) : 0}%</span>
+                            </div>
                         </div>
+                        <p className="text-[11px] text-gray-500 mt-2 font-medium text-center">
+                            {bdeStats.acceptedQuotes} of {bdeStats.totalQuotes} proposals accepted
+                        </p>
                     </div>
                 </div>
 
@@ -1006,29 +1140,48 @@ const Home = () => {
                         <p className="text-sm text-gray-400 text-center py-6">No late/absent records today 🎉</p>
                     ) : (
                         <div className="space-y-2 max-h-52 overflow-y-auto no-scrollbar">
-                            {lateAbsent.late.map(r => (
-                                <div key={r._id} className="flex items-center gap-3 p-2 rounded-lg bg-yellow-50">
-                                    <div className="w-7 h-7 rounded-full bg-yellow-200 text-yellow-700 flex items-center justify-center text-xs font-bold shrink-0">
-                                        {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-gray-800 truncate">{r.userId?.firstName} {r.userId?.lastName}</p>
-                                        <p className="text-[10px] text-gray-400">Check-in: {r.checkIn ? new Date(r.checkIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "—"}</p>
-                                    </div>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-200 text-yellow-800 font-semibold capitalize">{r.status}</span>
-                                </div>
-                            ))}
-                            {lateAbsent.absent.map(r => (
-                                <div key={r._id} className="flex items-center gap-3 p-2 rounded-lg bg-red-50">
-                                    <div className="w-7 h-7 rounded-full bg-red-200 text-red-700 flex items-center justify-center text-xs font-bold shrink-0">
-                                        {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-gray-800 truncate">{r.userId?.firstName} {r.userId?.lastName}</p>
-                                    </div>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-200 text-red-800 font-semibold">Absent</span>
-                                </div>
-                            ))}
+                            {lateAbsent.late.map(r => {
+                                const uid = r.userId?._id || r.userId;
+                                const targetUrl = uid ? `/users/${uid}?tab=attendance` : "/attendance";
+                                return (
+                                    <Link 
+                                        key={r._id} 
+                                        to={targetUrl}
+                                        className="flex items-center gap-3 p-2 rounded-lg bg-yellow-50 hover:bg-yellow-100/70 border border-transparent hover:border-yellow-200 transition cursor-pointer group"
+                                        title={`View ${r.userId?.firstName || "Employee"}'s profile & attendance`}
+                                    >
+                                        <div className="w-7 h-7 rounded-full bg-yellow-200 text-yellow-700 flex items-center justify-center text-xs font-bold shrink-0 group-hover:scale-105 transition">
+                                            {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium text-gray-800 group-hover:text-yellow-800 transition truncate">{r.userId?.firstName} {r.userId?.lastName}</p>
+                                            <p className="text-[10px] text-gray-400">Check-in: {r.checkIn ? new Date(r.checkIn).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "—"}</p>
+                                        </div>
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-200 text-yellow-800 font-semibold capitalize group-hover:bg-yellow-300 transition">{r.status}</span>
+                                    </Link>
+                                );
+                            })}
+                            {lateAbsent.absent.map(r => {
+                                const uid = r.userId?._id || r.userId;
+                                const targetUrl = uid ? `/users/${uid}?tab=attendance` : "/attendance";
+                                return (
+                                    <Link 
+                                        key={r._id} 
+                                        to={targetUrl}
+                                        className="flex items-center gap-3 p-2 rounded-lg bg-red-50 hover:bg-red-100/70 border border-transparent hover:border-red-200 transition cursor-pointer group"
+                                        title={`View ${r.userId?.firstName || "Employee"}'s profile & attendance`}
+                                    >
+                                        <div className="w-7 h-7 rounded-full bg-red-200 text-red-700 flex items-center justify-center text-xs font-bold shrink-0 group-hover:scale-105 transition">
+                                            {r.userId?.firstName?.[0]}{r.userId?.lastName?.[0]}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium text-gray-800 group-hover:text-red-700 transition truncate">{r.userId?.firstName} {r.userId?.lastName}</p>
+                                            <p className="text-[10px] text-gray-400">Click to view employee details &rarr;</p>
+                                        </div>
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-200 text-red-800 font-semibold group-hover:bg-red-300 transition">Absent</span>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -1045,23 +1198,31 @@ const Home = () => {
                                 <span className="ml-1 text-xs bg-red-500 text-white rounded-full px-2 py-0.5 font-bold">{pendingLeaves.length}</span>
                             )}
                         </h2>
-                        <Link to="/leave-management" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View all <ArrowRight size={12} /></Link>
+                        <Link to="/leave-management?tab=team-leaves" className="text-xs text-blue-500 hover:underline flex items-center gap-1">View all <ArrowRight size={12} /></Link>
                     </div>
                     {pendingLeaves.length === 0 ? (
                         <p className="text-sm text-gray-400 text-center py-6">No pending leave requests 🎉</p>
                     ) : (
                         <div className="space-y-2 max-h-52 overflow-y-auto no-scrollbar">
                             {pendingLeaves.map(l => (
-                                <div key={l._id} className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50 transition">
+                                <Link 
+                                    key={l._id} 
+                                    to={`/leave-management?tab=team-leaves&leaveId=${l._id}&userId=${l.userId?._id || ""}`}
+                                    className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:bg-blue-50/60 hover:border-blue-200 transition cursor-pointer group"
+                                    title="Click to view and manage this leave application"
+                                >
                                     <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">
                                         {l.userId?.firstName?.[0]}{l.userId?.lastName?.[0]}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-gray-800 truncate">{l.userId?.firstName} {l.userId?.lastName}</p>
-                                        <p className="text-[10px] text-gray-400">{l.leaveType?.name} · {new Date(l.startDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</p>
+                                        <p className="text-xs font-medium text-gray-800 truncate group-hover:text-blue-600 transition">{l.userId?.firstName} {l.userId?.lastName}</p>
+                                        <p className="text-[10px] text-gray-400">
+                                            {l.leaveTypeId?.name || l.leaveType?.name || "Leave"}
+                                            {fmtLeaveDate(l) ? ` · ${fmtLeaveDate(l)}` : ""}
+                                        </p>
                                     </div>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">Pending</span>
-                                </div>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold group-hover:bg-amber-200 transition">Pending</span>
+                                </Link>
                             ))}
                         </div>
                     )}
@@ -1109,28 +1270,34 @@ const Home = () => {
 
             {/* Payroll Summary - MANAGE_PAYROLL permission */}
             {isAdmin && canViewPayroll && payrollSummary && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+            <div 
+                onClick={() => navigate("/reports/payroll")}
+                className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-md hover:border-indigo-300 transition cursor-pointer group"
+                title="Click to view full payroll report"
+            >
                 <div className="flex items-center justify-between mb-5">
                     <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                        <span className="p-1.5 bg-indigo-100 rounded-lg"><IndianRupee size={15} className="text-indigo-600" /></span>
+                        <span className="p-1.5 bg-indigo-100 group-hover:bg-indigo-200 rounded-lg transition"><IndianRupee size={15} className="text-indigo-600" /></span>
                         Payroll Summary — {currentMonth()}
                     </h2>
-                    <Link to="/reports/payroll" className="text-xs text-blue-500 hover:underline flex items-center gap-1">Full Report <ArrowRight size={12} /></Link>
+                    <span className="text-xs text-blue-500 group-hover:text-blue-600 group-hover:underline flex items-center gap-1">
+                        Full Report <ArrowRight size={12} />
+                    </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="bg-indigo-50 rounded-xl p-4">
+                    <div className="bg-indigo-50 group-hover:bg-indigo-100/60 rounded-xl p-4 transition">
                         <p className="text-xs text-indigo-500 font-semibold uppercase tracking-wide mb-1">Total Runs</p>
                         <p className="text-2xl font-bold text-indigo-800">{payrollSummary.total ?? 0}</p>
                     </div>
-                    <div className="bg-green-50 rounded-xl p-4">
+                    <div className="bg-green-50 group-hover:bg-green-100/60 rounded-xl p-4 transition">
                         <p className="text-xs text-green-500 font-semibold uppercase tracking-wide mb-1">Paid</p>
                         <p className="text-2xl font-bold text-green-800">{payrollSummary.paid ?? 0}</p>
                     </div>
-                    <div className="bg-amber-50 rounded-xl p-4">
+                    <div className="bg-amber-50 group-hover:bg-amber-100/60 rounded-xl p-4 transition">
                         <p className="text-xs text-amber-500 font-semibold uppercase tracking-wide mb-1">Pending</p>
                         <p className="text-2xl font-bold text-amber-800">{payrollSummary.pending ?? 0}</p>
                     </div>
-                    <div className="bg-blue-50 rounded-xl p-4">
+                    <div className="bg-blue-50 group-hover:bg-blue-100/60 rounded-xl p-4 transition">
                         <p className="text-xs text-blue-500 font-semibold uppercase tracking-wide mb-1">Net Payout</p>
                         <p className="text-xl font-bold text-blue-800 tracking-wider">{fmtSalary(payrollSummary.totalNet)}</p>
                     </div>
@@ -1252,6 +1419,140 @@ const Home = () => {
                                 <span className="text-xs font-medium text-gray-600 group-hover:text-blue-600 transition">{c.label}</span>
                             </Link>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Task Detail Modal */}
+            {selectedTaskId && (
+                <TaskDetail
+                    taskId={selectedTaskId}
+                    onClose={() => setSelectedTaskId(null)}
+                    onUpdate={() => {
+                        if (canViewPM) {
+                            getPendingTasks().then(res => setPendingTasks(res.data?.data || [])).catch(() => {});
+                            getProjects().then(res => setPmProjects(res.data?.data || [])).catch(() => {});
+                        }
+                        if (!isAdmin && !isClient) {
+                            getMyTaskHistory().then(r => setTaskHistory(r.data?.data || [])).catch(() => {});
+                        }
+                    }}
+                    isAdmin={isAdmin}
+                    currentUserId={user?._id}
+                />
+            )}
+
+            {/* Resource Utilization Modal */}
+            {showResourceModal && (
+                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-gray-100 overflow-hidden flex flex-col max-h-[85vh]">
+                        {/* Modal Header */}
+                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-fuchsia-50/50 to-indigo-50/30">
+                            <div className="flex items-center gap-3">
+                                <span className="p-2 bg-fuchsia-100 rounded-xl">
+                                    <BarChart2 size={18} className="text-fuchsia-600" />
+                                </span>
+                                <div>
+                                    <h3 className="font-bold text-gray-900 text-base">Resource Utilization</h3>
+                                    <p className="text-xs text-gray-500">Active team members engaged in projects</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setShowResourceModal(false)}
+                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition cursor-pointer"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Modal Content - List of Members & their Projects */}
+                        <div className="p-6 overflow-y-auto space-y-3 flex-1 no-scrollbar">
+                            <div className="flex items-center justify-between text-xs text-gray-500 pb-2 border-b border-gray-100">
+                                <span>{allProjectMembers.length} Active Members</span>
+                                <span>Across {pmProjects.length} Projects</span>
+                            </div>
+
+                            {allProjectMembers.length > 0 ? (
+                                allProjectMembers.map(m => {
+                                    const memberId = (m._id || m.id)?.toString();
+                                    const assignedProjects = pmProjects.filter(p => 
+                                        p.members?.some(mem => (mem._id || mem.id || mem)?.toString() === memberId)
+                                    );
+
+                                    return (
+                                        <div key={memberId} className="p-3.5 rounded-xl border border-gray-100 hover:border-fuchsia-200 hover:bg-fuchsia-50/20 transition space-y-2.5">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
+                                                        {m.profilePic ? (
+                                                            <img 
+                                                                src={getImageUrl(m.profilePic?.url || m.profilePic)} 
+                                                                alt="" 
+                                                                className="w-full h-full object-cover" 
+                                                                onError={(e) => {
+                                                                    e.target.style.display = "none";
+                                                                    if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = "inline";
+                                                                }}
+                                                            />
+                                                        ) : null}
+                                                        <span style={m.profilePic ? { display: "none" } : undefined}>
+                                                            {(m.firstName?.[0] || 'U').toUpperCase()}
+                                                        </span>
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-semibold text-gray-800 truncate">
+                                                            {m.firstName} {m.lastName}
+                                                        </p>
+                                                        <p className="text-[11px] text-gray-400 truncate">
+                                                            {m.email || m.designation || "Team Member"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-100 shrink-0">
+                                                    {assignedProjects.length} {assignedProjects.length === 1 ? "Project" : "Projects"}
+                                                </span>
+                                            </div>
+
+                                            {assignedProjects.length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5 pl-12">
+                                                    {assignedProjects.map(p => (
+                                                        <button
+                                                            key={p._id}
+                                                            onClick={() => {
+                                                                setShowResourceModal(false);
+                                                                navigate(`/projects/${p._id}`);
+                                                            }}
+                                                            className="text-[10px] font-medium px-2 py-1 bg-white hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 border border-gray-200 hover:border-indigo-200 rounded-md transition flex items-center gap-1 cursor-pointer"
+                                                            title={`Open ${p.name}`}
+                                                        >
+                                                            <FolderKanban size={10} className="text-indigo-500" />
+                                                            <span className="truncate max-w-[130px]">{p.name}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <p className="text-sm text-gray-400 text-center py-6">No members assigned to projects</p>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                            <p className="text-[11px] text-gray-500">Click any project tag to view its details</p>
+                            <button
+                                onClick={() => {
+                                    setShowResourceModal(false);
+                                    navigate("/projects");
+                                }}
+                                className="text-xs font-semibold text-white bg-fuchsia-600 hover:bg-fuchsia-700 px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                                All Projects <ArrowRight size={12} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

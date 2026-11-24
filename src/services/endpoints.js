@@ -183,6 +183,7 @@ export const ENDPOINTS = {
 
     TASK: {
     CREATE: `/api/tasks`,
+    PENDING: `/api/tasks/pending`,
     MY_HISTORY: `/api/tasks/my-history`,
     BY_PROJECT: (projectId) => `/api/tasks/project/${projectId}`,
     GET_BY_ID: (id) => `/api/tasks/${id}`,
