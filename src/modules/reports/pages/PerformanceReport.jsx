@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import api from "../../../services/axios";
 import { ENDPOINTS } from "../../../services/endpoints";
 import { toast } from "react-toastify";
-import { Users, CheckCircle, Calendar, Target, Filter, RefreshCw, BarChart2, Download, X, Folder, Clock, CheckCircle2, AlertCircle, Briefcase, Eye, Search, Layers } from "lucide-react";
+import { Users, CheckCircle, Calendar, Target, Filter, BarChart2, Download, X, Folder, Clock, CheckCircle2, AlertCircle, Briefcase, Eye, Search, Layers } from "lucide-react";
 import { useStore } from "../../../context/StoreContext";
 import { getImageUrl } from "../../../utils/imageUtils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
@@ -19,13 +19,30 @@ const PerformanceReport = () => {
     const [loading, setLoading] = useState(true);
     const [performanceData, setPerformanceData] = useState([]);
     
-    // Helpers for dates
-    const currentMonth = () => new Date().toISOString().slice(0, 7);
-    const todayDate = () => new Date().toISOString().split("T")[0];
+    // Helpers for local dates (avoids UTC shift issues)
+    const formatLocalYMD = (dateObj) => {
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const d = String(dateObj.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    };
+    const currentMonth = () => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    };
+    const todayDate = () => formatLocalYMD(new Date());
     const firstDayOfMonth = () => {
         const now = new Date();
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
     };
+    const getLast3MonthsRange = () => {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        return { startDate: formatLocalYMD(start), endDate: formatLocalYMD(end) };
+    };
+    const currentYearNum = new Date().getFullYear();
+    const yearOptions = Array.from({ length: 5 }, (_, i) => String(currentYearNum - i));
 
     // Date Filters
     const [dateRange, setDateRange] = useState("this_month");
@@ -33,25 +50,63 @@ const PerformanceReport = () => {
     const [startDate, setStartDate] = useState(firstDayOfMonth());
     const [endDate, setEndDate] = useState(todayDate());
     
-    // Modal state for viewing developer tasks & project details
+    // Modal state for viewing individual employee performance (Month / Last 3 Months / Year / Date Wise)
     const [selectedDevModal, setSelectedDevModal] = useState(null);
+    const [modalFilterType, setModalFilterType] = useState("month"); // "month" | "last_3_months" | "year" | "custom"
+    const [modalMonth, setModalMonth] = useState(currentMonth());
+    const [modalYear, setModalYear] = useState(String(currentYearNum));
+    const [modalStartDate, setModalStartDate] = useState(firstDayOfMonth());
+    const [modalEndDate, setModalEndDate] = useState(todayDate());
+    const [modalPerfData, setModalPerfData] = useState(null);
+    const [modalMonthlyBreakdown, setModalMonthlyBreakdown] = useState([]);
+    const [modalLoading, setModalLoading] = useState(false);
+
     const [taskStatusFilter, setTaskStatusFilter] = useState("all"); // "all", "done", "pending"
     const [taskProjectFilter, setTaskProjectFilter] = useState("all");
     const [taskSearchQuery, setTaskSearchQuery] = useState("");
 
-    // Sync modal with refreshed performanceData if modal is open
-    useEffect(() => {
-        if (selectedDevModal) {
-            const updated = performanceData.find(d => String(d.userId) === String(selectedDevModal.userId));
-            if (updated) setSelectedDevModal(updated);
-        }
-    }, [performanceData]);
-
     const handleOpenTaskModal = (dev, initialStatus = "all") => {
         setSelectedDevModal(dev);
+        setModalPerfData(dev);
+        setModalMonthlyBreakdown([]);
         setTaskStatusFilter(initialStatus);
         setTaskProjectFilter("all");
         setTaskSearchQuery("");
+
+        if (dateRange === "specific_month" && selectedMonth) {
+            setModalFilterType("month");
+            setModalMonth(selectedMonth);
+        } else if (dateRange === "last_month") {
+            const now = new Date();
+            const lastM = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            setModalFilterType("month");
+            setModalMonth(`${lastM.getFullYear()}-${String(lastM.getMonth() + 1).padStart(2, "0")}`);
+        } else if (dateRange === "last_3_months") {
+            setModalFilterType("last_3_months");
+        } else if (dateRange === "this_year") {
+            setModalFilterType("year");
+            setModalYear(String(currentYearNum));
+        } else if (dateRange === "custom" && startDate && endDate) {
+            setModalFilterType("custom");
+            setModalStartDate(startDate);
+            setModalEndDate(endDate);
+        } else if (dateRange === "today") {
+            const t = todayDate();
+            setModalFilterType("custom");
+            setModalStartDate(t);
+            setModalEndDate(t);
+        } else if (dateRange === "this_week") {
+            const now = new Date();
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+            const wkStart = new Date(now.getFullYear(), now.getMonth(), diff);
+            setModalFilterType("custom");
+            setModalStartDate(formatLocalYMD(wkStart));
+            setModalEndDate(todayDate());
+        } else {
+            setModalFilterType("month");
+            setModalMonth(currentMonth());
+        }
     };
 
     const formatDate = (dateStr) => {
@@ -148,8 +203,8 @@ const PerformanceReport = () => {
                 const now = new Date();
                 const day = now.getDay();
                 const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-                const start = new Date(now.setDate(diff));
-                params = { startDate: start.toISOString().split("T")[0], endDate: todayDate() };
+                const start = new Date(now.getFullYear(), now.getMonth(), diff);
+                params = { startDate: formatLocalYMD(start), endDate: todayDate() };
             } else if (dateRange === "this_month") {
                 params = { month: currentMonth() };
             } else if (dateRange === "last_month") {
@@ -157,9 +212,11 @@ const PerformanceReport = () => {
                 const lastM = new Date(now.getFullYear(), now.getMonth() - 1, 1);
                 const lastMonthStr = `${lastM.getFullYear()}-${String(lastM.getMonth() + 1).padStart(2, "0")}`;
                 params = { month: lastMonthStr };
+            } else if (dateRange === "last_3_months") {
+                params = getLast3MonthsRange();
             } else if (dateRange === "this_year") {
                 const year = new Date().getFullYear();
-                params = { startDate: `${year}-01-01`, endDate: `${year}-12-31` };
+                params = { year: String(year) };
             } else if (dateRange === "all_time") {
                 params = { allTime: "true" };
             }
@@ -188,6 +245,63 @@ const PerformanceReport = () => {
         fetchReport();
     }, [dateRange, selectedMonth, startDate, endDate]); // eslint-disable-line
 
+    // Fetch single employee detailed performance when modal or modal filters change
+    useEffect(() => {
+        if (!selectedDevModal?.userId) return;
+        if (modalFilterType === "custom" && (!modalStartDate || !modalEndDate || modalStartDate > modalEndDate)) return;
+
+        let cancelled = false;
+        const fetchModalPerformance = async () => {
+            try {
+                setModalLoading(true);
+                const params = { userId: selectedDevModal.userId };
+                if (modalFilterType === "month") {
+                    params.month = modalMonth || currentMonth();
+                } else if (modalFilterType === "last_3_months") {
+                    const range = getLast3MonthsRange();
+                    params.startDate = range.startDate;
+                    params.endDate = range.endDate;
+                } else if (modalFilterType === "year") {
+                    params.year = modalYear || String(currentYearNum);
+                } else if (modalFilterType === "custom") {
+                    params.startDate = modalStartDate;
+                    params.endDate = modalEndDate;
+                }
+
+                const res = await api.get(ENDPOINTS.PERFORMANCE.GET, { params });
+                if (!cancelled && res.data?.success) {
+                    const empRecord = res.data.data?.[0] || {
+                        ...selectedDevModal,
+                        tasksAssigned: 0,
+                        tasksCompleted: 0,
+                        lateTasks: 0,
+                        taskCompletionRate: 0,
+                        daysPresent: 0,
+                        daysLate: 0,
+                        totalWorkingDays: 0,
+                        attendanceRate: 0,
+                        performanceScore: 0,
+                        avgCompletionFormatted: "—",
+                        tasks: []
+                    };
+                    setModalPerfData(empRecord);
+                    setModalMonthlyBreakdown(res.data.monthlyBreakdown || []);
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    toast.error(error.response?.data?.message || "Failed to fetch employee performance");
+                }
+            } finally {
+                if (!cancelled) setModalLoading(false);
+            }
+        };
+
+        fetchModalPerformance();
+        return () => { cancelled = true; };
+    }, [selectedDevModal?.userId, modalFilterType, modalMonth, modalYear, modalStartDate, modalEndDate]); // eslint-disable-line
+
+    const escapeCSV = (val) => `"${String(val ?? "").replace(/"/g, '""')}"`;
+
     const exportToCSV = () => {
         if (!performanceData || performanceData.length === 0) {
             toast.info("No data to export");
@@ -206,7 +320,7 @@ const PerformanceReport = () => {
             dev.performanceScore
         ]);
 
-        const csvContent = [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+        const csvContent = [headers.map(escapeCSV).join(","), ...rows.map(r => r.map(escapeCSV).join(","))].join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -215,6 +329,126 @@ const PerformanceReport = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const getModalPeriodMeta = () => {
+        if (modalFilterType === "month") {
+            return { label: `Month: ${modalMonth}`, fileTag: `Month_${modalMonth}` };
+        }
+        if (modalFilterType === "last_3_months") {
+            const r = getLast3MonthsRange();
+            return { label: `Last 3 Months (${r.startDate} to ${r.endDate})`, fileTag: `Last_3_Months_${r.startDate}_to_${r.endDate}` };
+        }
+        if (modalFilterType === "year") {
+            return { label: `Year: ${modalYear}`, fileTag: `Year_${modalYear}` };
+        }
+        return { label: `${modalStartDate} to ${modalEndDate}`, fileTag: `${modalStartDate}_to_${modalEndDate}` };
+    };
+
+    const handleDownloadModalCSV = () => {
+        const emp = modalPerfData || selectedDevModal;
+        if (!emp) return;
+
+        const periodMeta = getModalPeriodMeta();
+        const csvLines = [];
+
+        csvLines.push(["Employee Performance Report"].map(escapeCSV).join(","));
+        csvLines.push(["Employee Name", emp.name || ""].map(escapeCSV).join(","));
+        if (emp.employeeCode) csvLines.push(["Employee Code", emp.employeeCode].map(escapeCSV).join(","));
+        if (emp.email) csvLines.push(["Email", emp.email].map(escapeCSV).join(","));
+        csvLines.push(["Period", periodMeta.label].map(escapeCSV).join(","));
+        csvLines.push("");
+
+        // Summary metrics
+        csvLines.push(["Summary Metrics"].map(escapeCSV).join(","));
+        csvLines.push([
+            "Overall Score (Pts)",
+            "Tasks Assigned",
+            "Tasks Completed",
+            "Task Completion %",
+            "Days Present",
+            "Working Days",
+            "Attendance %",
+            "Late Days",
+            "Overdue Tasks",
+            "Avg Completion Time"
+        ].map(escapeCSV).join(","));
+        csvLines.push([
+            emp.performanceScore ?? 0,
+            emp.tasksAssigned ?? 0,
+            emp.tasksCompleted ?? 0,
+            `${emp.taskCompletionRate ?? 0}%`,
+            emp.daysPresent ?? 0,
+            emp.totalWorkingDays ?? 0,
+            `${emp.attendanceRate ?? 0}%`,
+            emp.daysLate ?? 0,
+            emp.lateTasks ?? 0,
+            emp.avgCompletionFormatted || "—"
+        ].map(escapeCSV).join(","));
+
+        // Monthly Breakdown (especially useful for Last 3 Months / Year Wise)
+        if (modalMonthlyBreakdown && modalMonthlyBreakdown.length > 0) {
+            csvLines.push("");
+            csvLines.push(["Monthly Breakdown"].map(escapeCSV).join(","));
+            csvLines.push([
+                "Month",
+                "Tasks Assigned",
+                "Tasks Completed",
+                "Completion %",
+                "Days Present",
+                "Working Days",
+                "Attendance %",
+                "Late Days",
+                "Score (Pts)",
+                "Avg Time"
+            ].map(escapeCSV).join(","));
+
+            modalMonthlyBreakdown.forEach(mb => {
+                csvLines.push([
+                    mb.monthLabel || mb.month,
+                    mb.tasksAssigned,
+                    mb.tasksCompleted,
+                    `${mb.taskCompletionRate}%`,
+                    mb.daysPresent,
+                    mb.totalWorkingDays,
+                    `${mb.attendanceRate}%`,
+                    mb.daysLate,
+                    mb.performanceScore,
+                    mb.avgCompletionFormatted || "—"
+                ].map(escapeCSV).join(","));
+            });
+        }
+
+        // Detailed Tasks
+        const tasks = emp.tasks || [];
+        if (tasks.length > 0) {
+            csvLines.push("");
+            csvLines.push(["Task Details"].map(escapeCSV).join(","));
+            csvLines.push(["Task Title", "Project", "Priority", "Status", "Due Date", "Created Date", "Last Updated"].map(escapeCSV).join(","));
+            tasks.forEach(t => {
+                csvLines.push([
+                    t.title || "",
+                    t.projectName || "General",
+                    t.priority || "medium",
+                    t.status || "",
+                    formatDate(t.dueDate),
+                    formatDate(t.createdAt),
+                    formatDate(t.updatedAt)
+                ].map(escapeCSV).join(","));
+            });
+        }
+
+        const blob = new Blob([csvLines.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const safeName = (emp.name || "Employee").replace(/\s+/g, "_");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${safeName}_Performance_${periodMeta.fileTag}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -228,7 +462,7 @@ const PerformanceReport = () => {
                 
                 <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full md:w-auto">
                     {/* Specific Month Selector (Outside Dropdown) */}
-                    <div className={`flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-xl border shadow-2xs transition w-full sm:w-auto ${
+                    <div className={`flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-sm border shadow-2xs transition w-full sm:w-auto ${
                         dateRange === "specific_month" ? "border-indigo-500 ring-2 ring-indigo-100" : "border-gray-200 hover:border-gray-300"
                     }`}>
                         <div className="flex items-center gap-2">
@@ -249,7 +483,7 @@ const PerformanceReport = () => {
                     </div>
 
                     {/* Date Range: From - To (Outside Dropdown) */}
-                    <div className={`flex items-center justify-between sm:justify-start gap-2 bg-white px-2.5 sm:px-3 py-1.5 rounded-xl border shadow-2xs transition w-full sm:w-auto ${
+                    <div className={`flex items-center justify-between sm:justify-start gap-2 bg-white px-2.5 sm:px-3 py-1.5 rounded-sm border shadow-2xs transition w-full sm:w-auto ${
                         dateRange === "custom" ? "border-indigo-500 ring-2 ring-indigo-100" : "border-gray-200 hover:border-gray-300"
                     }`}>
                         <div className="flex items-center gap-1 min-w-0">
@@ -282,7 +516,7 @@ const PerformanceReport = () => {
                     </div>
 
                     {/* Quick Presets Dropdown (Only Presets) */}
-                    <div className={`flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-xl border shadow-2xs transition w-full sm:w-auto ${
+                    <div className={`flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-1.5 rounded-sm border shadow-2xs transition w-full sm:w-auto ${
                         dateRange !== "specific_month" && dateRange !== "custom" ? "border-indigo-500 ring-2 ring-indigo-100" : "border-gray-200 hover:border-gray-300"
                     }`}>
                         <div className="flex items-center gap-2">
@@ -304,47 +538,42 @@ const PerformanceReport = () => {
                             <option value="today">Daily (Today)</option>
                             <option value="this_week">Weekly (This Week)</option>
                             <option value="last_month">Last Month</option>
+                            <option value="last_3_months">Last 3 Months</option>
                             <option value="this_year">Yearly (This Year)</option>
                             <option value="all_time">All Time</option>
                         </select>
                     </div>
 
                     {/* Actions Row */}
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        {/* Reset Button */}
-                        {(dateRange === "specific_month" || dateRange === "custom") && (
-                            <button
-                                onClick={() => {
-                                    setDateRange("this_month");
-                                    setSelectedMonth(currentMonth());
-                                    setStartDate(firstDayOfMonth());
-                                    setEndDate(todayDate());
-                                }}
-                                className="px-3 py-1.5 text-xs text-gray-600 hover:text-indigo-600 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition shadow-2xs cursor-pointer font-medium active:scale-95"
-                                title="Reset to current month"
-                            >
-                                Reset
-                            </button>
-                        )}
-
-                        <button 
-                            onClick={fetchReport} 
-                            className="p-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 rounded-xl transition shadow-2xs cursor-pointer active:scale-95 shrink-0"
-                            title="Refresh"
-                        >
-                            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                        </button>
-                        
-                        {canViewAll && (
-                            <button 
-                                onClick={exportToCSV}
-                                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-semibold transition shadow-xs cursor-pointer"
-                            >
-                                <Download size={14} />
-                                <span>Export CSV</span>
-                            </button>
-                        )}
-                    </div>
+                    {(dateRange === "specific_month" || dateRange === "custom" || canViewAll) && (
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            {/* Reset Button */}
+                            {(dateRange === "specific_month" || dateRange === "custom") && (
+                                <button
+                                    onClick={() => {
+                                        setDateRange("this_month");
+                                        setSelectedMonth(currentMonth());
+                                        setStartDate(firstDayOfMonth());
+                                        setEndDate(todayDate());
+                                    }}
+                                    className="px-3 py-1.5 text-xs text-gray-600 hover:text-indigo-600 bg-white hover:bg-gray-50 border border-gray-200 rounded-sm transition shadow-2xs cursor-pointer font-medium active:scale-95"
+                                    title="Reset to current month"
+                                >
+                                    Reset
+                                </button>
+                            )}
+                            
+                            {canViewAll && (
+                                <button 
+                                    onClick={exportToCSV}
+                                    className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-sm text-xs font-semibold transition shadow-xs cursor-pointer"
+                                >
+                                    <Download size={14} />
+                                    <span>Export CSV</span>
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -431,12 +660,13 @@ const PerformanceReport = () => {
                                         <th className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">Attendance %</th>
                                         <th className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">Late Days</th>
                                         <th className="px-4 sm:px-6 py-3.5 text-right whitespace-nowrap">Score</th>
+                                        <th className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {performanceData.length === 0 ? (
                                         <tr>
-                                            <td colSpan={canViewAll ? 7 : 6} className="px-6 py-8 text-center text-gray-500">
+                                            <td colSpan={canViewAll ? 8 : 7} className="px-6 py-8 text-center text-gray-500">
                                                 No performance data found for the selected period.
                                             </td>
                                         </tr>
@@ -546,6 +776,17 @@ const PerformanceReport = () => {
                                                              {dev.performanceScore} Pts
                                                          </span>
                                                     </td>
+                                                    <td className="px-4 sm:px-6 py-3.5 text-center whitespace-nowrap">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleOpenTaskModal(dev, "all")}
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-sm text-xs font-semibold transition cursor-pointer active:scale-95"
+                                                            title="View detailed performance (Month / Last 3 Months / Year / Date Wise) & download"
+                                                        >
+                                                            <Eye size={13} />
+                                                            <span>View</span>
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             );
                                         })
@@ -557,9 +798,12 @@ const PerformanceReport = () => {
                 </>
             )}
 
-            {/* Task & Project Breakdown Modal */}
+            {/* Employee Detailed Performance Modal (Month / Last 3 Months / Year / Date Wise + Download) */}
             {selectedDevModal && (() => {
-                const allDevTasks = selectedDevModal.tasks || [];
+                const modalDev = modalPerfData || selectedDevModal;
+                const allDevTasks = modalDev.tasks || [];
+                const periodMeta = getModalPeriodMeta();
+                const last3Range = getLast3MonthsRange();
                 
                 // Group tasks by project
                 const projectStats = allDevTasks.reduce((acc, t) => {
@@ -596,238 +840,408 @@ const PerformanceReport = () => {
 
                 const totalCount = allDevTasks.length;
                 const completedCount = allDevTasks.filter(t => t.status === "done").length;
-                const pendingCount = totalCount - completedCount;
 
                 return (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
                         {/* Backdrop */}
                         <div className="absolute inset-0" onClick={() => setSelectedDevModal(null)}></div>
 
-                        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 z-10 animate-in zoom-in-95 duration-150">
+                        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden border border-gray-200 z-10 animate-in zoom-in-95 duration-150">
                             {/* Modal Header */}
                             <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between shrink-0">
                                 <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
-                                    {selectedDevModal.profilePic ? (
+                                    {modalDev.profilePic ? (
                                         <img 
-                                            src={getImageUrl(selectedDevModal.profilePic?.url || selectedDevModal.profilePic)} 
-                                            alt={selectedDevModal.name} 
+                                            src={getImageUrl(modalDev.profilePic?.url || modalDev.profilePic)} 
+                                            alt={modalDev.name} 
                                             className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover ring-2 ring-indigo-400 shrink-0" 
                                         />
                                     ) : (
                                         <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm sm:text-base ring-2 ring-indigo-400 shrink-0">
-                                            {selectedDevModal.name?.charAt(0)?.toUpperCase() || "U"}
+                                            {modalDev.name?.charAt(0)?.toUpperCase() || "U"}
                                         </div>
                                     )}
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <h3 className="text-base sm:text-lg font-bold text-white truncate">{selectedDevModal.name}</h3>
+                                            <h3 className="text-base sm:text-lg font-bold text-white truncate">{modalDev.name}</h3>
+                                            {modalDev.employeeCode && (
+                                                <span className="text-[10px] sm:text-xs bg-white/10 text-indigo-100 px-2 py-0.5 rounded-sm border border-white/15 font-medium shrink-0">
+                                                    {modalDev.employeeCode}
+                                                </span>
+                                            )}
                                             <span className="text-[11px] sm:text-xs bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/30 font-semibold shrink-0">
-                                                Score: {selectedDevModal.performanceScore || 0} Pts
+                                                Score: {modalDev.performanceScore || 0} Pts
                                             </span>
                                         </div>
                                         <p className="text-[11px] sm:text-xs text-indigo-200/80 mt-0.5 flex items-center gap-1.5 truncate">
-                                            <span>Breakdown</span>
+                                            <span>Performance Details</span>
                                             <span>•</span>
-                                            <span className="truncate">
-                                                {dateRange === "specific_month" ? `Month: ${selectedMonth}` :
-                                                 dateRange === "custom" ? `${startDate} to ${endDate}` :
-                                                 dateRange.replace("_", " ").toUpperCase()}
-                                            </span>
+                                            <span className="truncate font-medium text-indigo-100">{periodMeta.label}</span>
                                         </p>
                                     </div>
                                 </div>
                                 <button 
                                     onClick={() => setSelectedDevModal(null)}
-                                    className="text-gray-300 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition cursor-pointer shrink-0 ml-2"
+                                    className="text-gray-300 hover:text-white p-1.5 rounded-sm hover:bg-white/10 transition cursor-pointer shrink-0 ml-2"
                                     title="Close Modal"
                                 >
                                     <X size={20} />
                                 </button>
                             </div>
 
-                            {/* KPI Summary Cards */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 p-3 sm:p-4 bg-gray-50 border-b border-gray-200 shrink-0">
-                                <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-xs">
-                                    <span className="text-[11px] sm:text-xs font-medium text-gray-500">Total Tasks</span>
-                                    <div className="text-lg sm:text-xl font-bold text-gray-900 mt-0.5">{totalCount}</div>
-                                </div>
-                                <div className="bg-white p-3 rounded-xl border border-emerald-100 shadow-xs">
-                                    <span className="text-[11px] sm:text-xs font-medium text-emerald-600">Completed</span>
-                                    <div className="text-lg sm:text-xl font-bold text-emerald-600 mt-0.5">{completedCount}</div>
-                                </div>
-                                <div className="bg-white p-3 rounded-xl border border-amber-100 shadow-xs">
-                                    <span className="text-[11px] sm:text-xs font-medium text-amber-600">Pending / Review</span>
-                                    <div className="text-lg sm:text-xl font-bold text-amber-600 mt-0.5">{pendingCount}</div>
-                                </div>
-                                <div className="bg-white p-3 rounded-xl border border-indigo-100 shadow-xs">
-                                    <span className="text-[11px] sm:text-xs font-medium text-indigo-600">Projects</span>
-                                    <div className="text-lg sm:text-xl font-bold text-indigo-600 mt-0.5">{projectList.length}</div>
-                                </div>
-                            </div>
-
-                            {/* Projects Breakdown Pills */}
-                            {projectList.length > 0 && (
-                                <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-white border-b border-gray-100 shrink-0 overflow-x-auto scrollbar-none">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
-                                            <Briefcase size={13} className="text-indigo-600" /> Projects Contributed ({projectList.length})
-                                        </span>
-                                        {taskProjectFilter !== "all" && (
-                                            <button 
-                                                onClick={() => setTaskProjectFilter("all")}
-                                                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer"
-                                            >
-                                                Clear project filter
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                        <button
-                                            onClick={() => setTaskProjectFilter("all")}
-                                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                                                taskProjectFilter === "all"
-                                                    ? "bg-indigo-600 text-white shadow-xs"
-                                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            }`}
-                                        >
-                                            <span>All Projects</span>
-                                            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                                                taskProjectFilter === "all" ? "bg-indigo-700 text-white" : "bg-gray-200 text-gray-600"
-                                            }`}>
-                                                {totalCount}
-                                            </span>
-                                        </button>
-                                        {projectList.map(proj => (
+                            {/* Modal Period Filter Toolbar & Download Button */}
+                            <div className="px-3.5 sm:px-6 py-3 bg-gray-50 border-b border-gray-200 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 shrink-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {/* Mode Switcher */}
+                                    <div className="inline-flex flex-wrap items-center gap-1 bg-white p-1 rounded-sm border border-gray-200 shadow-2xs">
+                                        {[
+                                            { id: "month", label: "Month Wise" },
+                                            { id: "last_3_months", label: "Last 3 Months" },
+                                            { id: "year", label: "Year Wise" },
+                                            { id: "custom", label: "Date Wise" }
+                                        ].map(tab => (
                                             <button
-                                                key={proj.name}
-                                                onClick={() => setTaskProjectFilter(taskProjectFilter === proj.name ? "all" : proj.name)}
-                                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 border whitespace-nowrap ${
-                                                    taskProjectFilter === proj.name
-                                                        ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                                                        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                                key={tab.id}
+                                                type="button"
+                                                onClick={() => setModalFilterType(tab.id)}
+                                                className={`px-2.5 py-1 text-xs font-semibold rounded-sm transition cursor-pointer ${
+                                                    modalFilterType === tab.id
+                                                        ? "bg-indigo-600 text-white shadow-2xs"
+                                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                                                 }`}
                                             >
-                                                <Folder size={12} className={taskProjectFilter === proj.name ? "text-white" : "text-indigo-500"} />
-                                                <span>{proj.name}</span>
-                                                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                                                    taskProjectFilter === proj.name ? "bg-indigo-700 text-white" : "bg-indigo-50 text-indigo-700 font-semibold"
-                                                }`}>
-                                                    {proj.total}
-                                                </span>
+                                                {tab.label}
                                             </button>
                                         ))}
                                     </div>
-                                </div>
-                            )}
 
-                            {/* Filter and Search Bar */}
-                            <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
-                                {/* Status Tabs */}
-                                <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg w-full sm:w-auto">
-                                    <button
-                                        onClick={() => setTaskStatusFilter("all")}
-                                        className={`px-3 py-1 text-xs font-medium rounded-md transition cursor-pointer flex-1 sm:flex-initial ${
-                                            taskStatusFilter === "all" ? "bg-white text-gray-900 shadow-xs font-semibold" : "text-gray-600 hover:text-gray-900"
-                                        }`}
-                                    >
-                                        All ({totalCount})
-                                    </button>
-                                    <button
-                                        onClick={() => setTaskStatusFilter("done")}
-                                        className={`px-3 py-1 text-xs font-medium rounded-md transition cursor-pointer flex-1 sm:flex-initial ${
-                                            taskStatusFilter === "done" ? "bg-white text-emerald-700 shadow-xs font-semibold" : "text-gray-600 hover:text-gray-900"
-                                        }`}
-                                    >
-                                        Completed ({completedCount})
-                                    </button>
-                                    <button
-                                        onClick={() => setTaskStatusFilter("pending")}
-                                        className={`px-3 py-1 text-xs font-medium rounded-md transition cursor-pointer flex-1 sm:flex-initial ${
-                                            taskStatusFilter === "pending" ? "bg-white text-amber-700 shadow-xs font-semibold" : "text-gray-600 hover:text-gray-900"
-                                        }`}
-                                    >
-                                        Pending ({pendingCount})
-                                    </button>
-                                </div>
+                                    {/* Sub-controls based on mode */}
+                                    {modalFilterType === "month" && (
+                                        <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-sm border border-gray-200 shadow-2xs">
+                                            <Calendar size={14} className="text-indigo-600 shrink-0" />
+                                            <input
+                                                type="month"
+                                                value={modalMonth}
+                                                onChange={(e) => setModalMonth(e.target.value)}
+                                                className="text-xs font-medium text-gray-800 bg-transparent focus:outline-none cursor-pointer"
+                                            />
+                                        </div>
+                                    )}
 
-                                {/* Search Bar */}
-                                <div className="relative w-full sm:w-64">
-                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search tasks or projects..."
-                                        value={taskSearchQuery}
-                                        onChange={(e) => setTaskSearchQuery(e.target.value)}
-                                        className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs"
-                                    />
-                                    {taskSearchQuery && (
-                                        <button
-                                            onClick={() => setTaskSearchQuery("")}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs p-1 cursor-pointer font-bold"
-                                        >
-                                            ×
-                                        </button>
+                                    {modalFilterType === "last_3_months" && (
+                                        <div className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-sm border border-indigo-200 text-xs font-semibold">
+                                            <Calendar size={13} />
+                                            <span>{last3Range.startDate} to {last3Range.endDate}</span>
+                                        </div>
+                                    )}
+
+                                    {modalFilterType === "year" && (
+                                        <div className="flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-sm border border-gray-200 shadow-2xs">
+                                            <Calendar size={14} className="text-indigo-600 shrink-0" />
+                                            <span className="text-xs font-semibold text-gray-500">Year:</span>
+                                            <select
+                                                value={modalYear}
+                                                onChange={(e) => setModalYear(e.target.value)}
+                                                className="text-xs font-semibold text-gray-800 bg-transparent focus:outline-none cursor-pointer"
+                                            >
+                                                {yearOptions.map(y => (
+                                                    <option key={y} value={y}>{y}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {modalFilterType === "custom" && (
+                                        <div className="flex flex-wrap items-center gap-2 bg-white px-2.5 py-1 rounded-sm border border-gray-200 shadow-2xs">
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[11px] font-semibold text-gray-500">From:</span>
+                                                <input
+                                                    type="date"
+                                                    value={modalStartDate}
+                                                    onChange={(e) => setModalStartDate(e.target.value)}
+                                                    className="text-xs font-medium text-gray-800 bg-transparent focus:outline-none cursor-pointer"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
+                                                <span className="text-[11px] font-semibold text-gray-500">To:</span>
+                                                <input
+                                                    type="date"
+                                                    value={modalEndDate}
+                                                    min={modalStartDate || undefined}
+                                                    onChange={(e) => setModalEndDate(e.target.value)}
+                                                    className="text-xs font-medium text-gray-800 bg-transparent focus:outline-none cursor-pointer"
+                                                />
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleDownloadModalCSV}
+                                    disabled={modalLoading}
+                                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-sm text-xs font-semibold shadow-2xs transition cursor-pointer active:scale-95 shrink-0"
+                                    title="Download this employee's performance data as CSV"
+                                >
+                                    <Download size={14} />
+                                    <span>Download Performance</span>
+                                </button>
                             </div>
 
-                            {/* Tasks Table Body */}
-                            <div className="flex-1 overflow-y-auto overflow-x-auto">
-                                {filteredTasks.length === 0 ? (
-                                    <div className="py-16 text-center text-gray-400 flex flex-col items-center">
-                                        <Layers size={40} className="text-gray-300 mb-2 stroke-[1.5]" />
-                                        <p className="text-sm font-medium text-gray-600">No tasks found</p>
-                                        <p className="text-xs text-gray-400 mt-1">
-                                            {allDevTasks.length === 0 
-                                                ? "No tasks have been assigned to this developer in this period." 
-                                                : "Try adjusting your search or filters."}
-                                        </p>
+                            {/* Scrollable Modal Body */}
+                            <div className="flex-1 overflow-y-auto">
+                                {modalLoading ? (
+                                    <div className="py-16 flex flex-col items-center justify-center text-gray-500">
+                                        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                                        <span className="text-xs font-medium">Loading employee performance...</span>
                                     </div>
                                 ) : (
-                                    <table className="w-full text-xs text-left min-w-[580px]">
-                                        <thead className="bg-gray-50 text-gray-500 font-semibold uppercase tracking-wider sticky top-0 border-b border-gray-200">
-                                            <tr>
-                                                <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Task Title</th>
-                                                <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Project</th>
-                                                <th className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">Priority</th>
-                                                <th className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">Status</th>
-                                                <th className="px-4 sm:px-5 py-3 text-right whitespace-nowrap">Due Date</th>
-                                                <th className="px-4 sm:px-5 py-3 text-right whitespace-nowrap">Created</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {filteredTasks.map((task) => (
-                                                <tr key={task._id} className="hover:bg-indigo-50/30 transition">
-                                                    <td className="px-4 sm:px-5 py-3 font-medium text-gray-900 max-w-xs">
-                                                        <div className="font-semibold text-gray-900 leading-snug">{task.title}</div>
-                                                        {task.description && (
-                                                            <div className="text-[11px] text-gray-400 truncate max-w-xs mt-0.5">
-                                                                {task.description}
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 sm:px-5 py-3 whitespace-nowrap">
-                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                                                            <Folder size={12} className="text-indigo-500" />
-                                                            <span>{task.projectName || "General"}</span>
+                                    <>
+                                        {/* KPI Summary Cards */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 p-3.5 sm:p-4 bg-gray-50/70 border-b border-gray-200">
+                                            <div className="bg-white p-3 rounded-lg border border-indigo-100 shadow-2xs">
+                                                <span className="text-[11px] font-medium text-indigo-600">Overall Score</span>
+                                                <div className="text-lg sm:text-xl font-bold text-indigo-700 mt-0.5">{modalDev.performanceScore || 0} Pts</div>
+                                                <span className="text-[10px] text-gray-400">Completion: {modalDev.taskCompletionRate || 0}%</span>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-2xs">
+                                                <span className="text-[11px] font-medium text-emerald-600">Tasks Completed</span>
+                                                <div className="text-lg sm:text-xl font-bold text-emerald-700 mt-0.5">
+                                                    {modalDev.tasksCompleted || 0} <span className="text-xs font-medium text-gray-400">/ {modalDev.tasksAssigned || 0}</span>
+                                                </div>
+                                                <span className="text-[10px] text-gray-400">Overdue: {modalDev.lateTasks || 0}</span>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
+                                                <span className="text-[11px] font-medium text-blue-600">Attendance</span>
+                                                <div className="text-lg sm:text-xl font-bold text-blue-700 mt-0.5">{modalDev.attendanceRate || 0}%</div>
+                                                <span className="text-[10px] text-gray-400">
+                                                    {modalDev.daysPresent || 0}/{modalDev.totalWorkingDays || 0} Days • {modalDev.daysLate || 0} Late
+                                                </span>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-2xs">
+                                                <span className="text-[11px] font-medium text-gray-500">Avg Time & Projects</span>
+                                                <div className="text-lg sm:text-xl font-bold text-gray-800 mt-0.5">{modalDev.avgCompletionFormatted || "—"}</div>
+                                                <span className="text-[10px] text-gray-400">{projectList.length} Project{projectList.length === 1 ? "" : "s"}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Month-by-Month Breakdown (for Last 3 Months, Year Wise, Date Wise) */}
+                                        {modalMonthlyBreakdown.length > 0 && (
+                                            <div className="px-3.5 sm:px-6 py-3 bg-white border-b border-gray-200">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <BarChart2 size={13} className="text-indigo-600" />
+                                                        Month-by-Month Summary ({modalMonthlyBreakdown.length} {modalMonthlyBreakdown.length === 1 ? "Month" : "Months"})
+                                                    </span>
+                                                </div>
+                                                <div className="overflow-x-auto border border-gray-200 rounded-sm">
+                                                    <table className="w-full text-xs text-left min-w-[540px]">
+                                                        <thead className="bg-gray-50 text-gray-500 font-semibold uppercase">
+                                                            <tr>
+                                                                <th className="px-3 py-2">Month</th>
+                                                                <th className="px-3 py-2 text-center">Assigned</th>
+                                                                <th className="px-3 py-2 text-center">Completed</th>
+                                                                <th className="px-3 py-2 text-center">Completion %</th>
+                                                                <th className="px-3 py-2 text-center">Attendance</th>
+                                                                <th className="px-3 py-2 text-center">Late Days</th>
+                                                                <th className="px-3 py-2 text-center">Avg Time</th>
+                                                                <th className="px-3 py-2 text-right">Score</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-gray-100">
+                                                            {modalMonthlyBreakdown.map((mb) => (
+                                                                <tr key={mb.month} className="hover:bg-gray-50">
+                                                                    <td className="px-3 py-2 font-semibold text-gray-800">{mb.monthLabel || mb.month}</td>
+                                                                    <td className="px-3 py-2 text-center text-gray-700">{mb.tasksAssigned}</td>
+                                                                    <td className="px-3 py-2 text-center text-emerald-700 font-semibold">{mb.tasksCompleted}</td>
+                                                                    <td className="px-3 py-2 text-center text-gray-700">{mb.taskCompletionRate}%</td>
+                                                                    <td className="px-3 py-2 text-center">
+                                                                        <span className={mb.attendanceRate >= 80 ? "text-emerald-600 font-semibold" : "text-rose-600 font-semibold"}>
+                                                                            {mb.attendanceRate}%
+                                                                        </span>
+                                                                        <span className="text-[10px] text-gray-400 ml-1">({mb.daysPresent}/{mb.totalWorkingDays})</span>
+                                                                    </td>
+                                                                    <td className="px-3 py-2 text-center text-rose-500">{mb.daysLate}</td>
+                                                                    <td className="px-3 py-2 text-center text-gray-600">{mb.avgCompletionFormatted || "—"}</td>
+                                                                    <td className="px-3 py-2 text-right">
+                                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${mb.performanceScore >= 80 ? "bg-green-100 text-green-800" : mb.performanceScore >= 50 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}`}>
+                                                                            {mb.performanceScore} Pts
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Projects Breakdown Pills */}
+                                        {projectList.length > 0 && (
+                                            <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-white border-b border-gray-100 overflow-x-auto scrollbar-none">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <Briefcase size={13} className="text-indigo-600" /> Projects Contributed ({projectList.length})
+                                                    </span>
+                                                    {taskProjectFilter !== "all" && (
+                                                        <button 
+                                                            onClick={() => setTaskProjectFilter("all")}
+                                                            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer"
+                                                        >
+                                                            Clear project filter
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                                    <button
+                                                        onClick={() => setTaskProjectFilter("all")}
+                                                        className={`px-2.5 py-1 rounded-sm text-xs font-medium transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                                                            taskProjectFilter === "all"
+                                                                ? "bg-indigo-600 text-white shadow-xs"
+                                                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                                        }`}
+                                                    >
+                                                        <span>All Projects</span>
+                                                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                                                            taskProjectFilter === "all" ? "bg-indigo-700 text-white" : "bg-gray-200 text-gray-600"
+                                                        }`}>
+                                                            {totalCount}
                                                         </span>
-                                                    </td>
-                                                    <td className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
-                                                        {getPriorityBadge(task.priority)}
-                                                    </td>
-                                                    <td className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
-                                                        {getStatusBadge(task.status)}
-                                                    </td>
-                                                    <td className="px-4 sm:px-5 py-3 text-right whitespace-nowrap text-gray-600">
-                                                        {formatDate(task.dueDate)}
-                                                    </td>
-                                                    <td className="px-4 sm:px-5 py-3 text-right whitespace-nowrap text-gray-400">
-                                                        {formatDate(task.createdAt)}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                                    </button>
+                                                    {projectList.map(proj => (
+                                                        <button
+                                                            key={proj.name}
+                                                            onClick={() => setTaskProjectFilter(taskProjectFilter === proj.name ? "all" : proj.name)}
+                                                            className={`px-2.5 py-1 rounded-sm text-xs font-medium transition cursor-pointer flex items-center gap-1.5 border whitespace-nowrap ${
+                                                                taskProjectFilter === proj.name
+                                                                    ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                                                                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                                                            }`}
+                                                        >
+                                                            <Folder size={12} className={taskProjectFilter === proj.name ? "text-white" : "text-indigo-500"} />
+                                                            <span>{proj.name}</span>
+                                                            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                                                                taskProjectFilter === proj.name ? "bg-indigo-700 text-white" : "bg-indigo-50 text-indigo-700 font-semibold"
+                                                            }`}>
+                                                                {proj.total}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Filter and Search Bar */}
+                                        <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                                            {/* Status Tabs */}
+                                            <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-sm w-full sm:w-auto">
+                                                <button
+                                                    onClick={() => setTaskStatusFilter("all")}
+                                                    className={`px-3 py-1 text-xs font-medium rounded-sm transition cursor-pointer flex-1 sm:flex-initial ${
+                                                        taskStatusFilter === "all" ? "bg-white text-gray-900 shadow-xs font-semibold" : "text-gray-600 hover:text-gray-900"
+                                                    }`}
+                                                >
+                                                    All ({totalCount})
+                                                </button>
+                                                <button
+                                                    onClick={() => setTaskStatusFilter("done")}
+                                                    className={`px-3 py-1 text-xs font-medium rounded-sm transition cursor-pointer flex-1 sm:flex-initial ${
+                                                        taskStatusFilter === "done" ? "bg-white text-emerald-700 shadow-xs font-semibold" : "text-gray-600 hover:text-gray-900"
+                                                    }`}
+                                                >
+                                                    Completed ({completedCount})
+                                                </button>
+                                                <button
+                                                    onClick={() => setTaskStatusFilter("pending")}
+                                                    className={`px-3 py-1 text-xs font-medium rounded-sm transition cursor-pointer flex-1 sm:flex-initial ${
+                                                        taskStatusFilter === "pending" ? "bg-white text-amber-700 shadow-xs font-semibold" : "text-gray-600 hover:text-gray-900"
+                                                    }`}
+                                                >
+                                                    Pending ({totalCount - completedCount})
+                                                </button>
+                                            </div>
+
+                                            {/* Search Bar */}
+                                            <div className="relative w-full sm:w-64">
+                                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search tasks or projects..."
+                                                    value={taskSearchQuery}
+                                                    onChange={(e) => setTaskSearchQuery(e.target.value)}
+                                                    className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-gray-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+                                                />
+                                                {taskSearchQuery && (
+                                                    <button
+                                                        onClick={() => setTaskSearchQuery("")}
+                                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs p-1 cursor-pointer font-bold"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Tasks Table Body */}
+                                        <div className="overflow-x-auto">
+                                            {filteredTasks.length === 0 ? (
+                                                <div className="py-12 text-center text-gray-400 flex flex-col items-center">
+                                                    <Layers size={36} className="text-gray-300 mb-2 stroke-[1.5]" />
+                                                    <p className="text-sm font-medium text-gray-600">No tasks found</p>
+                                                    <p className="text-xs text-gray-400 mt-1">
+                                                        {allDevTasks.length === 0 
+                                                            ? "No tasks have been assigned to this developer in this period." 
+                                                            : "Try adjusting your search or filters."}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <table className="w-full text-xs text-left min-w-[580px]">
+                                                    <thead className="bg-gray-50 text-gray-500 font-semibold uppercase tracking-wider border-b border-gray-200">
+                                                        <tr>
+                                                            <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Task Title</th>
+                                                            <th className="px-4 sm:px-5 py-3 whitespace-nowrap">Project</th>
+                                                            <th className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">Priority</th>
+                                                            <th className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">Status</th>
+                                                            <th className="px-4 sm:px-5 py-3 text-right whitespace-nowrap">Due Date</th>
+                                                            <th className="px-4 sm:px-5 py-3 text-right whitespace-nowrap">Created</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-gray-100">
+                                                        {filteredTasks.map((task) => (
+                                                            <tr key={task._id} className="hover:bg-indigo-50/30 transition">
+                                                                <td className="px-4 sm:px-5 py-3 font-medium text-gray-900 max-w-xs">
+                                                                    <div className="font-semibold text-gray-900 leading-snug">{task.title}</div>
+                                                                    {task.description && (
+                                                                        <div className="text-[11px] text-gray-400 truncate max-w-xs mt-0.5">
+                                                                            {task.description}
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 sm:px-5 py-3 whitespace-nowrap">
+                                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                                                        <Folder size={12} className="text-indigo-500" />
+                                                                        <span>{task.projectName || "General"}</span>
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
+                                                                    {getPriorityBadge(task.priority)}
+                                                                </td>
+                                                                <td className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
+                                                                    {getStatusBadge(task.status)}
+                                                                </td>
+                                                                <td className="px-4 sm:px-5 py-3 text-right whitespace-nowrap text-gray-600">
+                                                                    {formatDate(task.dueDate)}
+                                                                </td>
+                                                                <td className="px-4 sm:px-5 py-3 text-right whitespace-nowrap text-gray-400">
+                                                                    {formatDate(task.createdAt)}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            )}
+                                        </div>
+                                    </>
                                 )}
                             </div>
 
@@ -838,7 +1252,7 @@ const PerformanceReport = () => {
                                 </span>
                                 <button
                                     onClick={() => setSelectedDevModal(null)}
-                                    className="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg transition shadow-xs cursor-pointer active:scale-95"
+                                    className="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-sm transition shadow-xs cursor-pointer active:scale-95"
                                 >
                                     Close
                                 </button>
