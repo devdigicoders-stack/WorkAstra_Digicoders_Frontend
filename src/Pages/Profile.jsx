@@ -114,7 +114,10 @@ const Profile = () => {
         role: u.role?.name || "",
         companyId: u.companyId?.name || "",
         department: u.department?.name || (typeof u.department === "string" ? u.department : ""),
-        designation: u.designation?.name || (typeof u.designation === "string" ? u.designation : ""),
+        designation: u.designation?.name
+            || (typeof u.designation === "string" && !/^[0-9a-fA-F]{24}$/.test(u.designation) ? u.designation : "")
+            || u.department?.name
+            || (typeof u.department === "string" && !/^[0-9a-fA-F]{24}$/.test(u.department) ? u.department : ""),
         reportingTo: u.reportingTo?._id || u.reportingTo || "",
         reportingToName: u.reportingTo ? `${u.reportingTo.firstName || ""} ${u.reportingTo.lastName || ""}`.trim() : "",
         profilePic: null,
@@ -484,7 +487,7 @@ const Profile = () => {
                                 <InfoRow icon={Clock} label="Work Shift" value={shiftTiming ? `${shiftDisplay} (${shiftTiming.startTime} – ${shiftTiming.endTime})` : shiftDisplay} />
                                 <InfoRow icon={ShieldCheck} label="Employment Status" value={form.employmentStatusName} />
                                 <InfoRow icon={Building2} label="Department" value={form.department} />
-                                <InfoRow icon={User} label="Designation" value={form.designation} />
+                                <InfoRow icon={User} label="Designation" value={form.designation || form.department} />
                                 <InfoRow icon={User} label="Reporting To" value={form.reportingToName} />
                             </div>
                         )
