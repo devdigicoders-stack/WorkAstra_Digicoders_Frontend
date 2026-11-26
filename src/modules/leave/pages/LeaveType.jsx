@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, X, FileText, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Pencil, Trash2, X, FileText, ToggleLeft, ToggleRight, Building2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useStore } from "../../../context/StoreContext";
+import api from "../../../services/axios";
+import { ENDPOINTS } from "../../../services/endpoints";
 import {
     getLeaveTypes, createLeaveType, updateLeaveType, deleteLeaveType,
 } from "../services/leaveService";
@@ -13,11 +15,13 @@ const EMPTY = {
     name: "", code: "", description: "",
     defaultDays: 0, isPaid: true,
     carryForward: false, maxCarryForward: 0,
+    branchId: "",
 };
 
 // ── Drawer ─────────────────────────────────────────────────────────────────────
-const LeaveTypeDrawer = ({ isOpen, onClose, initial, onSubmit, loading, isSuperAdmin, companies }) => {
+const LeaveTypeDrawer = ({ isOpen, onClose, initial, onSubmit, loading, isSuperAdmin, isAdmin, userBranchName, companies }) => {
     const [form, setForm] = useState(EMPTY);
+    const [branches, setBranches] = useState([]);
 
     useEffect(() => {
         setForm(initial ? {
@@ -29,8 +33,29 @@ const LeaveTypeDrawer = ({ isOpen, onClose, initial, onSubmit, loading, isSuperA
             carryForward: initial.carryForward ?? false,
             maxCarryForward: initial.maxCarryForward ?? 0,
             companyId: initial.companyId?._id || initial.companyId || "",
-        } : { ...EMPTY, companyId: "" });
+            branchId: initial.branchId?._id || initial.branchId || "",
+        } : { ...EMPTY, companyId: "", branchId: "" });
     }, [isOpen, initial]);
+
+    useEffect(() => {
+        if (!isOpen || (!isSuperAdmin && !isAdmin)) {
+            setBranches([]);
+            return;
+        }
+        if (isSuperAdmin) {
+            if (!form.companyId) {
+                setBranches([]);
+                return;
+            }
+            api.get(ENDPOINTS.BRANCH.GET_BY_COMPANY(form.companyId))
+                .then(res => setBranches(res.data?.branches || []))
+                .catch(() => setBranches([]));
+        } else {
+            api.get(ENDPOINTS.BRANCH.GET_ALL)
+                .then(res => setBranches(res.data?.branches || []))
+                .catch(() => setBranches([]));
+        }
+    }, [isOpen, isSuperAdmin, isAdmin, form.companyId]);
 
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -38,7 +63,10 @@ const LeaveTypeDrawer = ({ isOpen, onClose, initial, onSubmit, loading, isSuperA
         if (!form.name.trim()) return toast.error("Name is required");
         if (!form.code.trim()) return toast.error("Code is required");
         if (isSuperAdmin && !form.companyId) return toast.error("Company is required");
-        onSubmit(form);
+        onSubmit({
+            ...form,
+            branchId: (isSuperAdmin || isAdmin) ? (form.branchId || null) : undefined,
+        });
     };
 
     if (!isOpen) return null;
@@ -85,12 +113,48 @@ const LeaveTypeDrawer = ({ isOpen, onClose, initial, onSubmit, loading, isSuperA
                             <label className="block text-xs font-medium text-gray-500 mb-1">
                                 Company <span className="text-red-500">*</span>
                             </label>
-                            <select value={form.companyId} onChange={e => set("companyId", e.target.value)} className={inputCls}>
+                            <select
+                                value={form.companyId}
+                                onChange={e => setForm(f => ({ ...f, companyId: e.target.value, branchId: "" }))}
+                                className={inputCls}
+                            >
                                 <option value="">Select Company</option>
                                 {companies.map(c => (
                                     <option key={c._id} value={c._id}>{c.name}</option>
                                 ))}
                             </select>
+                        </div>
+                    )}
+
+                    {(isSuperAdmin || isAdmin) ? (
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500 mb-1">
+                                Branch Scope
+                            </label>
+                            <select
+                                value={form.branchId}
+                                onChange={e => set("branchId", e.target.value)}
+                                disabled={isSuperAdmin && !form.companyId}
+                                className={inputCls}
+                            >
+                                <option value="">All Branches (Company-wide)</option>
+                                {branches.map(b => (
+                                    <option key={b._id} value={b._id}>{b.name}</option>
+                                ))}
+                            </select>
+                            <p className="text-[11px] text-gray-400 mt-1">
+                                Leave as All Branches for everyone, or select a specific branch.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-blue-50 border border-blue-100 text-xs text-blue-700">
+                            <Building2 size={15} className="shrink-0 mt-0.5 text-blue-600" />
+                            <div>
+                                <p className="font-semibold">Branch-Specific Leave Type</p>
+                                <p className="text-blue-600 mt-0.5">
+                                    Only visible to <span className="font-medium">{userBranchName || "your branch"}</span> employees.
+                                </p>
+                            </div>
                         </div>
                     )}
 
@@ -165,7 +229,15 @@ const LeaveType = () => {
     const { user } = useStore();
     const permissions = user?.role?.permissions || [];
     const isSuperAdmin = user?.role?.name === "super_admin";
+    const isAdmin = user?.role?.name === "admin";
+    const userBranchId = user?.branch?._id || user?.branch || "";
+    const userBranchName = user?.branch?.name || "";
     const can = (p) => isSuperAdmin || permissions.includes(p);
+    const canManageRow = (lt) => {
+        if (isSuperAdmin || isAdmin) return true;
+        const ltBranchId = lt.branchId?._id || lt.branchId || "";
+        return Boolean(userBranchId && ltBranchId && String(ltBranchId) === String(userBranchId));
+    };
 
     const [types, setTypes]       = useState([]);
     const [loading, setLoading]   = useState(false);
@@ -194,7 +266,7 @@ const LeaveType = () => {
             toast.success("Leave type created");
             setDrawerOpen(false);
             load();
-        } catch (err) { toast.error(err?.message || "Failed to create"); }
+        } catch (err) { toast.error(err?.response?.data?.message || err?.message || "Failed to create"); }
         finally { setLoading(false); }
     };
 
@@ -205,7 +277,7 @@ const LeaveType = () => {
             toast.success("Leave type updated");
             setDrawerOpen(false);
             load();
-        } catch (err) { toast.error(err?.message || "Failed to update"); }
+        } catch (err) { toast.error(err?.response?.data?.message || err?.message || "Failed to update"); }
         finally { setLoading(false); }
     };
 
@@ -215,7 +287,7 @@ const LeaveType = () => {
             await deleteLeaveType(id);
             toast.success("Leave type deleted");
             load();
-        } catch { toast.error("Failed to delete"); }
+        } catch (err) { toast.error(err?.response?.data?.message || err?.message || "Failed to delete"); }
     };
 
     return (
@@ -241,6 +313,7 @@ const LeaveType = () => {
                         <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                             <th className="px-4 py-3 text-left">Leave Type</th>
                             <th className="px-4 py-3 text-left">Code</th>
+                            <th className="px-4 py-3 text-left">Branch / Scope</th>
                             <th className="px-4 py-3 text-left">Default Days</th>
                             <th className="px-4 py-3 text-left">Paid</th>
                             <th className="px-4 py-3 text-left">Carry Forward</th>
@@ -253,7 +326,7 @@ const LeaveType = () => {
                     <tbody className="divide-y divide-gray-100">
                         {types.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="px-4 py-14 text-center">
+                                <td colSpan={(can("UPDATE_LEAVE_TYPE") || can("DELETE_LEAVE_TYPE")) ? 8 : 7} className="px-4 py-14 text-center">
                                     <FileText size={36} className="mx-auto text-gray-300 mb-2" />
                                     <p className="text-gray-400 text-sm">No leave types found. Add one to get started.</p>
                                 </td>
@@ -278,6 +351,18 @@ const LeaveType = () => {
                                         {lt.code}
                                     </span>
                                 </td>
+                                <td className="px-4 py-3">
+                                    {lt.branchId?.name ? (
+                                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                            <Building2 size={11} />
+                                            {lt.branchId.name}
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            All Branches
+                                        </span>
+                                    )}
+                                </td>
                                 <td className="px-4 py-3 text-gray-600">{lt.defaultDays} days</td>
                                 <td className="px-4 py-3">
                                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${lt.isPaid ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-50 text-gray-500 border-gray-200"}`}>
@@ -300,20 +385,24 @@ const LeaveType = () => {
                                 </td>
                                 {(can("UPDATE_LEAVE_TYPE") || can("DELETE_LEAVE_TYPE")) && (
                                     <td className="px-4 py-3">
-                                        <div className="flex items-center justify-center gap-2">
-                                            {can("UPDATE_LEAVE_TYPE") && (
-                                                <button onClick={() => { setSelected(lt); setDrawerOpen(true); }}
-                                                    className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition">
-                                                    <Pencil size={14} />
-                                                </button>
-                                            )}
-                                            {can("DELETE_LEAVE_TYPE") && (
-                                                <button onClick={() => handleDelete(lt._id)}
-                                                    className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition">
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            )}
-                                        </div>
+                                        {canManageRow(lt) ? (
+                                            <div className="flex items-center justify-center gap-2">
+                                                {can("UPDATE_LEAVE_TYPE") && (
+                                                    <button onClick={() => { setSelected(lt); setDrawerOpen(true); }}
+                                                        className="p-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 rounded-lg transition">
+                                                        <Pencil size={14} />
+                                                    </button>
+                                                )}
+                                                {can("DELETE_LEAVE_TYPE") && (
+                                                    <button onClick={() => handleDelete(lt._id)}
+                                                        className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <span className="block text-center text-xs text-gray-400">View only</span>
+                                        )}
                                     </td>
                                 )}
                             </tr>
@@ -329,6 +418,8 @@ const LeaveType = () => {
                 onSubmit={selected ? handleUpdate : handleCreate}
                 loading={loading}
                 isSuperAdmin={isSuperAdmin}
+                isAdmin={isAdmin}
+                userBranchName={userBranchName}
                 companies={companies}
             />
         </div>

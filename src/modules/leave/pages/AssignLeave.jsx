@@ -288,9 +288,19 @@ const AssignLeave = () => {
                                 <label className="block text-xs font-medium text-gray-500 mb-1">Leave Type</label>
                                 <select value={indForm.leaveTypeId} onChange={e => setInd("leaveTypeId", e.target.value)} className={inputCls}>
                                     <option value="">Select leave type</option>
-                                    {leaveTypes.map(lt => (
-                                        <option key={lt._id} value={lt._id}>{lt.name} ({lt.code})</option>
-                                    ))}
+                                    {leaveTypes
+                                        .filter(lt => {
+                                            const selectedEmp = employees.find(emp => emp._id === indForm.userId);
+                                            const empBranchId = selectedEmp?.branch?._id || selectedEmp?.branch || "";
+                                            const ltBranchId = lt.branchId?._id || lt.branchId || "";
+                                            if (!ltBranchId || !empBranchId) return true;
+                                            return String(ltBranchId) === String(empBranchId);
+                                        })
+                                        .map(lt => (
+                                            <option key={lt._id} value={lt._id}>
+                                                {lt.name} ({lt.code}) — {lt.branchId?.name || "All Branches"}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -368,9 +378,16 @@ const AssignLeave = () => {
                                 <select value={bulkForm.leaveTypeId} onChange={e => setBulk("leaveTypeId", e.target.value)} className={inputCls}>
                                     <option value="">Select leave type</option>
                                     {leaveTypes.map(lt => (
-                                        <option key={lt._id} value={lt._id}>{lt.name} ({lt.code})</option>
+                                        <option key={lt._id} value={lt._id}>
+                                            {lt.name} ({lt.code}) — {lt.branchId?.name || "All Branches"}
+                                        </option>
                                     ))}
                                 </select>
+                                {leaveTypes.find(lt => lt._id === bulkForm.leaveTypeId)?.branchId?.name && (
+                                    <p className="text-[11px] text-blue-600 mt-1">
+                                        Only active employees in {leaveTypes.find(lt => lt._id === bulkForm.leaveTypeId).branchId.name} branch will be assigned this leave type.
+                                    </p>
+                                )}
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>

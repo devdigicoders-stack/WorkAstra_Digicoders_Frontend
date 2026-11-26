@@ -321,7 +321,9 @@ const ApplyLeaveTab = ({ onApplied }) => {
                         <select value={form.leaveTypeId} onChange={e => set("leaveTypeId", e.target.value)} className={inputCls}>
                             <option value="">Select leave type</option>
                             {leaveTypes.map(lt => (
-                                <option key={lt._id} value={lt._id}>{lt.name} ({lt.code}) — {lt.isPaid ? "Paid" : "Unpaid"}</option>
+                                <option key={lt._id} value={lt._id}>
+                                    {lt.name} ({lt.code}) — {lt.isPaid ? "Paid" : "Unpaid"}{lt.branchId?.name ? ` [${lt.branchId.name}]` : ""}
+                                </option>
                             ))}
                         </select>
                         {/* #9 — Balance indicator */}
