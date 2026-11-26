@@ -8,7 +8,7 @@ import {
     ArrowRight, Calendar, Timer, MapPin, IndianRupee, FileText, AlertCircle, PieChart,
     UserX, ClockAlert, Palmtree, PartyPopper, Activity, Banknote, Sun,
     Briefcase, Target, ListTodo, BarChart2,
-    PhoneCall, FileCheck, Percent, UserCheck, X
+    PhoneCall, FileCheck, Percent, UserCheck, X, RefreshCw
 } from "lucide-react";
 import api from "../services/axios";
 import { ENDPOINTS } from "../services/endpoints";
@@ -71,17 +71,17 @@ const STATUS = {
 const getLocation = () => new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("Geolocation not supported"));
     navigator.geolocation.getCurrentPosition(
-        async ({ coords: { latitude, longitude } }) => {
+        async ({ coords: { latitude, longitude, accuracy } }) => {
             let address = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
             try {
                 const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
                 const d = await r.json();
                 address = d.display_name || address;
             } catch { }
-            resolve({ latitude, longitude, address });
+            resolve({ latitude, longitude, address, accuracy: accuracy ? Math.round(accuracy) : null });
         },
         (e) => reject(new Error(e.message)),
-        { enableHighAccuracy: true, timeout: 10000 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
 });
 
@@ -158,10 +158,24 @@ const Home = () => {
 
     useEffect(() => { const id = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(id); }, []);
 
-    // Fetch location
-    useEffect(() => {
+    const fetchCurrentLocation = (showToast = false) => {
         setLocating(true);
-        getLocation().then(l => setLocation(l)).catch(e => setLocationError(e.message)).finally(() => setLocating(false));
+        setLocationError("");
+        getLocation()
+            .then((l) => {
+                setLocation(l);
+                if (showToast) toast.success("Current location updated!");
+            })
+            .catch((e) => {
+                setLocationError(e.message);
+                if (showToast) toast.error(e.message || "Failed to fetch location");
+            })
+            .finally(() => setLocating(false));
+    };
+
+    // Fetch location on mount
+    useEffect(() => {
+        fetchCurrentLocation(false);
     }, []);
 
     // Load org + sales stats
@@ -528,9 +542,30 @@ const Home = () => {
                     </div>
 
                     {/* Location */}
-                    <div className={`flex items-start gap-2 text-xs rounded-lg px-3 py-2 ${locationError ? "bg-red-50 text-red-500" : "bg-gray-50 text-gray-500"}`}>
-                        <MapPin size={12} className="mt-0.5 shrink-0" />
-                        <span className="line-clamp-2">{locating ? "Detecting..." : locationError || location?.address || "—"}</span>
+                    <div className={`rounded-xl border px-3 py-2.5 text-xs space-y-2 ${locationError ? "bg-red-50/70 border-red-200 text-red-600" : "bg-gray-50 border-gray-200/70 text-gray-600"}`}>
+                        <div className="flex items-start gap-2">
+                            <MapPin size={13} className={`mt-0.5 shrink-0 ${locationError ? "text-red-500" : "text-blue-500"}`} />
+                            <div className="min-w-0 flex-1">
+                                <p className="line-clamp-2 leading-relaxed font-medium">
+                                    {locating ? "Fetching current location..." : locationError || location?.address || "Location unavailable"}
+                                </p>
+                                {!locating && !locationError && location?.latitude != null && location?.longitude != null && (
+                                    <p className="text-[11px] text-gray-400 mt-0.5 tabular-nums">
+                                        {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
+                                        {location.accuracy ? ` · ±${location.accuracy}m` : ""}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => fetchCurrentLocation(true)}
+                            disabled={locating}
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-blue-600 hover:bg-blue-50 hover:border-blue-200 font-medium transition disabled:opacity-50"
+                        >
+                            <RefreshCw size={12} className={locating ? "animate-spin" : ""} />
+                            <span>{locating ? "Fetching Current Location..." : "Fetch Current Location"}</span>
+                        </button>
                     </div>
 
                     {/* Shift */}

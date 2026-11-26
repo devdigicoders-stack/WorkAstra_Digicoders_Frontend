@@ -5,6 +5,7 @@ import { Check, X, Upload, Building, CreditCard, Banknote, ShieldAlert, Pencil }
 import { getMyBankDetails, submitBankDetails, approveBankDetails, rejectBankDetails, adminEditBankDetails } from "../services/UserService";
 import { useStore } from "../../../context/StoreContext";
 import api from "../../../services/axios";
+import { getImageUrl } from "../../../utils/imageUtils";
 
 const BankDetailsComponent = ({ employeeId = null, isAdminView = false }) => {
     const { user: currentUser } = useStore();
@@ -66,9 +67,7 @@ const BankDetailsComponent = ({ employeeId = null, isAdminView = false }) => {
                         upiNumber: data.bankDetails.upiNumber || "",
                         upiType: data.bankDetails.upiType || "",
                     });
-                    if (data.bankDetails.qrCode?.url) {
-                        setQrCodePreview(data.bankDetails.qrCode.url);
-                    }
+                    setQrCodePreview(data.bankDetails.qrCode?.url ? getImageUrl(data.bankDetails.qrCode.url) : null);
                     setBankStatus(data.bankStatus);
                     setBankRejectedReason(data.bankRejectedReason);
                 }
@@ -170,36 +169,36 @@ const BankDetailsComponent = ({ employeeId = null, isAdminView = false }) => {
         <div className="max-w-4xl space-y-6">
             {/* Status Banner */}
             {bankStatus === "pending" && (
-                <div className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-xl">
-                    <ShieldAlert size={18} />
-                    <div>
+                <div className="flex items-start sm:items-center gap-3 p-3.5 sm:p-4 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-xl">
+                    <ShieldAlert size={18} className="shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="min-w-0">
                         <p className="font-semibold text-sm">Verification Pending</p>
-                        <p className="text-xs">Your bank details are under review by admin.</p>
+                        <p className="text-xs break-words">Your bank details are under review by admin.</p>
                     </div>
                 </div>
             )}
             {bankStatus === "approved" && (
-                <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl">
-                    <Check size={18} />
-                    <div>
+                <div className="flex items-start sm:items-center gap-3 p-3.5 sm:p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl">
+                    <Check size={18} className="shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="min-w-0">
                         <p className="font-semibold text-sm">Approved ?</p>
-                        <p className="text-xs">Bank details are verified and locked.</p>
+                        <p className="text-xs break-words">Bank details are verified and locked.</p>
                     </div>
                 </div>
             )}
             {bankStatus === "rejected" && (
-                <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl">
-                    <X size={18} />
-                    <div>
+                <div className="flex items-start sm:items-center gap-3 p-3.5 sm:p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl">
+                    <X size={18} className="shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="min-w-0">
                         <p className="font-semibold text-sm">Rejected ?</p>
-                        <p className="text-xs">Reason: {bankRejectedReason}</p>
+                        <p className="text-xs break-words">Reason: {bankRejectedReason}</p>
                     </div>
                 </div>
             )}
 
             {/* Admin Actions */}
             {isAdminView && !isEditing && (
-                <div className="flex gap-3 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 bg-white p-3.5 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
                     {bankStatus === "pending" && (
                         <>
                             <button onClick={handleApprove} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm font-medium transition">
@@ -217,13 +216,13 @@ const BankDetailsComponent = ({ employeeId = null, isAdminView = false }) => {
             )}
 
             {isAdminView && isEditing && (
-                <div className="flex gap-3 bg-white p-4 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 text-sm font-medium shadow-sm">
-                    You are in Edit Mode. Make the required changes and click "Save Changes" below.
-                    <button type="button" onClick={() => setIsEditing(false)} className="ml-auto underline hover:text-blue-900">Cancel Edit</button>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 bg-blue-50 p-3.5 sm:p-4 rounded-xl border border-blue-200 text-blue-700 text-xs sm:text-sm font-medium shadow-sm">
+                    <span>You are in Edit Mode. Make the required changes and click "Save Changes" below.</span>
+                    <button type="button" onClick={() => setIsEditing(false)} className="self-start sm:ml-auto underline hover:text-blue-900 shrink-0">Cancel Edit</button>
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 bg-white p-3.5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm">
                 
                 {/* Bank Details */}
                 <div className="space-y-4">
@@ -243,7 +242,7 @@ const BankDetailsComponent = ({ employeeId = null, isAdminView = false }) => {
                         <label className={labelCls}>IFSC Code</label>
                         <input name="ifscCode" value={form.ifscCode} onChange={handleChange} disabled={isReadOnly} required className={inputCls} placeholder="e.g. SBIN0001234" />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className={labelCls}>Account Type</label>
                             <select name="accountType" value={form.accountType} onChange={handleChange} disabled={isReadOnly} className={inputCls}>
@@ -269,7 +268,7 @@ const BankDetailsComponent = ({ employeeId = null, isAdminView = false }) => {
                         <label className={labelCls}>UPI ID</label>
                         <input name="upiId" value={form.upiId} onChange={handleChange} disabled={isReadOnly} className={inputCls} placeholder="e.g. 9876543210@ybl" />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className={labelCls}>UPI App Type</label>
                             <input name="upiType" value={form.upiType} onChange={handleChange} disabled={isReadOnly} className={inputCls} placeholder="PhonePe, GPay etc." />
@@ -289,7 +288,7 @@ const BankDetailsComponent = ({ employeeId = null, isAdminView = false }) => {
                         <label className={labelCls}>QR Code Image (Optional)</label>
                         {qrCodePreview ? (
                             <div className="relative inline-block mt-2">
-                                <img src={qrCodePreview} alt="QR Code" className="w-32 h-32 object-cover border border-gray-200 rounded-xl" />
+                                <img src={qrCodePreview} alt="QR Code" className="w-32 h-32 object-contain bg-white p-1 border border-gray-200 rounded-xl" />
                                 {!isReadOnly && (
                                     <button type="button" onClick={() => { setQrCodePreview(null); setQrCodeFile(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600">
                                         <X size={14} />
@@ -313,8 +312,8 @@ const BankDetailsComponent = ({ employeeId = null, isAdminView = false }) => {
 
                 {/* Submit Button */}
                 {!isReadOnly && (
-                    <div className="md:col-span-2 flex justify-end mt-4 pt-4 border-t">
-                        <button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-6 rounded-xl text-sm font-medium transition disabled:opacity-50">
+                    <div className="md:col-span-2 flex justify-end mt-2 sm:mt-4 pt-4 border-t">
+                        <button type="submit" disabled={saving} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-6 rounded-xl text-sm font-medium transition disabled:opacity-50">
                             {saving ? "Submitting..." : (isAdminView ? "Save Changes" : (bankStatus === "rejected" ? "Resubmit for Approval" : "Submit for Approval"))}
                         </button>
                     </div>

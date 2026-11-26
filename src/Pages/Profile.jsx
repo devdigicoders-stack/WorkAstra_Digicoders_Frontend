@@ -320,18 +320,18 @@ const Profile = () => {
     }
 
     return (
-        <div className="bg-gray-50 min-h-screen">
+        <div className="bg-gray-50 min-h-screen overflow-x-hidden">
             {/* Cover + Avatar */}
             <div className="relative">
-                <div className="h-32 sm:h-44 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600" />
-                <div className="max-w-4xl mx-auto px-4 sm:px-6">
-                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-12 sm:-mt-14 pb-4">
+                <div className="h-28 sm:h-44 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600" />
+                <div className="max-w-4xl mx-auto px-3 sm:px-6">
+                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 -mt-10 sm:-mt-14 pb-4">
                         {/* Avatar */}
                         <div className="relative w-fit">
-                            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-blue-100 flex items-center justify-center">
+                            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-blue-100 flex items-center justify-center">
                                 {preview
                                     ? <img src={preview} alt="avatar" className="w-full h-full object-cover" />
-                                    : <span className="text-3xl font-bold text-blue-600">{initials}</span>}
+                                    : <span className="text-2xl sm:text-3xl font-bold text-blue-600">{initials}</span>}
                             </div>
                             {editMode && (
                                 <label className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center cursor-pointer shadow-lg transition">
@@ -342,24 +342,24 @@ const Profile = () => {
                         </div>
 
                         {/* Name + actions */}
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pb-1">
-                            <div className="sm:text-right">
-                                <h1 className="text-xl font-bold text-gray-900">{form.firstName} {form.lastName}</h1>
-                                <p className="text-sm text-gray-500">{form.role}{form.companyId ? ` · ${form.companyId}` : ""}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pb-1 min-w-0">
+                            <div className="sm:text-right min-w-0">
+                                <h1 className="text-lg sm:text-xl font-bold text-gray-900 break-words">{form.firstName} {form.lastName}</h1>
+                                <p className="text-xs sm:text-sm text-gray-500 break-words">{form.role}{form.companyId ? ` · ${form.companyId}` : ""}</p>
                             </div>
                             {!editMode ? (
                                 <button onClick={() => setEditMode(true)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition shadow-sm">
+                                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition shadow-sm shrink-0">
                                     <Pencil size={14} /> Edit Profile
                                 </button>
                             ) : (
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                                     <button onClick={handleCancel}
-                                        className="flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white hover:bg-gray-50 rounded-xl text-sm transition">
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 border border-gray-200 bg-white hover:bg-gray-50 rounded-xl text-sm transition">
                                         <X size={14} /> Cancel
                                     </button>
                                     <button onClick={handleSave} disabled={saving}
-                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition disabled:opacity-60">
+                                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition disabled:opacity-60">
                                         <Check size={14} /> {saving ? "Saving..." : "Save Changes"}
                                     </button>
                                 </div>
@@ -369,39 +369,39 @@ const Profile = () => {
                 </div>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-10">
+            <div className="max-w-4xl mx-auto px-3 sm:px-6 pb-8 sm:pb-10">
                 {/* Stats row */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mb-5 sm:mb-6">
                     {[
                         { label: "Employee Code", value: form.employeeCode || "—", icon: Briefcase, color: "text-blue-600 bg-blue-50" },
                         { label: "Department", value: form.department || "—", icon: Building2, color: "text-purple-600 bg-purple-50" },
                         { label: "Work Shift", value: shiftDisplay, icon: Clock, color: "text-green-600 bg-green-50" },
                         { label: "Emp. Status", value: form.employmentStatusName || "—", icon: ShieldCheck, color: "text-orange-600 bg-orange-50" },
                     ].map(s => (
-                        <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
-                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}>
-                                <s.icon size={16} />
+                        <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 min-w-0">
+                            <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center shrink-0 ${s.color}`}>
+                                <s.icon size={15} />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-xs text-gray-400 truncate">{s.label}</p>
-                                <p className="text-sm font-semibold text-gray-800 truncate">{s.value}</p>
+                                <p className="text-[11px] sm:text-xs text-gray-400 truncate">{s.label}</p>
+                                <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate">{s.value}</p>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 w-fit mb-5">
+                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl p-1 w-full sm:w-fit max-w-full overflow-x-auto no-scrollbar mb-4 sm:mb-5">
                     {TABS.map(t => (
                         <button key={t.key} onClick={() => setTab(t.key)}
-                            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${tab === t.key ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                            className={`whitespace-nowrap shrink-0 flex-1 sm:flex-none text-center px-2.5 sm:px-4 py-2 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition ${tab === t.key ? "bg-blue-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
                             {t.label}
                         </button>
                     ))}
                 </div>
 
                 {/* Tab Content */}
-                <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6">
+                <div className="bg-white border border-gray-200 rounded-2xl p-3.5 sm:p-6">
 
                     {/* ── Personal ── */}
                     {tab === "personal" && (
@@ -573,29 +573,29 @@ const Profile = () => {
 
                             {/* Logged in devices list */}
                             <div className="pt-4 border-t border-gray-100">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div>
+                                <div className="flex items-center justify-between gap-2 mb-3">
+                                    <div className="min-w-0">
                                         <h4 className="text-sm font-semibold text-gray-800">Your Logged-in Devices</h4>
                                         <p className="text-xs text-gray-400">Where you're currently logged in</p>
                                     </div>
-                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0 whitespace-nowrap">
                                         {(rawUser?.loggedDevices?.length || 1)} Active
                                     </span>
                                 </div>
 
                                 <div className="space-y-2.5">
                                     {(!rawUser?.loggedDevices || rawUser.loggedDevices.length === 0) ? (
-                                        <div className="p-3 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                        <div className="p-3 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
                                                     {rawUser?.lastLoginDevice === "Mobile" ? <Smartphone size={16} /> : <Laptop size={16} />}
                                                 </div>
-                                                <div>
-                                                    <p className="text-xs font-semibold text-gray-800">{rawUser?.lastLoginDeviceDetails || rawUser?.lastLoginDevice || "Current Device"}</p>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-semibold text-gray-800 break-words">{rawUser?.lastLoginDeviceDetails || rawUser?.lastLoginDevice || "Current Device"}</p>
                                                     <p className="text-[10px] text-gray-400">This Device (Active Now)</p>
                                                 </div>
                                             </div>
-                                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Active</span>
+                                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">Active</span>
                                         </div>
                                     ) : (
                                         rawUser.loggedDevices.map((dev, idx) => (
@@ -606,12 +606,12 @@ const Profile = () => {
                                                     </div>
                                                     <div className="min-w-0">
                                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="text-xs font-semibold text-gray-800">{dev.deviceDetails || dev.deviceType}</span>
+                                                            <span className="text-xs font-semibold text-gray-800 break-words">{dev.deviceDetails || dev.deviceType}</span>
                                                             {idx === 0 && (
                                                                 <span className="text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded">This device</span>
                                                             )}
                                                         </div>
-                                                        <p className="text-[10px] text-gray-400 mt-0.5">
+                                                        <p className="text-[10px] text-gray-400 mt-0.5 break-all">
                                                             IP: {dev.ip || "127.0.0.1"} • {new Date(dev.loginAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                                                         </p>
                                                     </div>
@@ -639,12 +639,12 @@ const Profile = () => {
                                     </p>
                                     <form onSubmit={handleChangePayrollPin} className="space-y-4">
                                         <div>
-                                            <div className="flex items-center justify-between mb-1.5">
+                                            <div className="flex items-center justify-between gap-2 mb-1.5">
                                                 <label className={labelCls + " mb-0"}>Current PIN</label>
                                                 <button
                                                     type="button"
                                                     onClick={() => { setForgotPinMode(true); setForgotPinStep(1); }}
-                                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
+                                                    className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1 shrink-0 whitespace-nowrap"
                                                 >
                                                     <KeyRound size={12} />
                                                     Forgot PIN?
@@ -702,13 +702,13 @@ const Profile = () => {
                                     </form>
                                 </div>
                             ) : (
-                                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
-                                    <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-4">
+                                    <div className="flex items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
                                                 <KeyRound size={16} />
                                             </div>
-                                            <div>
+                                            <div className="min-w-0">
                                                 <h4 className="text-sm font-bold text-gray-900">Reset PIN via Email OTP</h4>
                                                 <p className="text-xs text-gray-500">Recover your Payroll PIN without knowing your current PIN</p>
                                             </div>
@@ -716,7 +716,7 @@ const Profile = () => {
                                         <button
                                             type="button"
                                             onClick={() => setForgotPinMode(false)}
-                                            className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 hover:underline"
+                                            className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 hover:underline shrink-0"
                                         >
                                             <ArrowLeft size={13} /> Back
                                         </button>
@@ -724,7 +724,7 @@ const Profile = () => {
 
                                     {forgotPinStep === 1 ? (
                                         <div className="space-y-4 py-2">
-                                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700">
+                                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700 break-words">
                                                 We will send a 6-digit verification code to your registered email: <strong>{user?.email || "registered email"}</strong>.
                                             </div>
                                             <button
@@ -738,7 +738,7 @@ const Profile = () => {
                                         </div>
                                     ) : (
                                         <form onSubmit={handleResetPinWithOtp} className="space-y-4">
-                                            <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700">
+                                            <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-700 break-words">
                                                 ✓ OTP sent to <strong>{maskedEmail || user?.email}</strong>. It is valid for 10 minutes.
                                             </div>
                                             <div>
@@ -749,7 +749,7 @@ const Profile = () => {
                                                     value={forgotPinForm.otp}
                                                     onChange={e => setForgotPinForm(p => ({ ...p, otp: e.target.value.replace(/\D/g, "") }))}
                                                     placeholder="Enter 6-digit OTP"
-                                                    className={`${inputCls} text-center tracking-[0.5em] font-mono text-base font-bold`}
+                                                    className={`${inputCls} text-center tracking-[0.25em] sm:tracking-[0.5em] placeholder:tracking-normal font-mono text-base font-bold`}
                                                     autoFocus
                                                 />
                                             </div>
@@ -786,19 +786,19 @@ const Profile = () => {
                                                     <p className="text-xs text-red-500 mt-1">PINs do not match</p>
                                                 )}
                                             </div>
-                                            <div className="flex gap-2 pt-1">
+                                            <div className="flex flex-col-reverse sm:flex-row gap-2 pt-1">
                                                 <button
                                                     type="button"
                                                     disabled={forgotLoading}
                                                     onClick={handleSendResetOtp}
-                                                    className="w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1"
+                                                    className="w-full sm:w-1/3 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1"
                                                 >
                                                     <RefreshCw size={12} className={forgotLoading ? "animate-spin" : ""} /> Resend
                                                 </button>
                                                 <button
                                                     type="submit"
                                                     disabled={forgotLoading}
-                                                    className="w-2/3 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
+                                                    className="w-full sm:w-2/3 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-medium transition disabled:opacity-50"
                                                 >
                                                     {forgotLoading ? "Resetting..." : "Verify & Save PIN"}
                                                 </button>
