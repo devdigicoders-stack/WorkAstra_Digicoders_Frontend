@@ -326,8 +326,16 @@ const Profile = () => {
         <div className="bg-gray-50 min-h-screen overflow-x-hidden">
             {/* Cover + Avatar */}
             <div className="relative">
-                <div className="h-28 sm:h-44 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600" />
-                <div className="max-w-4xl mx-auto px-3 sm:px-6">
+                <div className="h-32 sm:h-44 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 flex items-center justify-center px-6 pt-3 pb-9 sm:pb-12 overflow-hidden">
+                    <div className="bg-white/95 px-4 py-2 sm:px-6 sm:py-2.5 rounded-2xl shadow-md max-w-full">
+                        <img
+                            src="/offerlatter.png"
+                            alt="Cover Banner"
+                            className="max-h-12 sm:max-h-20 w-auto max-w-full object-contain select-none"
+                        />
+                    </div>
+                </div>
+                <div className="max-w-4xl mx-auto px-3 sm:px-6 relative z-10">
                     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 -mt-10 sm:-mt-14 pb-4">
                         {/* Avatar */}
                         <div className="relative w-fit">
