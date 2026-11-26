@@ -1251,8 +1251,9 @@ const Attendance = () => {
     const isSuperAdmin = user?.role?.name === "super_admin";
     const permissions = user?.role?.permissions || [];
     const isAdmin = user?.role?.name === "admin" || isSuperAdmin || permissions.includes("VIEW_ALL_ATTENDANCES");
+    const hasTeamPermission = isAdmin || permissions.includes("VIEW_TEAM_ATTENDANCE");
     const [hasDirectReports, setHasDirectReports] = useState(false);
-    const showTeamTab = isAdmin || hasDirectReports;
+    const showTeamTab = hasTeamPermission && (isAdmin || hasDirectReports);
 
     const [time, setTime] = useState(new Date());
     const [today, setToday] = useState(null);
@@ -1363,10 +1364,21 @@ const Attendance = () => {
     };
 
     useEffect(() => {
-        if (showTeamTab) {
-            fetchUsers().then(d => setActiveUsers(d.users?.filter(u => u.isActive && (u.role?.name || u.role)?.toLowerCase() !== "client") || [])).catch(() => { });
+        if (!showTeamTab) {
+            setActiveUsers([]);
+            return;
         }
-    }, [showTeamTab]);
+        fetchUsers()
+            .then(d => {
+                const list = (d.users || []).filter(u =>
+                    u.isActive &&
+                    (u.role?.name || u.role)?.toLowerCase() !== "client" &&
+                    (isAdmin || String(u._id) !== String(user?._id))
+                );
+                setActiveUsers(list);
+            })
+            .catch(() => { });
+    }, [showTeamTab, isAdmin, user?._id]);
 
     const handleEditPunchSubmit = async (e) => {
         e.preventDefault();
@@ -1455,14 +1467,21 @@ const Attendance = () => {
         } catch { }
     }, []);
 
-    // Check if this user manages anyone (to show Team tab)
+    // Check if this user has team attendance permission & manages anyone (to show Team tab)
     useEffect(() => {
-        if (isAdmin) { setHasDirectReports(true); return; }
+        if (!hasTeamPermission) {
+            setHasDirectReports(false);
+            return;
+        }
+        if (isAdmin) {
+            setHasDirectReports(true);
+            return;
+        }
         getTeamAttendance({ month })
-            .then(d => setHasDirectReports((d.records || []).length > 0 || true))
-            .catch(() => { });
+            .then(d => setHasDirectReports(Boolean(d.hasTeam || (d.records || []).length > 0)))
+            .catch(() => setHasDirectReports(false));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAdmin]);
+    }, [isAdmin, hasTeamPermission]);
 
     const loadSummary = useCallback(async () => {
         try { const d = await getAttendanceSummary(month, { scope: 'my' }); setSummary(d.summary); } catch { }
